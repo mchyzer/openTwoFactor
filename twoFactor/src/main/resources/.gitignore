@@ -7,3 +7,7 @@
 /grouper.client.properties
 /twoFactor.hibernate.properties
 /morphString.properties
+/encryptKeysTest.properties
+/krb5.conf
+/sources.mysql.xml
+/twoFactor.server.properties
