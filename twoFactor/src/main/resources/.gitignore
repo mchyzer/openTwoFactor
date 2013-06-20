@@ -1,0 +1,9 @@
+/ehcache.xml
+/sources.xml
+/subject.properties
+/log4j.properties
+/krb5.properties
+/spy.properties
+/grouper.client.properties
+/twoFactor.hibernate.properties
+/morphString.properties
