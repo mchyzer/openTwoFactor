@@ -517,168 +517,6 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
 
   
   
-  
-  
-  
-  
-/* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
-CREATE OR REPLACE FORCE VIEW TWO_FACTOR_AUDIT_V
-(
-   THE_TIMESTAMP_DATE,
-   ACTION,
-   LOGINID,
-   user_using_LOGINID,
-   TRUSTED_BROWSER,
-   IP_ADDRESS,
-   USER_AGENT_OPERATING_SYSTEM,
-   USER_AGENT_BROWSER,
-   USER_AGENT_MOBILE,
-   SERVICE_PROVIDER_ID,
-   SERVICE_PROVIDER_NAME,
-   DESCRIPTION,
-   DOMAIN_NAME,
-   WHEN_BROWSER_TRUSTED_DATE,
-   USER_AGENT,
-   UUID,
-   THE_TIMESTAMP,
-   WHEN_BROWSER_TRUSTED,
-   USER_UUID,
-   BROWSER_UUID,
-   IP_ADDRESS_UUID,
-   SERVICE_PROVIDER_UUID,
-   USER_AGENT_UUID,
-   USER_UUID_USING_APP
-)
-AS
-   SELECT CASE
-             WHEN tfa.the_timestamp = 0 THEN NULL
-             ELSE DATE '1970-01-01' + tfa.the_timestamp / 1000 / 60 / 60 / 24
-          END
-             AS the_timestamp_date,
-          tfa.action,
-          (SELECT tfuv.loginid
-             FROM two_factor_user_v tfuv
-            WHERE tfuv.uuid = tfa.user_uuid)
-             AS loginid,
-          (SELECT tfuv.loginid
-             FROM two_factor_user_v tfuv
-            WHERE tfuv.uuid = tfa.USER_UUID_USING_APP)
-             AS user_using_loginid,
-          (SELECT TFB.TRUSTED_BROWSER
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS trusted_browser,
-          (SELECT TFIA.IP_ADDRESS
-             FROM two_factor_ip_address tfia
-            WHERE tfia.uuid = TFA.IP_ADDRESS_UUID)
-             AS ip_address,
-          (SELECT TFUA.OPERATING_SYSTEM
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_operating_system,
-          (SELECT TFUA.BROWSER
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_browser,
-          (SELECT TFUA.MOBILE
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_mobile,
-          (SELECT TFSP.SERVICE_PROVIDER_ID
-             FROM two_factor_service_provider tfsp
-            WHERE tfsp.uuid = tfa.service_provider_uuid)
-             AS service_provider_id,
-          (SELECT TFSP.SERVICE_PROVIDER_name
-             FROM two_factor_service_provider tfsp
-            WHERE tfsp.uuid = tfa.service_provider_uuid)
-             AS service_provider_name,
-          TFA.DESCRIPTION,
-          (SELECT TFIA.DOMAIN_NAME
-             FROM two_factor_ip_address tfia
-            WHERE tfia.uuid = TFA.IP_ADDRESS_UUID)
-             AS domain_name,
-          (SELECT CASE
-                     WHEN tfb.when_trusted = 0
-                     THEN
-                        NULL
-                     ELSE
-                        DATE '1970-01-01'
-                        + tfb.when_trusted / 1000 / 60 / 60 / 24
-                  END
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS when_browser_trusted_date,
-          (SELECT TFUA.user_agent
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent,
-          TFA.UUID,
-          tfa.the_timestamp,
-          (SELECT tfb.when_trusted
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS when_browser_trusted,
-          TFA.USER_UUID,
-          TFA.BROWSER_UUID,
-          TFA.IP_ADDRESS_UUID,
-          TFA.SERVICE_PROVIDER_UUID,
-          TFA.USER_AGENT_UUID,
-          tfa.USER_UUID_USING_APP
-     FROM two_factor_audit tfa
-    WHERE TFA.DELETED_ON IS NULL;
-COMMENT ON TABLE TWO_FACTOR_AUDIT_V IS 'view on audit records to make them more human readable';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.THE_TIMESTAMP_DATE IS 'date of when it happened';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.ACTION IS 'action enum';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.LOGINID IS 'loginid of user who performed it';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.TRUSTED_BROWSER IS 'if this is a trusted  browser (might not be in sync)';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.IP_ADDRESS IS 'ip address of user who performed it';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_OPERATING_SYSTEM IS 'user agent operating system of user who performed it (might not be accurate)';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_BROWSER IS 'user agent browser of user who performed it (might not be accurate)';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_MOBILE IS 'T or F if the browser of the user who performed it is mobile (might not be accurate)';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_ID IS 'service provider id of the affected service provider';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_NAME IS 'service provider name of the affected service provider';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.DESCRIPTION IS 'description of the audit record if applicable';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.DOMAIN_NAME IS 'domain name of the ip address of the user who performed it';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.WHEN_BROWSER_TRUSTED_DATE IS 'when the browser was last trusted';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT IS 'the user agent that performed the action';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.UUID IS 'the audit uuid';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.THE_TIMESTAMP IS 'date of when it happened in millis from 1970';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.WHEN_BROWSER_TRUSTED IS 'when the browser was last trusted in millis since 1970';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_UUID IS 'uuid of the user who did the action';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.BROWSER_UUID IS 'uuid of the browser which did the action';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.IP_ADDRESS_UUID IS 'ip address that did the action';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_UUID IS 'uuid of the service provider involved in the action';
-
-COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_UUID IS 'uuid of the user agent involved in the action';
- comment on column two_factor_audit_v.USER_UUID_USING_APP is 'uuid of the user using the application';
- comment on column two_factor_audit_v.user_using_LOGINID is 'login id of the user using the application';
- 
- 
- 
- 
- 
- 
     
 /* Formatted on 3/20/2013 3:06:28 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW two_factor_user_v
@@ -984,6 +822,168 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'date value for when the phone cod
 
 
 
+  
+  
+  
+  
+/* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
+CREATE OR REPLACE FORCE VIEW TWO_FACTOR_AUDIT_V
+(
+   THE_TIMESTAMP_DATE,
+   ACTION,
+   LOGINID,
+   user_using_LOGINID,
+   TRUSTED_BROWSER,
+   IP_ADDRESS,
+   USER_AGENT_OPERATING_SYSTEM,
+   USER_AGENT_BROWSER,
+   USER_AGENT_MOBILE,
+   SERVICE_PROVIDER_ID,
+   SERVICE_PROVIDER_NAME,
+   DESCRIPTION,
+   DOMAIN_NAME,
+   WHEN_BROWSER_TRUSTED_DATE,
+   USER_AGENT,
+   UUID,
+   THE_TIMESTAMP,
+   WHEN_BROWSER_TRUSTED,
+   USER_UUID,
+   BROWSER_UUID,
+   IP_ADDRESS_UUID,
+   SERVICE_PROVIDER_UUID,
+   USER_AGENT_UUID,
+   USER_UUID_USING_APP
+)
+AS
+   SELECT CASE
+             WHEN tfa.the_timestamp = 0 THEN NULL
+             ELSE DATE '1970-01-01' + tfa.the_timestamp / 1000 / 60 / 60 / 24
+          END
+             AS the_timestamp_date,
+          tfa.action,
+          (SELECT tfuv.loginid
+             FROM two_factor_user_v tfuv
+            WHERE tfuv.uuid = tfa.user_uuid)
+             AS loginid,
+          (SELECT tfuv.loginid
+             FROM two_factor_user_v tfuv
+            WHERE tfuv.uuid = tfa.USER_UUID_USING_APP)
+             AS user_using_loginid,
+          (SELECT TFB.TRUSTED_BROWSER
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS trusted_browser,
+          (SELECT TFIA.IP_ADDRESS
+             FROM two_factor_ip_address tfia
+            WHERE tfia.uuid = TFA.IP_ADDRESS_UUID)
+             AS ip_address,
+          (SELECT TFUA.OPERATING_SYSTEM
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_operating_system,
+          (SELECT TFUA.BROWSER
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_browser,
+          (SELECT TFUA.MOBILE
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_mobile,
+          (SELECT TFSP.SERVICE_PROVIDER_ID
+             FROM two_factor_service_provider tfsp
+            WHERE tfsp.uuid = tfa.service_provider_uuid)
+             AS service_provider_id,
+          (SELECT TFSP.SERVICE_PROVIDER_name
+             FROM two_factor_service_provider tfsp
+            WHERE tfsp.uuid = tfa.service_provider_uuid)
+             AS service_provider_name,
+          TFA.DESCRIPTION,
+          (SELECT TFIA.DOMAIN_NAME
+             FROM two_factor_ip_address tfia
+            WHERE tfia.uuid = TFA.IP_ADDRESS_UUID)
+             AS domain_name,
+          (SELECT CASE
+                     WHEN tfb.when_trusted = 0
+                     THEN
+                        NULL
+                     ELSE
+                        DATE '1970-01-01'
+                        + tfb.when_trusted / 1000 / 60 / 60 / 24
+                  END
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS when_browser_trusted_date,
+          (SELECT TFUA.user_agent
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent,
+          TFA.UUID,
+          tfa.the_timestamp,
+          (SELECT tfb.when_trusted
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS when_browser_trusted,
+          TFA.USER_UUID,
+          TFA.BROWSER_UUID,
+          TFA.IP_ADDRESS_UUID,
+          TFA.SERVICE_PROVIDER_UUID,
+          TFA.USER_AGENT_UUID,
+          tfa.USER_UUID_USING_APP
+     FROM two_factor_audit tfa
+    WHERE TFA.DELETED_ON IS NULL;
+COMMENT ON TABLE TWO_FACTOR_AUDIT_V IS 'view on audit records to make them more human readable';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.THE_TIMESTAMP_DATE IS 'date of when it happened';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.ACTION IS 'action enum';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.LOGINID IS 'loginid of user who performed it';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.TRUSTED_BROWSER IS 'if this is a trusted  browser (might not be in sync)';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.IP_ADDRESS IS 'ip address of user who performed it';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_OPERATING_SYSTEM IS 'user agent operating system of user who performed it (might not be accurate)';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_BROWSER IS 'user agent browser of user who performed it (might not be accurate)';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_MOBILE IS 'T or F if the browser of the user who performed it is mobile (might not be accurate)';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_ID IS 'service provider id of the affected service provider';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_NAME IS 'service provider name of the affected service provider';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.DESCRIPTION IS 'description of the audit record if applicable';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.DOMAIN_NAME IS 'domain name of the ip address of the user who performed it';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.WHEN_BROWSER_TRUSTED_DATE IS 'when the browser was last trusted';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT IS 'the user agent that performed the action';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.UUID IS 'the audit uuid';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.THE_TIMESTAMP IS 'date of when it happened in millis from 1970';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.WHEN_BROWSER_TRUSTED IS 'when the browser was last trusted in millis since 1970';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_UUID IS 'uuid of the user who did the action';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.BROWSER_UUID IS 'uuid of the browser which did the action';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.IP_ADDRESS_UUID IS 'ip address that did the action';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.SERVICE_PROVIDER_UUID IS 'uuid of the service provider involved in the action';
+
+COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_UUID IS 'uuid of the user agent involved in the action';
+ comment on column two_factor_audit_v.USER_UUID_USING_APP is 'uuid of the user using the application';
+ comment on column two_factor_audit_v.user_using_LOGINID is 'login id of the user using the application';
+ 
+ 
+ 
+ 
+ 
+ 
 
 
  

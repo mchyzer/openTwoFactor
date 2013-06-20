@@ -69,6 +69,13 @@
   </servlet-mapping>
 
 <!-- 
+  <security-role>
+    <description>
+      The role that is required to log in to web service
+    </description>
+    <role-name>tf_user</role-name>
+  </security-role>
+
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Authenticated</web-resource-name>
@@ -78,8 +85,6 @@
       <role-name>tf_user</role-name>
     </auth-constraint>
   </security-constraint>
--->
-<!--
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Authenticated</web-resource-name>
@@ -94,11 +99,5 @@
     <realm-name>Two Factor</realm-name>
   </login-config>
 
-  <security-role>
-    <description>
-      The role that is required to log in to web service
-    </description>
-    <role-name>*</role-name>
-  </security-role>
 -->  
 </web-app>

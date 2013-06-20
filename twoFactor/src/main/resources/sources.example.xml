@@ -59,7 +59,7 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
      <!-- edu.internet2.middleware.subject.provider.C3p0JdbcConnectionProvider (default)
           edu.internet2.middleware.subject.provider.DbcpJdbcConnectionProvider (legacy) 
           edu.internet2.middleware.grouper.subj.GrouperJdbcConnectionProvider 
-            (same settings as grouper.hibernate.properties, the driver, url, pass, maxActive, maxIdle, maxWait are forbidden -->
+            (same settings as twoFactor.hibernate.properties, the driver, url, pass, maxActive, maxIdle, maxWait are forbidden -->
     <init-param>
        <param-name>jdbcConnectionProvider</param-name>
        <param-value>edu.internet2.middleware.subject.provider.C3p0JdbcConnectionProvider</param-value>
@@ -101,12 +101,12 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
      </init-param>
      
      <!-- 
-       e.g. mysql:           jdbc:mysql://localhost:3306/grouper
+       e.g. mysql:           jdbc:mysql://localhost:3306/two_factor
        e.g. p6spy (log sql): [use the URL that your DB requires]
        e.g. oracle:          jdbc:oracle:thin:@server.school.edu:1521:sid
-       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/grouper;create=true
+       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/two_factor;create=true
        e.g. hsqldb (b):      jdbc:hsqldb:hsql://localhost:9001
-       e.g. postgres:        jdbc:postgresql:grouper -->
+       e.g. postgres:        jdbc:postgresql:two_factor -->
      
      <init-param>
        <param-name>dbUrl</param-name>
@@ -302,16 +302,16 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
      </init-param>
      
      <!- - 
-       e.g. mysql:           jdbc:mysql://localhost:3306/grouper
+       e.g. mysql:           jdbc:mysql://localhost:3306/two_factor
        e.g. p6spy (log sql): [use the URL that your DB requires]
        e.g. oracle:          jdbc:oracle:thin:@server.school.edu:1521:sid
-       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/grouper;create=true
+       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/two_factor;create=true
        e.g. hsqldb (b):      jdbc:hsqldb:hsql://localhost:9001
-       e.g. postgres:        jdbc:postgresql:grouper - ->
+       e.g. postgres:        jdbc:postgresql:two_factor - ->
      
      <init-param>
        <param-name>dbUrl</param-name>
-       <param-value>jdbc:hsqldb:C:/projects/GrouperI2MI_1-2/grouper/dist/run/grouper</param-value>
+       <param-value>jdbc:hsqldb:C:/projects/two_factorI2MI_1-2/two_factor/dist/run/two_factor</param-value>
      </init-param>
      <init-param>
        <param-name>dbUser</param-name>
@@ -483,7 +483,7 @@ where
    -->
    
    <!--
-  <source adapterClass="edu.internet2.middleware.grouper.subj.GrouperJndiSourceAdapter">
+  <source adapterClass="edu.internet2.middleware.subject.provider.LdapSourceAdapter">
     <id>twoFactor</id>
     <name>Example Edu</name>
     <type>person</type>

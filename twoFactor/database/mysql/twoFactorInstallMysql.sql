@@ -281,120 +281,8 @@ ALTER TABLE two_factor_audit ADD (
   REFERENCES two_factor_ip_address (UUID));
 
   
-  
-
-
-CREATE OR REPLACE VIEW two_factor_audit_v
-(
-   THE_TIMESTAMP_DATE,
-   ACTION,
-   LOGINID,
-   user_using_LOGINID,
-   TRUSTED_BROWSER,
-   IP_ADDRESS,
-   USER_AGENT_OPERATING_SYSTEM,
-   USER_AGENT_BROWSER,
-   USER_AGENT_MOBILE,
-   SERVICE_PROVIDER_ID,
-   SERVICE_PROVIDER_NAME,
-   DESCRIPTION,
-   DOMAIN_NAME,
-   WHEN_BROWSER_TRUSTED_DATE,
-   USER_AGENT,
-   UUID,
-   THE_TIMESTAMP,
-   WHEN_BROWSER_TRUSTED,
-   USER_UUID,
-   BROWSER_UUID,
-   IP_ADDRESS_UUID,
-   SERVICE_PROVIDER_UUID,
-   USER_AGENT_UUID,
-   USER_UUID_USING_APP
-)
-AS
-   SELECT CASE
-             WHEN tfa.the_timestamp = 0 THEN NULL
-             ELSE DATE_ADD( '1970-01-01', interval 
-                          (tfa.the_timestamp / 1000) SECOND)                          
-          END
-             AS the_timestamp_date,
-          tfa.action,
-          (SELECT tfuv.loginid
-             FROM two_factor_user_v tfuv
-            WHERE tfuv.uuid = tfa.user_uuid)
-             AS loginid,
-          (SELECT tfuv.loginid
-             FROM two_factor_user_v tfuv
-            WHERE tfuv.uuid = tfa.USER_UUID_USING_APP)
-             AS user_using_loginid,
-          (SELECT tfb.TRUSTED_BROWSER
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS trusted_browser,
-          (SELECT tfia.IP_ADDRESS
-             FROM two_factor_ip_address tfia
-            WHERE tfia.uuid = tfa.IP_ADDRESS_UUID)
-             AS ip_address,
-          (SELECT tfua.OPERATING_SYSTEM
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_operating_system,
-          (SELECT tfua.BROWSER
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_browser,
-          (SELECT tfua.MOBILE
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent_mobile,
-          (SELECT tfsp.SERVICE_PROVIDER_ID
-             FROM two_factor_service_provider tfsp
-            WHERE tfsp.uuid = tfa.service_provider_uuid)
-             AS service_provider_id,
-          (SELECT tfsp.SERVICE_PROVIDER_name
-             FROM two_factor_service_provider tfsp
-            WHERE tfsp.uuid = tfa.service_provider_uuid)
-             AS service_provider_name,
-          tfa.DESCRIPTION,
-          (SELECT tfia.DOMAIN_NAME
-             FROM two_factor_ip_address tfia
-            WHERE tfia.uuid = tfa.IP_ADDRESS_UUID)
-             AS domain_name,
-          (SELECT CASE
-                     WHEN tfb.when_trusted = 0
-                     THEN
-                        NULL
-                     ELSE DATE_ADD( '1970-01-01', interval 
-                          (tfb.when_trusted / 1000) SECOND)
-                  END
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS when_browser_trusted_date,
-          (SELECT tfua.user_agent
-             FROM two_factor_user_agent tfua
-            WHERE tfua.uuid = tfa.user_agent_uuid)
-             AS user_agent,
-          tfa.UUID,
-          tfa.the_timestamp,
-          (SELECT tfb.when_trusted
-             FROM two_factor_browser tfb
-            WHERE tfb.uuid = tfa.browser_uuid)
-             AS when_browser_trusted,
-          tfa.USER_UUID,
-          tfa.BROWSER_UUID,
-          tfa.IP_ADDRESS_UUID,
-          tfa.SERVICE_PROVIDER_UUID,
-          tfa.USER_AGENT_UUID,
-          tfa.USER_UUID_USING_APP
-     FROM two_factor_audit tfa
-    WHERE tfa.DELETED_ON IS NULL;
-
-    
-    
-    
-
 CREATE or replace
-    VIEW two_factor2.two_factor_user_v (loginid, uuid, OPTED_IN, SEQUENTIAL_PASS_INDEX,
+    VIEW two_factor_user_v (loginid, uuid, OPTED_IN, SEQUENTIAL_PASS_INDEX,
        SEQUENTIAL_PASS_GIVEN_TO_USER, TWO_FACTOR_SECRET_ABBR, TWO_FACTOR_SECRET_TEMP_ABBR,
    LAST_TOTP_TIMESTAMP_USED,
       LAST_TOTP60_TIMESTAMP_USED,
@@ -591,7 +479,114 @@ CREATE or replace
  FROM two_factor_user tfu);
 
 
- 
+  
+
+
+CREATE OR REPLACE VIEW two_factor_audit_v
+(
+   THE_TIMESTAMP_DATE,
+   ACTION,
+   LOGINID,
+   user_using_LOGINID,
+   TRUSTED_BROWSER,
+   IP_ADDRESS,
+   USER_AGENT_OPERATING_SYSTEM,
+   USER_AGENT_BROWSER,
+   USER_AGENT_MOBILE,
+   SERVICE_PROVIDER_ID,
+   SERVICE_PROVIDER_NAME,
+   DESCRIPTION,
+   DOMAIN_NAME,
+   WHEN_BROWSER_TRUSTED_DATE,
+   USER_AGENT,
+   UUID,
+   THE_TIMESTAMP,
+   WHEN_BROWSER_TRUSTED,
+   USER_UUID,
+   BROWSER_UUID,
+   IP_ADDRESS_UUID,
+   SERVICE_PROVIDER_UUID,
+   USER_AGENT_UUID,
+   USER_UUID_USING_APP
+)
+AS
+   SELECT CASE
+             WHEN tfa.the_timestamp = 0 THEN NULL
+             ELSE DATE_ADD( '1970-01-01', interval 
+                          (tfa.the_timestamp / 1000) SECOND)                          
+          END
+             AS the_timestamp_date,
+          tfa.action,
+          (SELECT tfuv.loginid
+             FROM two_factor_user_v tfuv
+            WHERE tfuv.uuid = tfa.user_uuid)
+             AS loginid,
+          (SELECT tfuv.loginid
+             FROM two_factor_user_v tfuv
+            WHERE tfuv.uuid = tfa.USER_UUID_USING_APP)
+             AS user_using_loginid,
+          (SELECT tfb.TRUSTED_BROWSER
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS trusted_browser,
+          (SELECT tfia.IP_ADDRESS
+             FROM two_factor_ip_address tfia
+            WHERE tfia.uuid = tfa.IP_ADDRESS_UUID)
+             AS ip_address,
+          (SELECT tfua.OPERATING_SYSTEM
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_operating_system,
+          (SELECT tfua.BROWSER
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_browser,
+          (SELECT tfua.MOBILE
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent_mobile,
+          (SELECT tfsp.SERVICE_PROVIDER_ID
+             FROM two_factor_service_provider tfsp
+            WHERE tfsp.uuid = tfa.service_provider_uuid)
+             AS service_provider_id,
+          (SELECT tfsp.SERVICE_PROVIDER_name
+             FROM two_factor_service_provider tfsp
+            WHERE tfsp.uuid = tfa.service_provider_uuid)
+             AS service_provider_name,
+          tfa.DESCRIPTION,
+          (SELECT tfia.DOMAIN_NAME
+             FROM two_factor_ip_address tfia
+            WHERE tfia.uuid = tfa.IP_ADDRESS_UUID)
+             AS domain_name,
+          (SELECT CASE
+                     WHEN tfb.when_trusted = 0
+                     THEN
+                        NULL
+                     ELSE DATE_ADD( '1970-01-01', interval 
+                          (tfb.when_trusted / 1000) SECOND)
+                  END
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS when_browser_trusted_date,
+          (SELECT tfua.user_agent
+             FROM two_factor_user_agent tfua
+            WHERE tfua.uuid = tfa.user_agent_uuid)
+             AS user_agent,
+          tfa.UUID,
+          tfa.the_timestamp,
+          (SELECT tfb.when_trusted
+             FROM two_factor_browser tfb
+            WHERE tfb.uuid = tfa.browser_uuid)
+             AS when_browser_trusted,
+          tfa.USER_UUID,
+          tfa.BROWSER_UUID,
+          tfa.IP_ADDRESS_UUID,
+          tfa.SERVICE_PROVIDER_UUID,
+          tfa.USER_AGENT_UUID,
+          tfa.USER_UUID_USING_APP
+     FROM two_factor_audit tfa
+    WHERE tfa.DELETED_ON IS NULL;
+
  
 
 CREATE TABLE two_factor_sample_source
