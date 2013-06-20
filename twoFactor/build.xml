@@ -66,7 +66,7 @@
     <mkdir dir="${main.outputDir}" />
     <mkdir dir="${main.binDir}" />
 
-    <javac  target="1.6"
+    <javac  target="1.6" source="1.6"
       srcdir="${main.sourceDir}" destdir="${main.binDir}" debug="true" classpath="${main.theClasspath}" />
   </target>
 
@@ -130,9 +130,9 @@
     <mkdir dir="dist" />
 
     <!-- this assumes that everything was checked out to the right place, and no other dirs exist -->
-    <tar destfile="${basedir}/dist/twoFactor.client-${version}.tar.gz" compression="gzip">
+    <tar destfile="${basedir}/dist/twoFactor.server-${version}.tar.gz" compression="gzip">
       <tarfileset dir="${basedir}/dist" >
-        <include name="twoFactor.client-${version}/**"/>
+        <include name="twoFactor.server-${version}/**"/>
       </tarfileset>
     </tar>            
     

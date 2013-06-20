@@ -963,7 +963,8 @@ public class UiMain extends UiServiceLogicBase {
           }
 
           twoFactorRequestContainer.getTwoFactorUntrustBrowserContainer().setNumberOfBrowsers(TwoFactorServerUtils.length(twoFactorBrowsers));
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("untrustBrowserSuccess"));
+          String error = TextContainer.retrieveFromRequest().getText().get("untrustBrowserSuccess");
+          twoFactorRequestContainer.setError(error);
 
         }
 

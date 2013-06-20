@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="src" path="src/test/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry exported="true" kind="lib" path="lib/nonwebapp/servlet.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-logging.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/log4j.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/grouperClient.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-collections.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/hibernate.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-lang.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/ezmorph.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/json-lib.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-jexl.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-beanutils.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-codec.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/ehcache.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/javassist.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/dom4j.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/c3p0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/junit/junit.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/slf4j-api.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/slf4j-log4j12.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/hibernate-jpa-2.0-api.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/p6spy.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/jta.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/ojdbc14.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/antlr.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/mysql-connector-java-bin.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/standard.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/jstl.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/zxing-core.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/zxing-javase.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/xstream.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/userAgentUtils.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/quartz.jar"/>
+	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/twilio-java-sdk-3.3.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/httpclient-4.2.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/httpcore-4.2.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/twilioDeps.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/subject.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-digester.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/morphString.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-httpclient.jar"/>
+	<classpathentry kind="output" path="webapp/WEB-INF/classes"/>
+</classpath>
