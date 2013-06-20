@@ -1,0 +1,19 @@
+.codes {
+  font-size: .4em;
+}
+
+/* do not display in printer friendly mode */
+.tfPrinterFriendlyNot {
+  display: none;
+}
+
+/* only show this as inline in printer friendly, "inherit" not available on ie */
+.tfPrinterFriendlyOnlyInline {
+  display: inline;
+}
+
+/* only show this as inline in printer friendly, "inherit" not available on ie */
+.tfPrinterFriendlyOnlyBlock {
+  display: block;
+}
+

@@ -1,0 +1,26 @@
+<body>
+<pre>
+
+The main documentation wiki for this project is here:
+
+https://flash.isc-seo.upenn.edu/confluence/display/FAST/Two+factor+authentication
+
+The two factor project is a server which runs a UI and WS.  The twoFactorClient project is a 
+client which can connect to the WS.
+
+This project is not a PennFAST project, it is a java application with hibernate and some other libraries.
+
+The WS is a restful JSON/XML web service which allows the cosign server to check a two factor token for a user.
+If the token is blank, that means that the user has not typed anything in yet, or they left the form blank.
+There is a lot of logic to see if a token (or lack of token) is ok, documented on wiki.  Bascially
+it depends on if the user has opted in, if the browser is trusted, which service is being accessed, etc.
+
+The UI allows users to opt in to two factor and admins to view logs or opt people out.  There are self
+service functions to help a user who is having problems.  Generally there is no required javascript,
+ajax, etc, things are very simple.
+
+
+
+
+</pre>
+</body>

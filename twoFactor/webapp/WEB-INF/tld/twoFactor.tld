@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd" version="2.0">
+
+  <description>Two Factor GUI library</description>
+  <display-name>Two Factor GUI library</display-name>
+  <tlib-version>1.0</tlib-version>
+  <short-name>twoFactor</short-name>
+  <uri>https://flash.isc-seo.upenn.edu/confluence/display/FAST/Two+factor+authentication</uri>
+
+
+  <tag>
+    <description>
+      Creates a dojo combobox
+    </description>
+    <name>combobox</name>
+    <tag-class>org.openTwoFactor.server.ui.customTags.TfCombobox</tag-class>
+    <body-content>empty</body-content>
+    <attribute>
+      <description>
+        id and class of elements, and name of combobox. Make this unique in page.
+        e.g. personPicker.  The id of the tag will be personPickerId, name will be
+        personPickerName.  Will generate a QueryReadStore too... 
+        </description>
+      <name>idBase</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        style, could include the width of the textfield
+        </description>
+      <name>style</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        class to use when drawing the control.  default is claro.  should be a dojo class theme, e.g.  claro, tundra, nihilo and soria
+        </description>
+      <name>classCss</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        if there should be a down arrow to click.  Default to false.  Generally this is useful only for 
+        combos with less then a few hundred options
+        </description>
+      <name>hasDownArrow</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        search delay in ms defaults to 500
+        </description>
+      <name>searchDelay</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        the operation to call when filtering, relative to this page url to call
+        </description>
+      <name>filterOperation</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        the default value (will be submitted) which should appear in the combo box when drawn.  Will lookup the label via ajax
+        </description>
+      <name>value</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>
+        send more form element names to the filter operation, comma separated
+        </description>
+      <name>additionalFormElementNames</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+
+  </tag>
+  
+  <function>
+    <description>
+      Escapes single quotes for javascript
+    </description>
+    <name>escapeSingleQuotes</name>
+    <function-class>org.openTwoFactor.server.ui.functions.Functions</function-class>
+    <function-signature>java.lang.String escapeSingleQuotes(java.lang.String)</function-signature>
+    <example>
+      ${twoFactor:escapeSingleQuotes(something)}
+    </example>
+  </function>
+  
+  
+</taglib>

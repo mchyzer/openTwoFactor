@@ -1,0 +1,367 @@
+
+Invariant Properties
+ because isolated facts give you constants and you need invariant properties for powerful algorithms.
+HOME
+ABOUT
+NOTEBOOK: COMMON XML TASKS
+NOTEBOOK: DEVELOPMENT TIPS
+NOTEBOOK: DATABASE/WEBAPP SECURITY
+DEC
+23
+Using Google Authenticator (TOTP) On Your Site
+By ThebearinboulderNO COMMENTS
+Lets say you want to use two-factor authentication on your site. (Blog entries to follow). How do you do it?
+Time-based One-Time Passwords (TOTP)
+An increasingly popular approach is Time-based One-Time Passwords (TOTP) (RFC6238). This is a straightforward algorithm that only requires an accurate clock and a shared secret.
+Accurate times have been a pain in the past  computers did not include particularly good real time clock chips  but any server should now be using NTP. I think the major distributions set it up by default but could be mistaken about that.
+Modern cell phones also have the accurate time since they include GPS receivers.
+Finally dongles with LCD displays can include accurate clocks, esp. if youre able to periodically synchronize them to a PC.
+Put it together and we can have reasonable confidence that well have matching clocks on the client and server so TOTP becomes a good option.
+Jumping straight to the code  this is the reference implementation from the RFC. The RFC also includes test vectors to verify implementations.
+/**
+ Copyright (c) 2011 IETF Trust and the persons identified as
+ authors of the code. All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, is permitted pursuant to, and subject to the license
+ terms contained in, the Simplified BSD License set forth in Section
+ 4.c of the IETF Trust's Legal Provisions Relating to IETF Documents
+ (http://trustee.ietf.org/license-info).
+ */
+import java.lang.reflect.UndeclaredThrowableException;
+ 
+import java.math.BigInteger;
+ 
+import java.security.GeneralSecurityException;
+ 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+ 
+import java.util.Date;
+import java.util.TimeZone;
+ 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+ 
+/**
+ * This is an example implementation of the OATH
+ * TOTP algorithm.
+ * Visit www.openauthentication.org for more information.
+ *
+ * @author Johan Rydell, PortWise, Inc.
+ */
+public class TOTP {
+    private static final int[] DIGITS_POWER
+    // 0 1  2   3    4     5      6       7        8
+         = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000 };
+ 
+    private TOTP() {
+    }
+ 
+    /**
+     * This method uses the JCE to provide the crypto algorithm.
+     * HMAC computes a Hashed Message Authentication Code with the
+     * crypto hash algorithm as a parameter.
+     *
+     * @param crypto: the crypto algorithm (HmacSHA1, HmacSHA256,
+     *                             HmacSHA512)
+     * @param keyBytes: the bytes to use for the HMAC key
+     * @param text: the message or text to be authenticated
+     */
+    private static byte[] hmac_sha(String crypto, byte[] keyBytes, byte[] text) {
+        try {
+            Mac hmac;
+            hmac = Mac.getInstance(crypto);
+ 
+            SecretKeySpec macKey = new SecretKeySpec(keyBytes, "RAW");
+            hmac.init(macKey);
+ 
+            return hmac.doFinal(text);
+        } catch (GeneralSecurityException gse) {
+            throw new UndeclaredThrowableException(gse);
+        }
+    }
+ 
+    /**
+     * This method converts a HEX string to Byte[]
+     *
+     * @param hex: the HEX string
+     *
+     * @return: a byte array
+     */
+    private static byte[] hexStr2Bytes(String hex) {
+        // Adding one byte to get the right conversion
+        // Values starting with "0" can be converted
+        byte[] bArray = new BigInteger("10" + hex, 16).toByteArray();
+ 
+        // Copy all the REAL bytes, not the "first"
+        byte[] ret = new byte[bArray.length - 1];
+ 
+        for (int i = 0; i < ret.length; i++)
+            ret[i] = bArray[i + 1];
+ 
+        return ret;
+    }
+ 
+    /**
+     * This method generates a TOTP value for the given
+     * set of parameters.
+     *
+     * @param key: the shared secret, HEX encoded
+     * @param time: a value that reflects a time
+     * @param returnDigits: number of digits to return
+     *
+     * @return: a numeric String in base 10 that includes
+     *              {@link truncationDigits} digits
+     */
+    public static String generateTOTP(String key, String time,
+        String returnDigits) {
+        return generateTOTP(key, time, returnDigits, "HmacSHA1");
+    }
+ 
+    /**
+     * This method generates a TOTP value for the given
+     * set of parameters.
+     *
+     * @param key: the shared secret, HEX encoded
+     * @param time: a value that reflects a time
+     * @param returnDigits: number of digits to return
+     *
+     * @return: a numeric String in base 10 that includes
+     *              {@link truncationDigits} digits
+     */
+    public static String generateTOTP256(String key, String time,
+        String returnDigits) {
+        return generateTOTP(key, time, returnDigits, "HmacSHA256");
+    }
+ 
+    /**
+     * This method generates a TOTP value for the given
+     * set of parameters.
+     *
+     * @param key: the shared secret, HEX encoded
+     * @param time: a value that reflects a time
+     * @param returnDigits: number of digits to return
+     *
+     * @return: a numeric String in base 10 that includes
+     *              {@link truncationDigits} digits
+     */
+    public static String generateTOTP512(String key, String time,
+        String returnDigits) {
+        return generateTOTP(key, time, returnDigits, "HmacSHA512");
+    }
+ 
+    /**
+     * This method generates a TOTP value for the given
+     * set of parameters.
+     *
+     * @param key: the shared secret, HEX encoded
+     * @param time: a value that reflects a time
+     * @param returnDigits: number of digits to return
+     * @param crypto: the crypto function to use
+     *
+     * @return: a numeric String in base 10 that includes
+     *              {@link truncationDigits} digits
+     */
+    public static String generateTOTP(String key, String time,
+        String returnDigits, String crypto) {
+        int codeDigits = Integer.decode(returnDigits).intValue();
+        String result = null;
+ 
+        // Using the counter
+        // First 8 bytes are for the movingFactor
+        // Compliant with base RFC 4226 (HOTP)
+        while (time.length() < 16)
+            time = "0" + time;
+ 
+        // Get the HEX in a Byte[]
+        byte[] msg = hexStr2Bytes(time);
+        byte[] k = hexStr2Bytes(key);
+        byte[] hash = hmac_sha(crypto, k, msg);
+ 
+        // put selected bytes into result int
+        int offset = hash[hash.length - 1] & 0xf;
+ 
+        int binary = ((hash[offset] & 0x7f) << 24) |
+            ((hash[offset + 1] & 0xff) << 16) |
+            ((hash[offset + 2] & 0xff) << <img src='http://invariantproperties.com/wp-includes/images/smilies/icon_cool.gif' alt='8)' class='wp-smiley' /> | (hash[offset + 3] & 0xff);
+ 
+        int otp = binary % DIGITS_POWER[codeDigits];
+ 
+        result = Integer.toString(otp);
+ 
+        while (result.length() < codeDigits) {
+            result = "0" + result;
+        }
+ 
+        return result;
+    }
+ 
+    public static void main(String[] args) {
+        // Seed for HMAC-SHA1 - 20 bytes
+        String seed = "3132333435363738393031323334353637383930";
+ 
+        // Seed for HMAC-SHA256 - 32 bytes
+        String seed32 = "3132333435363738393031323334353637383930" +
+            "313233343536373839303132";
+ 
+        // Seed for HMAC-SHA512 - 64 bytes
+        String seed64 = "3132333435363738393031323334353637383930" +
+            "3132333435363738393031323334353637383930" +
+            "3132333435363738393031323334353637383930" + "31323334";
+        long T0 = 0;
+        long X = 30;
+        long[] testTime = {
+                59L, 1111111109L, 1111111111L, 1234567890L, 2000000000L,
+                20000000000L
+            };
+ 
+        String steps = "0";
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+ 
+        try {
+            System.out.println("+---------------+-----------------------+" +
+                "------------------+--------+--------+");
+            System.out.println("|  Time(sec)    |   Time (UTC format)   " +
+                "| Value of T(Hex)  |  TOTP  | Mode   |");
+            System.out.println("+---------------+-----------------------+" +
+                "------------------+--------+--------+");
+ 
+            for (int i = 0; i < testTime.length; i++) {
+                long T = (testTime[i] - T0) / X;
+                steps = Long.toHexString(T).toUpperCase();
+ 
+                while (steps.length() < 16)
+                    steps = "0" + steps;
+ 
+                String fmtTime = String.format("%1$-11s", testTime[i]);
+                String utcTime = df.format(new Date(testTime[i] * 1000));
+                System.out.print("|  " + fmtTime + "  |  " + utcTime + "  | " +
+                    steps + " |");
+                System.out.println(generateTOTP(seed, steps, "8", "HmacSHA1") +
+                    "| SHA1   |");
+                System.out.print("|  " + fmtTime + "  |  " + utcTime + "  | " +
+                    steps + " |");
+                System.out.println(generateTOTP(seed32, steps, "8", "HmacSHA256") +
+                    "| SHA256 |");
+                System.out.print("|  " + fmtTime + "  |  " + utcTime + "  | " +
+                    steps + " |");
+                System.out.println(generateTOTP(seed64, steps, "8", "HmacSHA512") +
+                    "| SHA512 |");
+ 
+                System.out.println("+---------------+-----------------------+" +
+                    "------------------+--------+--------+");
+            }
+        } catch (final Exception e) {
+            System.out.println("Error : " + e);
+        }
+    }
+}
+Google Authenticator
+Enter Google. Or more precisely, Google Accounts. This is a popular hosting platform for small businesses, non-profits and groups. Even individuals with vanity domains.
+Many of these users require better security than you get with just a password. Some users REQUIRE better security due to regulatory or contractual obligations.
+Google saw the problem and came up with a solution: Google Authenticator. It is an open source implementation of the TOTP algorithm that has been implemented on smart phones and as a Linux PAM module. Not everyone has a smart phone but enough do for this to be a good solution. Hardware dongles are also available if you prefer them.
+(IMPORTANT: the security of the Linux PAM module is debatable since it includes the users secret key, unencrypted, in the users home directory.)
+The code to generate the code produced by Google Authenticator implementations is:
+byte[] key = new byte[8];  // = TOPT.exStr2Bytes(keyInHex);
+long counter = System.currentTimeMillis() / 30000L;
+ 
+String code = TOTP.generateTOTP(key, counter, "6", "HmacSHA1");
+(Sidenote: it goes without saying that the googlecode project includes similar code. Im using the RFC reference implementation since its much more flexible  I might want to use different parameters in other situations.)
+Server-side Implementation
+The server-side implementation is fairly straightforward.
+Registration
+Create a random 8-byte secret key. Be sure to use a cryptographically strong random number generator (SecureRandom), not the standard random number generator.
+Save the key in the database. ENCRYPT IT.
+Create a unique label, e.g., the username @ the sites domain name. You dont want to use anything that can change, e.g., the users email address, or something that might be used at other sites, e.g., nothing but his username. Remember that this is what is used to remind the user to use this key  you dont want to use random strings.
+Provide the user with a QR code that he can scan using his smart phone. You can also provide the secret key in a string for he user to enter manually.
+There is a standard URI for providing secret keys.
+The URI for a TOTP key is otpauth://totp/LABEL?secret=SECRET where LABEL is the unique identifier you created above and SECRET is the base32-encoded shared secret.
+Base32 uses the case-insensitive letters A-Z and the digits 2-7 to encode a value and corrects for several common errors, e.g., using 0' instead of O. An encoder is available in the Apache commons-codec project.
+You can get QR image for this URI at google.com, e.g., for otpauth://totp/alice@google.com?secret=JBSWY3DPEHPK3PXP it is
+
+<img src=https://www.google.com/chart?chs=200200&chld=M|0&cht=qr&chl=otpauth://totp/alice@google.com?secret=JBSWY3DPEHPK3PXP/>
+With the QR code the user can simply point his smartphone at his monitor to load his key.
+Verification
+The user is prompted for his username, password, and TOTP code
+When the login form is received three codes are generated  for the current time, 30 seconds ago, and 30 seconds from now. This gives you a bit of buffer to allow for unsynchronized clocks or the time required by the user to enter the data and submit the form.
+Check the codes and respond accordingly.
+Lost or Compromised Keys
+People lose the phones. Local policy may require access credentials to be changed periodically. You have to be prepared.
+The user authenticates himself using the current TOTP code (if its a a periodic change) or via some other mechanism. (Do not ask the common easy to guess questions!)
+A new secret key is created and provided to the user as described above.
+The old secret key is either deleted (low security) or retained to capture attempted uses in the future (high security).
+As always you never provide current credentials to the user.
+Crash Codes
+Sometimes people do not have access to their phone (e.g., theyre in a secured environment) or are otherwise unable to use the TOTP code. We must provide a fallback mechanism.
+Fortunately this is very easy  provide the user with the eight digit code for the first few values, say counter = 0 to counter = 5. Strictly speaking these are now Hash-based One-Time Passwords (HOTP).
+The user should treat these codes in the same way as passwords.
+The authentication process now checks the current time for 6 digit codes, or the first few counters for 8 digit codes.
+Oracles
+I mentioned that the secret key should be encrypted but we can make this design much more robust by using an oracle. These are stored procedures that encapsulate all of the logic and the application is provided the absolute minimum amount of information.
+The stored procedure signatures are
+--
+-- Generate a random key, associate it with the user, and return
+-- the corresponding otpauth URI.
+--
+-- This stored procedure is also responsible for moving any
+-- existing key to an audit table if future attempts to log
+-- in with the code should be recorded.
+--
+CREATE FUNCTION generateTotpUri(username varchar, label varchar) RETURNS varchar AS $$
+-- body...
+$$
+ 
+--
+-- Authenticate the user with the specified password and TOTP code.
+-- This stored procedure should accept either 6 digit time-based TOTP
+-- codes or 8 digit HOTP codes.
+--
+-- This stored procedure should only return 1 (success) or 0 (failure).
+--
+-- This stored procedure is also responsible for recording
+-- any attempts to log in with disabled secret keys.
+--
+CREATE FUNCTION authenticateUser(username varchar, password varchar, totp varchar) RETURNS intege AS $$
+-- body...
+$$
+Many databases support SHA1 HMAC computations, e.g., in the pgcrypto package for PostgreSQL. The trick to remember is that the last nybble of the hash is used as the offset into the hash before converting the hash into an integer  thats not a common approach yet.
+Implementation is left as an exercise for the reader. (Hint: you can always be lazy and ask the database crypto provider to add this function!)
+For More Information
+http://code.google.com/p/google-authenticator/
+Google Authenticator for multi-factor authentication
+RFC 6238 (TOTP)
+RFC 4226 (HOTP)
+PostgreSQL pgcrypto package  note: this is for release 8.3. I dont know if there have been more recent updates.
+Late update: another article went up at Java Code Geeks while I was working on mine: Google Authenticator: Using It With Your Own Java Authentication Server
+JAVA, SECURITY
+LEAVE YOUR COMMENT
+You must be logged in to post a comment.
+Archives
+October 2012
+September 2012
+May 2012
+January 2012
+December 2011
+July 2011
+June 2011
+May 2011
+April 2011
+March 2011
+February 2011
+October 2010
+September 2010
+Recent Posts
+PL/Java Code Finally Available
+Not Responsible For Broken Windshields
+Whats On My Desk
+Adding Native Encryption to dump, part 2: Cryptanalysis
+Adding native encryption to dump, part 1: Fast File System and DUMP format
+Meta
+Log in
+Entries RSS
+Comments RSS
+WordPress.org
+ 2012 - Invariant PropertiesRSS Feed
+Blue Taste Theme created by Jabox

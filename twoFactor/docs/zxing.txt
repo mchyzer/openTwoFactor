@@ -1,0 +1,10 @@
+QRCodeWriter writer = new QRCodeWriter();
+BitMatrix bitMatrix = null;
+try {
+    bitMatrix = writer.encode("HTTP://WWW.GOOGLE.COM", BarcodeFormat.QR_CODE, 300, 300);
+    MatrixToImageWriter.writeToFile(bitMatrix, "gif", new File("C:\\output.gif"));
+    } catch (WriterException e){
+        e.printStackTrace();
+    } catch (IOException e){
+        e.printStackTrace();
+    }

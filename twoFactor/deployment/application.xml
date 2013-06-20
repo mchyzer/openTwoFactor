@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: application.xml,v 1.1 2012/11/28 06:37:43 mchyzer Exp $ -->
+
+<application>
+  <!-- isProd:@isProd@ -->
+  <display-name>@displayName@</display-name>
+  <description>@main.versionName@</description>
+  <module>
+    <web>
+      <web-uri>@warFileName@</web-uri>
+      <context-root>@contextRoot@</context-root>
+    </web>
+  </module>
+</application>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:j2ee="http://java.sun.com/xml/ns/j2ee" version="2.4" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+  <context-param>
+    <param-name>quartz:shutdown-on-unload</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>quartz:wait-on-shutdown</param-name>
+    <param-value>false</param-value>
+  </context-param>
+  <context-param>
+    <param-name>quartz:start-on-load</param-name>
+    <param-value>true</param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>
+      org.quartz.ee.servlet.QuartzInitializerListener
+    </listener-class>
+  </listener>
+  
+  <filter>
+    <!-- keeps the request and response in threadlocal so they dont have to be passed around -->
+    <filter-name>Two Factor filter</filter-name>
+    <filter-class>org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee</filter-class>
+  </filter>
+
+  <!-- Map the filter to a Servlet or URL -->
+  <filter-mapping>
+    <filter-name>Two Factor filter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  <servlet>
+    <servlet-name>TwoFactorWsServlet</servlet-name>
+    <display-name>TwoFactorWsServlet</display-name>
+    <servlet-class>org.openTwoFactor.server.j2ee.TwoFactorRestServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet>
+    <servlet-name>TwoFactorUiServlet</servlet-name>
+    <display-name>TwoFactorUiServlet</display-name>
+    <servlet-class>org.openTwoFactor.server.j2ee.TwoFactorUiServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <!-- this is not protected at all by authn -->
+  <servlet-mapping>
+    <servlet-name>TwoFactorUiServlet</servlet-name>
+    <url-pattern>/twoFactorUnprotectedUi/*</url-pattern>
+  </servlet-mapping>
+  <!-- this is protected by someone's opt-in setting -->
+  <servlet-mapping>
+    <servlet-name>TwoFactorUiServlet</servlet-name>
+    <url-pattern>/twoFactorUi/*</url-pattern>
+  </servlet-mapping>
+  <!-- this is not protected by two-factor, must be protected by one factor -->
+  <servlet-mapping>
+    <servlet-name>TwoFactorUiServlet</servlet-name>
+    <url-pattern>/twoFactorPublicUi/*</url-pattern>
+  </servlet-mapping>
+  <!--  this is always protected by two factor -->
+  <servlet-mapping>
+    <servlet-name>TwoFactorUiServlet</servlet-name>
+    <url-pattern>/twoFactorAdminUi/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>TwoFactorWsServlet</servlet-name>
+    <url-pattern>/twoFactorWs/*</url-pattern>
+  </servlet-mapping>
+
+<!-- 
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Authenticated</web-resource-name>
+      <url-pattern>/twoFactorUi/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>tf_user</role-name>
+    </auth-constraint>
+  </security-constraint>
+-->
+<!--
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Authenticated</web-resource-name>
+      <url-pattern>/twoFactorWs/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>tf_user</role-name>
+    </auth-constraint>
+  </security-constraint>
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>Two Factor</realm-name>
+  </login-config>
+
+  <security-role>
+    <description>
+      The role that is required to log in to web service
+    </description>
+    <role-name>*</role-name>
+  </security-role>
+-->  
+</web-app>

@@ -1,0 +1,339 @@
+body,table,td {
+  font-family: Tahoma, Arial, Helvetica, sans-serif;
+  font-size: 100%;
+}
+
+a {
+  text-decoration: underline;
+}
+
+.tfBlueButton {
+  font-family: Tahoma, Arial, Helvetica, sans-serif;
+  text-decoration: none;
+  color: #FFFFFF;
+  font-weight: bold;
+  white-space: nowrap;
+  font-size: 0.9em;
+  cursor: pointer;
+  text-align: center;
+  background-color: #7794C9;
+  border: 0.0625em solid black;
+  border-top-color: #666;
+  border-left-color: #666;
+  padding: .3em;
+}
+
+.tfLinkButton {
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  color: blue;
+  font-size: 1em;
+  font-weight: normal;
+  font-family: Arial;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.title,h1 {
+  font-size: 1.40em;
+  font-weight: bold;
+  color: #999999;
+}
+h4 {
+  color: #555555;
+}
+@viewport {
+    width: device-width;
+}
+#header {
+  background-color: #011F5B;
+  background-image: linear-gradient(#29679A, #011F5B);
+  background-size:9px 100%;
+  background-repeat:repeat-x;
+  width: 100%;
+}
+#banner {
+  padding: 1em 0 1em 1.2em;
+}
+
+#theForm {
+
+  width: 80%;    
+  margin-top: 2.6em;
+  margin-left: 4.9em;
+  
+}
+
+#bannerImage {
+  width: 220px;
+}
+
+.buttonBox {
+  width: 19.5em;
+}
+
+/* lets say the min width for the screen is 220px */
+@media screen and (max-width: 440px) {
+  #theForm {
+    width: 80%;    
+    margin-left: 16%;
+  }
+  #bannerImage {
+    width: 50%;
+  }
+  #banner {
+    padding: 1em 0 1em 4%;
+  }
+  .buttonBox {
+    width: 80%;
+  }
+}
+
+/* lets say the min width for the screen is 220px */
+@media screen and (max-width: 220px) {
+  #bannerImage {
+    width: 107px;
+  }
+  #theForm {
+    width: 200px;    
+    margin-left: 2.1em;
+  }
+  #banner {
+    padding: 1em 0 1em 0.5em;
+  }
+  .buttonBox {
+    width: 200px;
+  }
+  #header {
+    width: 15em;
+  }
+}
+
+.formBox {
+  border: 0.0625em solid #d5d5cf;
+  background-color: white;
+  padding-top: 0.7em;
+  padding-bottom: 0.5em;
+  width: 27em;
+}
+
+.formRow {
+  margin-top: 0.0em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  margin-bottom: 0.0em;
+}
+
+.formLabel {
+  float: left;
+  padding-top: 0.2em;
+  width: 13em;
+}
+
+.formValue {
+  float: right;
+  width: 11.5em;
+  text-align: left;
+  margin-right: 1em;
+}
+
+.formValue .textfield {
+  width: 11em;
+}
+
+.formFooter {
+  clear: both;
+  font-size: 0.1em;
+}
+
+.buttonRow {
+  margin-top: 0.0em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  margin-bottom: 0.0em;
+}
+
+.buttonLabel {
+  float: left;
+  padding-top: 0.2em;
+  white-space: nowrap;
+}
+
+.buttonValue {
+  float: right;
+}
+
+.buttonFooter {
+  clear: both;
+  font-size: 0.1em;
+}
+
+.warning {
+  color: #990000;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+div.error {
+  font-weight: bold;
+  font-size:0.6875em;
+  color: #990000;
+  border: 0.125em solid #cc6666;
+  padding-top: 0.3125em;
+  padding-left: 0.3125em;
+  padding-right: 0.3125em;
+  padding-bottom: 0.3125em;
+/* dont put padding on bottom since already too much space */
+  margin-top: 0.1875em;
+  margin-left: 0.1875em;
+  margin-right: 0.1875em;
+  margin-bottom: 0.5em;
+  /* background-color: #ffcccc; */
+  /* doesnt show up on dark backgrounds, so mandate that is white,
+     you can override with inherit if you like */
+  background-color: #ffffff;
+  width: 40em;
+}
+
+.tfPrinterFriendlyOnlyInline {
+  display: none;
+}
+
+/* only show this as inline in printer friendly, "inherit" not available on ie */
+.tfPrinterFriendlyOnlyBlock {
+  display: none;
+}
+
+/* data table with dark header */
+table.tfDarkDataTable {
+  border:1px solid #bbbbbb;
+  padding: 1px;
+}
+table.tfDarkDataTable tr {
+  vertical-align: top;
+}
+/* in gray tops, the a links some bottom spacing so you can see they are underlined */
+table.tfDarkDataTable tr.tfTableHeader th {
+  padding-bottom: 2px;
+}
+/* in gray tops, the a links need to be white */
+table.tfDarkDataTable tr.tfTableHeader th a.tfLinkButton {
+  color:white;  
+}
+
+table.tfDarkDataTable th, table.tfDarkDataTable td, table.tfDarkDataTable th a.tfSortHeader {
+    font-size: 11px;
+    text-decoration: none;
+    padding-top: 0px;
+    padding-right: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    height: 16px;
+}
+table.tfDarkDataTable th, table.tfDarkDataTable td {
+    padding-right: 2px;
+    padding-left: 2px;
+}
+
+/* optional style for pre-format, scroll if necessary */
+table.tfDarkDataTable td pre.tfScrollableMedium {
+  overflow: auto;
+  width: 500px;
+  height: 200px;
+}
+
+/* headers */
+table.tfDarkDataTable th, table.tfDarkDataTable th a.tfSortHeader {
+    color: #FFFFFF;
+    font-weight: bold;
+    background-color: #666666;
+    white-space: nowrap;
+}
+table.tfDarkDataTable th a.tfSortHeader span.tfButtonLinkText {
+  text-decoration: underline;
+}
+table.tfDarkDataTable th a.tfAsc span.tfButtonLinkText,
+  table.tfDarkDataTable th a.tfDesc span.tfButtonLinkText {
+    color: #FFFF66;
+}
+
+table.tfDarkDataTable th a.tfSortHeader img {
+  margin-bottom: 2px;
+  margin-left: 0px;
+}
+/* hover to gray */
+table.tfDarkDataTable th a.tfSortHeader:hover {
+  color: #DDDDDD;
+}
+table.tfDarkDataTable tr {
+    background-color: #ffffff;
+}
+/* gray rows in table */
+table.tfDarkDataTable tr.tfEven,
+table.tfDarkDataTable tr.tfEven td table tr {
+      background-color: #dddddd;
+}
+/* white rows in table, start with white */
+table.tfDarkDataTable tr.tfOdd,
+table.tfDarkDataTable tr.tfOdd td table tr {
+      background-color: #ffffff;
+}
+/* new rows in table should be light green */
+table.tfDarkDataTable tr.tfNew,
+table.tfDarkDataTable tr.tfNew td table tr{
+      background-color: #ccffcc;
+} 
+/* new rows in table should be light green */
+table.tfDarkDataTable tr.red,
+table.tfDarkDataTable tr.red td table tr{
+    background-color: #ffcccc;
+} 
+/* if has buttons, put a little more space above */
+table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
+    padding: 7px;
+    /* add CH 20070206 to align button panels to right */
+    text-align: right;
+}
+
+/* .codes {
+  font-size: 1em;
+} */
+
+/* profile screen form box customizations */
+.profileFormBox {
+  width: 41.3em;
+  background-color: inherit;
+  border: none;
+}
+
+/* profile screen form box form label to the right */
+.profileFormBox .formLabel {
+  white-space: nowrap; 
+  text-align: right;
+}
+
+/* profile screen right side of form width nowrap */
+.profileFormBox .formValue {
+  width: 25em;
+  white-space: nowrap;
+}
+
+/* width of the comboboxes */
+.profileFormBox .formValue div.dijitComboBox {
+  width: 22em;
+}
+
+/* background white */
+.profileFormBox .formValue div.dijitComboBox input.dijitInputInner {
+  background-color: white !important;
+}
+
+/* substep in optin page, indents a little bit */
+.substep {
+  padding-left: 3em;
+  padding-right: 3em;
+}

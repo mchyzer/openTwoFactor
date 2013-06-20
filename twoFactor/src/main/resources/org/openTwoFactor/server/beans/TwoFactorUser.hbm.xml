@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping
+    PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<!-- $Id: TwoFactorUser.hbm.xml,v 1.1 2013/06/20 06:02:51 mchyzer Exp $ -->
+
+<hibernate-mapping package="org.openTwoFactor.server.beans" default-lazy="false">
+
+  <!-- note: optimistic-lock defaults to version, but will be dynamically replaced
+    based on the twoFactor.properties, so dont remove that attribute  -->
+  <class name="TwoFactorUser" table="two_factor_user" optimistic-lock="version">
+
+    <meta attribute="implement-equals">true</meta>
+    <meta attribute="session-method">TwoFactorDao.getSession();</meta>
+
+    <cache usage="read-write"/>
+
+    <!-- id -->
+    <id name="uuid" column="uuid" type="string" >
+      <generator class="assigned" />
+    </id>
+    <!-- id -->
+    
+    <!-- version helps hibernate know when insert/update, and makes sure optimistic locking -->
+    <version name="versionNumber" column="version_number" type="long" unsaved-value="negative" />
+
+    <property name="deletedOn" column="deleted_on" />
+    <property name="lastUpdated" column="last_updated" />
+    <property name="loginid" column="loginid" />
+  </class>
+</hibernate-mapping>

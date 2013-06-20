@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping
+    PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<!-- $Id: TwoFactorAuditView.hbm.xml,v 1.1 2013/06/20 06:02:51 mchyzer Exp $ -->
+
+<hibernate-mapping package="org.openTwoFactor.server.beans" default-lazy="false">
+
+  <!-- note: optimistic-lock defaults to version, but will be dynamically replaced
+    based on the twoFactor.properties, so dont remove that attribute  -->
+  <class name="TwoFactorAuditView" table="two_factor_audit_v" optimistic-lock="version">
+
+    <meta attribute="implement-equals">true</meta>
+    <meta attribute="session-method">TwoFactorDao.getSession();</meta>
+
+    <cache usage="read-write"/>
+
+    <!-- id -->
+    <id name="uuid" column="uuid" type="string" >
+      <generator class="assigned" />
+    </id>
+    <!-- id -->
+    
+    <property name="action" column="action" />
+    <property name="description" column="description" />
+    <property name="serviceProviderId" column="service_provider_id" />
+    <property name="theTimestamp" column="the_timestamp" />
+    <property name="loginid" column="loginid" />
+    <property name="trustedBrowser" column="trusted_browser" type="true_false" />
+    <property name="ipAddress" column="ip_address" />
+    <property name="userAgentOperatingSystem" column="user_agent_operating_system" />
+    <property name="userAgentBrowser" column="user_agent_browser" />
+    <property name="userAgentMobile" column="user_agent_mobile" type="true_false" />
+    <property name="serviceProviderName" column="service_provider_name" />
+    <property name="domainName" column="domain_name" />
+    <property name="userAgent" column="user_agent" />
+    <property name="whenBrowserTrusted" column="when_browser_trusted" />
+    <property name="userUuid" column="user_uuid" />
+    <property name="browserUuid" column="browser_uuid" />
+    <property name="ipAddressUuid" column="ip_address_uuid" />
+    <property name="serviceProviderUuid" column="service_provider_uuid" />
+    <property name="userAgentUuid" column="user_agent_uuid" />
+    <property name="userUuidUsingApp" column="user_uuid_using_app" />
+    <property name="userUsingLoginid" column="user_using_loginid" />
+  </class>
+</hibernate-mapping>
