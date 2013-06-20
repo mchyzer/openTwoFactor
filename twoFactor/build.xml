@@ -9,10 +9,54 @@
   </taskdef>
 
   <if><not><available file="build.properties" /></not>
-    <then><copy file="build.example.template" 
+    <then><copy file="build.example.properties" 
       tofile="build.properties" /></then>
   </if> 
-
+  <if><not><available file="src/main/resources/ehcache.xml" /></not>
+    <then><copy file="src/main/resources/ehcache.example.xml" 
+      tofile="src/main/resources/ehcache.xml" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/grouper.client.properties" /></not>
+    <then><copy file="misc/exampleConfigs/grouper.client.example.properties" 
+      tofile="src/main/resources/grouper.client.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/krb5.conf" /></not>
+    <then><copy file="src/main/resources/krb5.example.conf" 
+      tofile="src/main/resources/krb5.conf" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/log4j.properties" /></not>
+    <then><copy file="src/main/resources/log4j.example.properties" 
+      tofile="src/main/resources/log4j.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/morphString.properties" /></not>
+    <then><copy file="src/main/resources/morphString.example.properties" 
+      tofile="src/main/resources/morphString.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/sources.xml" /></not>
+    <then><copy file="src/main/resources/sources.example.xml" 
+      tofile="src/main/resources/sources.xml" /></then>
+  </if>
+  <if><not><available file="src/main/resources/spy.properties" /></not>
+    <then><copy file="src/main/resources/spy.example.properties" 
+      tofile="src/main/resources/spy.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/subject.properties" /></not>
+    <then><copy file="misc/exampleConfigs/subject.example.properties" 
+      tofile="src/main/resources/subject.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/twoFactor.hibernate.properties" /></not>
+    <then><copy file="misc/exampleConfigs/twoFactor.hibernate.example.properties" 
+      tofile="src/main/resources/twoFactor.hibernate.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/twoFactor.server.properties" /></not>
+    <then><copy file="misc/exampleConfigs/twoFactor.server.example.properties" 
+      tofile="src/main/resources/twoFactor.server.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/tfText/twoFactor.text.en.us.properties" /></not>
+    <then><copy file="misc/exampleConfigs/tfText/twoFactor.text.en.us.example.properties" 
+      tofile="src/main/resources/tfText/twoFactor.text.en.us.properties" /></then>
+  </if>
+  
   <property file="build.properties"/>
 
   <target name="build" description="full build" depends="init,clean,compile,jarPrepare,jar">
