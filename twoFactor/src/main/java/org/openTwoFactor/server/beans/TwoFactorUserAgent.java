@@ -29,6 +29,13 @@ import org.openTwoFactor.server.util.UserAgentUtils;
 public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
 
   /**
+   * truncate fields for db
+   */
+  public void truncate() {
+    this.userAgent = TwoFactorServerUtils.truncateAscii(this.userAgent, 200);
+  }
+
+  /**
    * if this seems like a mobile device from the user agent
    * MOBILE            VARCHAR2(1 CHAR),
    */

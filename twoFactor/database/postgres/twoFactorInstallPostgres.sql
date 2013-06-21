@@ -36,7 +36,6 @@ CREATE TABLE TWO_FACTOR_BROWSER
   UUID                  VARCHAR(40)       NOT NULL,
   USER_UUID             VARCHAR(40),
   LAST_UPDATED          INTEGER                 NOT NULL,
-  CREATED_ON            INTEGER                 NOT NULL,
   VERSION_NUMBER        INTEGER                 NOT NULL,
   DELETED_ON            INTEGER,
   ENCRYPTION_TIMESTAMP  INTEGER,
@@ -53,8 +52,6 @@ COMMENT ON COLUMN TWO_FACTOR_BROWSER.UUID IS 'uuid for this record';
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.USER_UUID IS 'foreign key to the user table';
 
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.LAST_UPDATED IS 'millis since 1970 when this browser was last updated';
-
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.CREATED_ON IS 'millis since 1970 that this browser was created';
 
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.VERSION_NUMBER IS 'increments each time the record is stored, for optimistic locking';
 
@@ -97,6 +94,7 @@ CREATE TABLE TWO_FACTOR_DAEMON_LOG
   DELETED_ON         INTEGER,
   SERVER_NAME        VARCHAR(100 )          NOT NULL,
   PROCESS_ID         VARCHAR(100 )          NOT NULL,
+  LAST_UPDATED       INTEGER                NOT NULL,
   primary key (uuid)
 );
 
@@ -126,6 +124,8 @@ COMMENT ON COLUMN TWO_FACTOR_DAEMON_LOG.SERVER_NAME IS 'server name the daemon r
 
 COMMENT ON COLUMN TWO_FACTOR_DAEMON_LOG.PROCESS_ID IS 'process id of the daemon';
 
+COMMENT ON COLUMN TWO_FACTOR_DAEMON_LOG.LAST_UPDATED IS 'millis since 1970 that this record has been updated';
+
 CREATE INDEX TF_DAEMON_LOG_DELETE_IDX ON TWO_FACTOR_DAEMON_LOG
 (DELETED_ON);
 
@@ -145,8 +145,9 @@ CREATE TABLE TWO_FACTOR_IP_ADDRESS
   IP_ADDRESS             varchar(45 )      NOT NULL,
   DOMAIN_NAME            varchar(80 ),
   LOOKED_UP_DOMAIN_NAME  varchar(1 )       NOT NULL,
-  CREATED_ON             INTEGER                NOT NULL,
+  DELETED_ON      INTEGER,
   VERSION_NUMBER         INTEGER                NOT NULL,
+  LAST_UPDATED    INTEGER                       NOT NULL,
   primary key (uuid)
 );
 
@@ -160,10 +161,11 @@ COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.DOMAIN_NAME IS 'after doing a reverse lo
 
 COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.LOOKED_UP_DOMAIN_NAME IS 'T or F if this IP address has been looked up';
 
-COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.CREATED_ON IS 'millis since 1970 since this record has been created';
-
 COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.VERSION_NUMBER IS 'increments each time the record is stored, for optimistic locking';
 
+COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.DELETED_ON IS 'If this row is deleted, set a delete date, and delete it later';
+
+COMMENT ON COLUMN TWO_FACTOR_IP_ADDRESS.LAST_UPDATED IS 'millis since 1970 that this record has been updated';
 
 
 CREATE UNIQUE INDEX TWO_FACTOR_IP_ADDRESS_U01 ON TWO_FACTOR_IP_ADDRESS
@@ -184,8 +186,9 @@ CREATE TABLE TWO_FACTOR_SERVICE_PROVIDER
   UUID                   varchar(40 )      NOT NULL,
   SERVICE_PROVIDER_ID    varchar(100 )     NOT NULL,
   SERVICE_PROVIDER_NAME  varchar(100 ),
-  CREATED_ON             INTEGER                NOT NULL,
   VERSION_NUMBER         INTEGER                NOT NULL,
+  DELETED_ON      INTEGER,
+  LAST_UPDATED    INTEGER                       NOT NULL,
   primary key (uuid)
 );
 
@@ -197,10 +200,11 @@ COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.SERVICE_PROVIDER_ID IS 'id of the 
 
 COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.SERVICE_PROVIDER_NAME IS 'name of the service provider sent from the authn system';
 
-COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.CREATED_ON IS 'number of millis since 1970 that this record was created';
-
 COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.VERSION_NUMBER IS 'increments each time this record was changed, for optimistic locking';
 
+COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.DELETED_ON IS 'If this row is deleted, set a delete date, and delete it later';
+
+COMMENT ON COLUMN TWO_FACTOR_SERVICE_PROVIDER.LAST_UPDATED IS 'millis since 1970 that this record has been updated';
 
 
 CREATE UNIQUE INDEX TWO_FACTOR_SP_ID_IDX ON TWO_FACTOR_SERVICE_PROVIDER
@@ -215,12 +219,13 @@ CREATE UNIQUE INDEX TWO_FACTOR_SP_ID_IDX ON TWO_FACTOR_SERVICE_PROVIDER
 CREATE TABLE TWO_FACTOR_USER_AGENT
 (
   UUID              varchar(40 )           NOT NULL,
-  USER_AGENT        varchar(100 )          NOT NULL,
+  USER_AGENT        varchar(200 )          NOT NULL,
   BROWSER           varchar(30 ),
   OPERATING_SYSTEM  varchar(30 ),
   MOBILE            varchar(1 ),
-  CREATED_ON        INTEGER                     NOT NULL,
   VERSION_NUMBER    INTEGER                     NOT NULL,
+  DELETED_ON      INTEGER,
+  LAST_UPDATED    INTEGER                       NOT NULL,
   primary key (uuid)
 );
 
@@ -236,10 +241,11 @@ COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.OPERATING_SYSTEM IS 'assumed OS from the
 
 COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.MOBILE IS 'if this is a mobile device';
 
-COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.CREATED_ON IS 'number of millis since 1970 that this was created';
-
 COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.VERSION_NUMBER IS 'increments each time the record is stored for optimistic locking';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.DELETED_ON IS 'If this row is deleted, set a delete date, and delete it later';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_AGENT.LAST_UPDATED IS 'millis since 1970 that this record has been updated';
 
 
 CREATE UNIQUE INDEX TWO_FACTOR_AGENT_AGENT_IDX ON TWO_FACTOR_USER_AGENT

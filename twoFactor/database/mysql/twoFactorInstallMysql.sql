@@ -27,7 +27,6 @@ CREATE TABLE two_factor_browser
   TRUSTED_BROWSER    VARCHAR(1 )           NOT NULL COMMENT 'T or F if this browser is trusted',
   WHEN_TRUSTED       BIGINT(20) COMMENT 'millis since 1970 when this browser was trusted',
   LAST_UPDATED       BIGINT(20)                    NOT NULL COMMENT 'millis since 1970 when this browser was last updated',
-  CREATED_ON         BIGINT(20)                    NOT NULL COMMENT 'millis since 1970 that this browser was created',
   DISABLED_DATE      BIGINT(20) COMMENT 'millis since 1970 that this browser was deleted',
   VERSION_NUMBER     BIGINT(20)                    NOT NULL COMMENT 'increments each time the record is stored, for optimistic locking',
   user_agent_uuid    varchar(40)         comment 'foreign key to the user agent for this browser',
@@ -69,8 +68,9 @@ CREATE TABLE two_factor_daemon_log
   MILLIS             BIGINT(20)                    comment 'millis the daemon took to process', 
   RECORDS_PROCESSED  BIGINT(20)                    comment 'number of records processed',
   DELETED_ON         BIGINT(20)                    comment 'millis since 1970 that this row was deleted',
-  SERVER_NAME        VARCHAR(100)          NOT NULL comment 'server name the daemon ran on',
-  PROCESS_ID         VARCHAR(100)          NOT NULL comment 'process id of the daemon'
+  SERVER_NAME        VARCHAR(100)         NOT NULL comment 'server name the daemon ran on',
+  LAST_UPDATED       BIGINT(20)           NOT NULL comment 'millis since 1970 that this record has been updated',
+  PROCESS_ID         VARCHAR(100)         NOT NULL comment 'process id of the daemon'
 );
 
 alter table two_factor_daemon_log
@@ -96,7 +96,8 @@ CREATE TABLE two_factor_ip_address
   IP_ADDRESS             VARCHAR(45 )      NOT NULL comment 'ip address (ipv4 or ipv6) of the source',
   DOMAIN_NAME            VARCHAR(80 ) comment 'after doing a reverse lookup, domain name if one found',
   LOOKED_UP_DOMAIN_NAME  VARCHAR(1)       NOT NULL comment 'T or F if this IP address has been looked up',
-  CREATED_ON             BIGINT(20)                NOT NULL comment 'millis since 1970 since this record has been created',
+  DELETED_ON             BIGINT(20)    comment 'If this row is deleted, set a delete date, and delete it later',
+  LAST_UPDATED           BIGINT(20)    NOT NULL comment 'millis since 1970 that this record has been updated',
   VERSION_NUMBER         BIGINT(20)                NOT NULL comment 'increments each time the record is stored, for optimistic locking'
 );
 
@@ -123,7 +124,8 @@ CREATE TABLE two_factor_service_provider
   UUID                   VARCHAR(40)      NOT NULL comment 'unique identifier',
   SERVICE_PROVIDER_ID    VARCHAR(100)     NOT NULL comment 'id of the service provider sent from authn system',
   SERVICE_PROVIDER_NAME  VARCHAR(100) comment 'name of the service provider sent from the authn system',
-  CREATED_ON             BIGINT(20)                NOT NULL comment 'number of millis since 1970 that this record was created',
+  DELETED_ON                    BIGINT(20)    comment 'If this row is deleted, set a delete date, and delete it later',
+  LAST_UPDATED                  BIGINT(20)    NOT NULL comment 'millis since 1970 that this record has been updated',
   VERSION_NUMBER         BIGINT(20)                NOT NULL comment 'increments each time this record was changed, for optimistic locking'
 );
 
@@ -146,11 +148,12 @@ CREATE UNIQUE INDEX TWO_FACTOR_SP_ID_IDX ON two_factor_service_provider
 CREATE TABLE two_factor_user_agent
 (
   UUID              VARCHAR(40 )           NOT NULL comment 'this is the primary key for the table, uuid',
-  USER_AGENT        VARCHAR(100 )          NOT NULL comment 'user agent sent from the browser',
+  USER_AGENT        VARCHAR(200 )          NOT NULL comment 'user agent sent from the browser',
   BROWSER           VARCHAR(30 ) comment 'assumed browser from user agent',
   OPERATING_SYSTEM  VARCHAR(30 ) comment 'assumed OS from the user agent',
   MOBILE            VARCHAR(1 ) comment 'if this is a mobile device',
-  CREATED_ON        BIGINT(20)                     NOT NULL comment 'number of millis since 1970 that this was created',
+  DELETED_ON                    BIGINT(20)    comment 'If this row is deleted, set a delete date, and delete it later',
+  LAST_UPDATED                  BIGINT(20)    NOT NULL comment 'millis since 1970 that this record has been updated',
   VERSION_NUMBER    BIGINT(20)                     NOT NULL comment 'increments each time the record is stored for optimistic locking'
 );
 

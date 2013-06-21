@@ -102,7 +102,7 @@ public class EncryptionKey {
         properties.load(inputStream);
         
       } catch (Exception e) {
-        throw new RuntimeException("Problem reading file: " + encryptionFileLocation);
+        throw new RuntimeException("Problem reading file: " + encryptionFileLocation, e);
       
       } finally {
         TwoFactorServerUtils.closeQuietly(inputStream);
