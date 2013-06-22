@@ -189,16 +189,15 @@
 
   </target>
 
-  <target name="distBinary" description="build tar gz on internet2 box" depends="init,clean,compile,jarPrepare,distBinaryPreJar,jar,packageAllServers">
-    <property name="binName" value="twoFactor.clientBinary-${version}" />
+  <target name="distBinary" description="build tar gz on unix box" depends="init,clean,compile,jarPrepare,distBinaryPreJar,jar,packageAllServers">
+    <property name="binName" value="twoFactor.server-${version}" />
     <mkdir dir="dist/binary/${binName}"/>
     <copy todir="dist/binary/${binName}">    
       <fileset dir="${main.confDir}">
-        <include name="twoFactor.client*.properties"/>
-        <include name="twoFactor.client.usage*.txt"/>
+        <include name="twoFactor.server*.properties"/>
       </fileset>
       <fileset dir="dist">
-        <include name="twoFactorClient.jar"/>
+        <include name="twoFactor.jar"/>
       </fileset>
     </copy>
     <tar destfile="${basedir}/dist/${binName}.tar.gz" compression="gzip">
@@ -217,7 +216,7 @@
     <javadoc destdir="javadoc/api" access="public"
       additionalparam="-notimestamp" >
       <packageset dir="src/java" defaultexcludes="yes">
-        <include name="edu/internet2/middleware/twoFactorClient/**" />
+        <include name="org/opentwofactor/server/**" />
 
       </packageset>
 

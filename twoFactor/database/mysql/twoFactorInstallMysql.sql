@@ -27,13 +27,9 @@ CREATE TABLE two_factor_browser
   TRUSTED_BROWSER    VARCHAR(1 )           NOT NULL COMMENT 'T or F if this browser is trusted',
   WHEN_TRUSTED       BIGINT(20) COMMENT 'millis since 1970 when this browser was trusted',
   LAST_UPDATED       BIGINT(20)                    NOT NULL COMMENT 'millis since 1970 when this browser was last updated',
-  DISABLED_DATE      BIGINT(20) COMMENT 'millis since 1970 that this browser was deleted',
   VERSION_NUMBER     BIGINT(20)                    NOT NULL COMMENT 'increments each time the record is stored, for optimistic locking',
-  user_agent_uuid    varchar(40)         comment 'foreign key to the user agent for this browser',
   DELETED_ON         BIGINT(20) comment 'if this row is to be deleted, this is the number of millis since 1970, then a week later it will actually be deleted',
-  ENCRYPTION_TIMESTAMP  BIGINT(20) comment 'when the browser uuid was encrypted',
-  BROWSER_TRUSTED_UUID  VARCHAR(40)       NOT NULL comment 'the cookie value of the browser, encrypted',
-  BROWSER_UUID_HASH  VARCHAR(45 )          NOT NULL COMMENT 'hash with salt of browser uuid'
+  BROWSER_TRUSTED_UUID  VARCHAR(40)       NOT NULL comment 'the cookie value of the browser, encrypted'
 );
 
 Alter table two_factor_browser
@@ -44,6 +40,13 @@ CREATE UNIQUE INDEX two_factor_browser_U01 ON two_factor_browser
 
 CREATE unique INDEX two_factor_browser_USER_ID_IDX ON two_factor_browser
 (USER_UUID);
+
+CREATE INDEX tf_browser_delete_idx ON two_factor_browser(DELETED_ON);
+
+
+CREATE UNIQUE INDEX two_factor_browser_cook_idx ON two_factor_browser(BROWSER_TRUSTED_UUID);
+
+
 
 
 ALTER TABLE two_factor_browser ADD (
@@ -212,7 +215,7 @@ CREATE TABLE two_factor_audit
   BROWSER_UUID           VARCHAR(40) COMMENT 'foreign key to the browser', 
   THE_TIMESTAMP          BIGINT(20)                NOT NULL COMMENT 'timestamp of this record',
   ACTION                 VARCHAR(30)      NOT NULL COMMENT 'action that occurred: AUTHN_TWO_FACTOR, AUTHN_TRUSTED_BROWSER, NOT_OPTED_IN, OPTIN_TWO_FACTOR, OPTOUT_TWO_FACTOR, WRONG_PASSWORD, INVALIDATE_PASSWORDS, GENERATE_PASSWORDS',
-  DESCRIPTION            VARCHAR(100) COMMENT 'if a description is needed, this is more info',
+  DESCRIPTION            VARCHAR(1000) COMMENT 'if a description is needed, this is more info',
   IP_ADDRESS_UUID        VARCHAR(40) COMMENT 'foreign key to the ip address',
   SERVICE_PROVIDER_UUID  VARCHAR(40) COMMENT 'foreign key to the service provider',
   USER_AGENT_UUID        VARCHAR(40) COMMENT 'foreign key to the user agent',

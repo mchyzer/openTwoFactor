@@ -28,12 +28,6 @@ import org.openTwoFactor.server.util.UserAgentUtils;
  */
 public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
 
-  /**
-   * truncate fields for db
-   */
-  public void truncate() {
-    this.userAgent = TwoFactorServerUtils.truncateAscii(this.userAgent, 200);
-  }
 
   /**
    * if this seems like a mobile device from the user agent
@@ -277,15 +271,6 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
   }
 
   /**
-   * abbreviate the user agent
-   * @param userAgent
-   * @return the user agent
-   */
-  private static String abbreviateUserAgent(String userAgent) {
-    return StringUtils.abbreviate(userAgent, 175);
-  }
-
-  /**
    * retrieve a user agent record by user agent
    * @param twoFactorDaoFactory
    * @param userAgent
@@ -298,7 +283,7 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
     }
     
     //note, this is size 200, but with utf8 chars, maybe it is bigger in the db?
-    userAgent = abbreviateUserAgent(userAgent);
+    userAgent = TwoFactorServerUtils.truncateAscii(userAgent, 200);
 
     final String USER_AGENT = userAgent;
     
@@ -394,7 +379,7 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
     }
     
     //note, this is size 200, but with utf8 chars, maybe it is bigger in the db?
-    this.userAgent = abbreviateUserAgent(this.userAgent);
+    this.userAgent = TwoFactorServerUtils.truncateAscii(this.userAgent, 200);
     
     return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       

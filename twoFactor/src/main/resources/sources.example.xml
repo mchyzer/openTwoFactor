@@ -92,7 +92,6 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
        e.g. p6spy (log sql): com.p6spy.engine.spy.P6SpyDriver
          for p6spy, put the underlying driver in spy.properties
        e.g. oracle:          oracle.jdbc.driver.OracleDriver
-       e.g. hsqldb:          org.hsqldb.jdbcDriver
        e.g. postgres:        org.postgresql.Driver -->
 
     <init-param>
@@ -104,8 +103,6 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
        e.g. mysql:           jdbc:mysql://localhost:3306/two_factor
        e.g. p6spy (log sql): [use the URL that your DB requires]
        e.g. oracle:          jdbc:oracle:thin:@server.school.edu:1521:sid
-       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/two_factor;create=true
-       e.g. hsqldb (b):      jdbc:hsqldb:hsql://localhost:9001
        e.g. postgres:        jdbc:postgresql:two_factor -->
      
      <init-param>
@@ -186,8 +183,8 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
 
      <!-- ##########################  STATUS SECTION for searches to filter out inactives and allow
                                                      the user to filter by status with e.g. status=all
-                                                     this is optional, and advanced - -> 
-     <!- - column or attribute which represents the status - - >
+                                                     this is optional, and advanced --> 
+     <!-- column or attribute which represents the status -->
      <init-param>
        <param-name>statusDatastoreFieldName</param-name>
        <param-value>active</param-value>
@@ -197,16 +194,16 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
        <param-name>statusLabel</param-name>
        <param-value>active</param-value>
      </init-param>
-     <!- - available statuses from screen (if not specified, any will be allowed). comma separated list.
+     <!-- available statuses from screen (if not specified, any will be allowed). comma separated list.
           Note, this is optional and you probably dont want to configure it, it is mostly necessary
           when you have multiple sources with statuses...  if someone types an invalid status
-          and you have this configured, it will not filter by it - - >
-     <!- - 
+          and you have this configured, it will not filter by it -->
+     <!-- 
      <init-param>
        <param-name>statusesFromUser<param-name>
        <param-value>Active, Inactive, Pending, All</param-value>
-     </init-param> - - >
-     <!- - all label from the user - - >
+     </init-param> -->
+     <!-- all label from the user -->
      <init-param>
        <param-name>statusAllFromUser</param-name>
        <param-value>all</param-value>
@@ -236,7 +233,7 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
        <param-name>statusTranslateDatastore1</param-name>
        <param-value>F</param-value>
      </init-param>
-     <!- - ########################## END STATUS SECTION --> 
+     <!-- ########################## END STATUS SECTION --> 
 
 
   </source>
@@ -293,33 +290,30 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
        e.g. p6spy (log sql): com.p6spy.engine.spy.P6SpyDriver
          for p6spy, put the underlying driver in spy.properties
        e.g. oracle:          oracle.jdbc.driver.OracleDriver
-       e.g. hsqldb:          org.hsqldb.jdbcDriver
        e.g. postgres:        org.postgresql.Driver - ->
 
      <init-param>
        <param-name>dbDriver</param-name>
-       <param-value>org.hsqldb.jdbcDriver</param-value>
+       <param-value>com.mysql.jdbc.Driver</param-value>
      </init-param>
      
      <!- - 
        e.g. mysql:           jdbc:mysql://localhost:3306/two_factor
        e.g. p6spy (log sql): [use the URL that your DB requires]
        e.g. oracle:          jdbc:oracle:thin:@server.school.edu:1521:sid
-       e.g. hsqldb (a):      jdbc:hsqldb:dist/run/two_factor;create=true
-       e.g. hsqldb (b):      jdbc:hsqldb:hsql://localhost:9001
        e.g. postgres:        jdbc:postgresql:two_factor - ->
      
      <init-param>
        <param-name>dbUrl</param-name>
-       <param-value>jdbc:hsqldb:C:/projects/two_factorI2MI_1-2/two_factor/dist/run/two_factor</param-value>
+       <param-value>jdbc:mysql://localhost:3306/two_factor</param-value>
      </init-param>
      <init-param>
        <param-name>dbUser</param-name>
-       <param-value>sa</param-value>
+       <param-value>two_factor</param-value>
      </init-param>
      <init-param>
        <param-name>dbPwd</param-name>
-       <param-value></param-value>
+       <param-value>*****</param-value>
      </init-param>
      
       <init-param>

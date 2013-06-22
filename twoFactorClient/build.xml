@@ -65,9 +65,9 @@
     <mkdir dir="${main.outputDir}" />
     <mkdir dir="${main.binDir}" />
 
-    <javac   target="1.6"
+    <javac   target="1.6" source="1.6"
       srcdir="${main.sourceExtDir}" destdir="${main.binDir}" debug="true" classpath="${main.theExtClasspath}" />
-    <javac  target="1.6"
+    <javac  target="1.6" source="1.6"
       srcdir="${main.sourceDir}" destdir="${main.binDir}" debug="true" classpath="${main.theClasspath}" />
   </target>
 
