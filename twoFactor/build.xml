@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 <project name="twoFactor" default="build" basedir=".">
 
@@ -413,4 +414,421 @@
 
   </target>
 
+=======
+
+<project name="twoFactor" default="build" basedir=".">
+
+  <!-- ant contrib allows conditionals in ant scripts -->
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+    <classpath>
+      <pathelement location="${basedir}/lib/ant/ant-contrib.jar" />
+    </classpath>
+  </taskdef>
+
+  <if><not><available file="build.properties" /></not>
+    <then><copy file="build.example.properties" 
+      tofile="build.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/ehcache.xml" /></not>
+    <then><copy file="src/main/resources/ehcache.example.xml" 
+      tofile="src/main/resources/ehcache.xml" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/grouper.client.properties" /></not>
+    <then><copy file="misc/exampleConfigs/grouper.client.example.properties" 
+      tofile="src/main/resources/grouper.client.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/krb5.conf" /></not>
+    <then><copy file="src/main/resources/krb5.example.conf" 
+      tofile="src/main/resources/krb5.conf" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/log4j.properties" /></not>
+    <then><copy file="src/main/resources/log4j.example.properties" 
+      tofile="src/main/resources/log4j.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/morphString.properties" /></not>
+    <then><copy file="src/main/resources/morphString.example.properties" 
+      tofile="src/main/resources/morphString.properties" /></then>
+  </if> 
+  <if><not><available file="src/main/resources/sources.xml" /></not>
+    <then><copy file="src/main/resources/sources.example.xml" 
+      tofile="src/main/resources/sources.xml" /></then>
+  </if>
+  <if><not><available file="src/main/resources/spy.properties" /></not>
+    <then><copy file="src/main/resources/spy.example.properties" 
+      tofile="src/main/resources/spy.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/subject.properties" /></not>
+    <then><copy file="misc/exampleConfigs/subject.example.properties" 
+      tofile="src/main/resources/subject.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/twoFactor.hibernate.properties" /></not>
+    <then><copy file="misc/exampleConfigs/twoFactor.hibernate.example.properties" 
+      tofile="src/main/resources/twoFactor.hibernate.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/twoFactor.server.properties" /></not>
+    <then><copy file="misc/exampleConfigs/twoFactor.server.example.properties" 
+      tofile="src/main/resources/twoFactor.server.properties" /></then>
+  </if>
+  <if><not><available file="src/main/resources/tfText/twoFactor.text.en.us.properties" /></not>
+    <then><copy file="misc/exampleConfigs/tfText/twoFactor.text.en.us.example.properties" 
+      tofile="src/main/resources/tfText/twoFactor.text.en.us.properties" /></then>
+  </if>
+  
+  <property file="build.properties"/>
+
+  <target name="build" description="full build" depends="init,clean,compile,jarPrepare,jar">
+  </target>
+
+  <target name="init">
+    <tstamp />
+
+    <property file="${basedir}/misc/version.properties"/>
+
+    <property name="cvs.branch" value="HEAD" />
+    
+    <property name="main.sourceDir" value="src/main/java" />
+
+    <property name="main.confDir" value="src/main/resources" />
+
+    <property name="main.lib" value="lib" />
+
+    <property name="main.binDir" value="dist/bin" />
+
+    <property name="main.outputDir" value="dist" />
+
+    <property name="main.appName" value="twoFactor" />
+    <property name="main.jarFile" value="${main.outputDir}/${main.appName}.jar" />
+
+    <path id="main.classpath">
+      <fileset dir="${main.lib}">
+        <include name="**/*.jar" />
+      </fileset>
+    </path>
+
+    <condition property="main.os" value="windows">
+      <os family="windows" />
+    </condition>
+    <condition property="main.os" value="unix">
+      <os family="unix" />
+    </condition>
+
+    <pathconvert targetos="${main.os}" property="main.theClasspath" refid="main.classpath" />
+    
+  </target>
+
+  <target name="clean">
+    <mkdir dir="${main.binDir}" />
+    <delete dir="${main.binDir}" />
+    <mkdir dir="${main.binDir}" />
+
+  </target> 
+  
+  <target name="compile">
+    <mkdir dir="${main.outputDir}" />
+    <mkdir dir="${main.binDir}" />
+
+    <javac  target="1.6" source="1.6"
+      srcdir="${main.sourceDir}" destdir="${main.binDir}" debug="true" classpath="${main.theClasspath}" />
+  </target>
+
+  <target name="jarPrepare">
+    <mkdir dir="${main.binDir}" />
+
+    <copy todir="${main.binDir}">
+      <fileset dir="${main.sourceDir}">
+        <include name="**/*.java"/>      <!-- source -->
+        <include name="**/*.txt"/>      <!-- txt -->
+        <include name="**/*.html"/>      <!-- html -->
+      </fileset>
+      <!-- fileset dir="${main.confDir}">
+        <include name="*.base.properties"/>      
+      </fileset>
+      <fileset dir="misc">
+        <include name="twoFactor.server.properties"/>      
+      </fileset>
+      <fileset dir="${basedir}">
+        <include name="README.txt"/>      
+      </fileset -->
+    </copy>
+  </target>
+
+  <target name="jar">
+    <tstamp>
+        <format property="the.timestamp" pattern="yyyy/MM/dd HH:mm:ss" />
+    </tstamp>
+    <jar jarfile="${main.jarFile}" duplicate="fail">
+      <fileset dir="${main.binDir}" />
+      <manifest>
+        <attribute name="Built-By"                value="${user.name}"/>
+        <attribute name="Implementation-Title"    value="twoFactor"/>
+        <attribute name="Implementation-Version"  value="${version}"/>
+        <attribute name="Implementation-URL"      value="https://flash.isc-seo.upenn.edu/confluence/x/UgklAw"/>
+        <attribute name="Build-Timestamp"         value="${the.timestamp}"/>
+      </manifest>
+     </jar>
+    <property name="instName" value="twoFactor.institution-${version}" />
+    <mkdir dir="dist/institution/${instName}"/>
+    <copy todir="dist/institution/${instName}">    
+      <fileset dir="${main.confDir}">
+        <include name="standardApi.server.properties"/>
+      </fileset>
+      <fileset dir="dist">
+        <include name="twoFactor.jar"/>
+      </fileset>
+    </copy>
+    <tar destfile="dist/${instName}.tar.gz" compression="gzip">
+      <tarfileset dir="dist/institution" >
+        <include name="${instName}/**"/>
+      </tarfileset>
+    </tar>            
+    <echo message="Output is: dist/twoFactor.jar and dist/${instName}.tar.gz" />
+    <echo message="Note: dist/${instName}.tar.gz contains the conf/standardApi.server.base.properties, make sure it has no sensitive credentials in it" />
+   </target>
+  
+  <target name="distPackage" description="build tar gz on internet2 box" depends="init">
+
+    <delete dir="doc" />
+    <mkdir dir="dist" />
+
+    <!-- this assumes that everything was checked out to the right place, and no other dirs exist -->
+    <tar destfile="${basedir}/dist/twoFactor.server-${version}.tar.gz" compression="gzip">
+      <tarfileset dir="${basedir}/dist" >
+        <include name="twoFactor.server-${version}/**"/>
+      </tarfileset>
+    </tar>            
+    
+  </target>
+
+  <target name="distBinaryPreJar">
+
+    <!-- we dont want this in the jar, we want it next to the jar -->
+    <delete file="${main.binDir}/twoFactor.client.usage.txt" />  
+
+  </target>
+
+  <target name="distBinary" description="build tar gz on unix box" depends="init,clean,compile,jarPrepare,distBinaryPreJar,jar,packageAllServers">
+    <property name="binName" value="twoFactor.server-${version}" />
+    <mkdir dir="dist/binary/${binName}"/>
+    <copy todir="dist/binary/${binName}">    
+      <fileset dir="${main.confDir}">
+        <include name="twoFactor.server*.properties"/>
+      </fileset>
+      <fileset dir="dist">
+        <include name="twoFactor.jar"/>
+      </fileset>
+    </copy>
+    <tar destfile="${basedir}/dist/${binName}.tar.gz" compression="gzip">
+      <tarfileset dir="dist/binary" >
+        <include name="${binName}/**"/>
+      </tarfileset>
+    </tar>            
+  </target>
+
+  <target name="javadoc" description="generate public api docs for users to javadoc/api" depends="init">
+    <!-- Let's be sure we clear out old cruft first... -->
+    <mkdir dir="javadoc/api" />
+    <delete dir="javadoc/api" />
+    <mkdir dir="javadoc/api" />
+    <!-- header="&lt;script&gt;alert('whatever');&lt;/script&gt;" -->
+    <javadoc destdir="javadoc/api" access="public"
+      additionalparam="-notimestamp" >
+      <packageset dir="src/java" defaultexcludes="yes">
+        <include name="org/opentwofactor/server/**" />
+
+      </packageset>
+
+      <link href="http://struts.apache.org/1.2.x/api/" />
+      <link href="http://java.sun.com/j2ee/sdk_1.3/techdocs/api" />
+      <link href="http://java.sun.com/j2se/1.4.2/docs/api" />
+
+    </javadoc>
+  </target>
+  <target name="javadocInternal" description="generate public api docs for cvs to doc/api" depends="init">
+    <!-- Let's be sure we clear out old cruft first... -->
+    <mkdir dir="doc/api" />
+    <delete dir="doc/api" />
+    <mkdir dir="doc/api" />
+    <!-- header="&lt;script&gt;alert('whatever');&lt;/script&gt;" -->
+    <javadoc destdir="doc/api" access="public"
+      additionalparam="-notimestamp" >
+      <packageset dir="src/java" defaultexcludes="yes">
+        <include name="edu/internet2/middleware/twoFactorClient/**" />
+
+      </packageset>
+
+      <link href="http://struts.apache.org/1.2.x/api/" />
+      <link href="http://java.sun.com/j2ee/sdk_1.3/techdocs/api" />
+      <link href="http://java.sun.com/j2se/1.4.2/docs/api" />
+
+    </javadoc>
+
+    <!-- replace .html?edu/internet2/middleware/twoFactor/webservices/twoFactorService.html" with 
+    .html" -->
+    <!-- take out existing params, these are used by javascript to go to frames gracefully, trash them -->
+    <replaceregexp flags="g">
+      <regexp pattern="\.html\?[^&quot; ]*&quot;" />
+      <substitution expression="\.html&quot;" />
+      <fileset dir="doc/api" includes="**/*.html" />
+    </replaceregexp>
+    <!-- replace relative links, e.g. method links -->
+    <replaceregexp flags="g">
+      <regexp pattern="\.html#([^&quot;>]*)&quot;" />
+      <substitution expression="\.html?view=co#\1&quot;" />
+      <fileset dir="doc/api" includes="**/*.html" />
+    </replaceregexp>
+    <!-- replace onLoad="top.loadFrames()" with onLoad="", this javascript messes things up with viewvc params -->
+    <replace file="doc/api/index.html">
+      <replacetoken><![CDATA[onLoad="top.loadFrames()"]]></replacetoken>
+      <replacevalue><![CDATA[onLoad=""]]></replacevalue>
+    </replace>
+    <!-- replace for cvs web: .html" with .html?view=co"   -->
+    <replace dir="doc/api" value=".html?view=co&quot;">
+      <include name="**/*.html" />
+      <replacetoken><![CDATA[.html"]]></replacetoken>
+    </replace>
+    <replace dir="doc/api" value=".css?view=co&quot;">
+      <include name="**/*.html" />
+      <replacetoken><![CDATA[.css"]]></replacetoken>
+    </replace>
+
+  </target>
+
+  <target name="dev" description="copy libs to cvs webapp dir so the app can be run in dev, Note this should only need to be done once (unless jars change)">
+    <mkdir dir="${basedir}/webapp/WEB-INF/lib" />
+    <delete dir="${basedir}/webapp/WEB-INF/lib" includes="*.jar" />
+    <copy todir="${basedir}/webapp/WEB-INF/lib">
+      <fileset dir="${basedir}/lib/twoFactor" >
+        <include name="*.jar"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="packageEnvHelper">
+    
+    <mkdir dir="dist/bin/${main.serverDirName}" />
+    <delete dir="dist/bin/${main.serverDirName}" />
+    <mkdir dir="dist/bin/${main.serverDirName}" />
+
+    <!-- filter out certain strings to other strings -->
+    <filter token="main.versionName" value="${version}" />
+    <filter token="main.warSuffix" value="${main.arSuffix}" />
+    <filter token="contextRoot" value="${main.appName}${main.contextRoot}" />
+    <filter token="warFileName" value="${main.appName}${main.arSuffix}.war" />
+    <filter token="displayName" value="${main.appName} ${main.arSuffix}" />
+    <filter token="isProd" value="${arg.isProd}" />
+
+    <mkdir dir="dist/bin/${main.serverDirName}/deployment" />
+    <copy file="deployment/application.xml" todir="dist/bin/${main.serverDirName}/deployment" filtering="true" />
+
+    <mkdir dir="dist/bin/${main.serverDirName}/war/resources" />
+
+    <copy toDir="dist/bin/${main.serverDirName}/war/resources" overwrite="true">
+      <fileset dir="${main.confDir}">
+      </fileset>
+    </copy>
+    <if><available file="servers/${main.serverDirName}/resources" type="dir" />
+      <then>
+        <copy toDir="dist/bin/${main.serverDirName}/war/resources" overwrite="true">
+          <fileset dir="servers/${main.serverDirName}/resources" />
+        </copy>
+      </then>
+    </if> 
+    <copy toDir="dist/bin/${main.serverDirName}/war/WEB-INF" overwrite="true">
+      <fileset dir="webapp/WEB-INF"  >
+        <exclude name="classes/**" />
+        <exclude name="lib/**" />
+      </fileset>
+    </copy>
+    <mkdir dir="dist/bin/${main.serverDirName}/war/WEB-INF/lib" />
+    <copy toDir="dist/bin/${main.serverDirName}/war/WEB-INF/lib" overwrite="true" flatten="true" >
+      <fileset dir="lib/twoFactor">
+        <include name="*.jar" />
+      </fileset>
+    </copy>
+
+    <if><available file="servers/${main.serverDirName}/webapp/WEB-INF" type="dir" />
+      <then>
+        <copy toDir="dist/bin/${main.serverDirName}/war/WEB-INF" overwrite="true">
+          <fileset dir="servers/${main.serverDirName}/webapp/WEB-INF" />
+        </copy>
+      </then>
+    </if> 
+
+    
+    <!-- WAR -->
+    <war warfile="${main.outputDir}/${main.appName}${main.arSuffix}.war">
+      <fileset dir="webapp">
+        <exclude name="WEB-INF/**" />
+      </fileset>
+      <webinf dir="dist/bin/${main.serverDirName}/war/WEB-INF">
+      </webinf>
+      <lib file="${main.outputDir}/${main.appName}.jar" />
+      <classes dir="dist/bin/${main.serverDirName}/war/resources" />
+
+      <!-- get the files from FAST jar 
+      <fileset dir="dist/bin/${main.serverDirName}/reference/docroot" />
+      <webinf dir="dist/bin/${main.serverDirName}/reference/WEBINF" />
+      <classes dir="dist/bin/${main.serverDirName}/reference/classes" /> -->
+    </war>
+    <if>
+      <istrue value="${main.buildEar}" />
+      <then>
+        <!-- no ear needed, war deployed to tomcat -->
+        <ear destfile="${main.outputDir}/${main.appName}${main.arSuffix}.ear" appxml="dist/bin/${main.serverDirName}/deployment/application.xml" basedir="${main.outputDir}" includes="${main.appName}${main.arSuffix}.war" duplicate="fail" />
+      </then>
+    </if>
+  </target>
+
+  <target name="packageAllServers">
+
+    <!-- Servers -->
+    <!-- main.serverDirName: directory to get the override files from -->
+    <!-- main.arSuffix: archive suffix on war or ear -->
+    <!-- main.excludeJars if anything should be excluded from lib (typically *ackdoor* or NOTHING) -->
+    <!-- main.buildToDelete: build to delete (typcially IntDev.ear, IntDev.war, or NOTHING... 
+       no vars allowed here) -->
+    <!-- main.excludeWeb: exclude from web: **/*ackdoor* or NOTHING -->
+    <!-- main.contextRoot: property from properties file: ${prop.contextRootIntDev} end of URL -->
+    <!-- main.buildEar: if we should build an ear for this (e.g. no for int dev) -->
+    <if>
+      <istrue value="${prop.packageProd}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="prod" />
+          <param name="main.arSuffix" value="Prod" />
+          <param name="main.buildToDelete" value="Prod.war" />
+          <param name="main.contextRoot" value="${prop.contextRootProd}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
+      <istrue value="${prop.packageTest}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="test" />
+          <param name="main.arSuffix" value="Test" />
+          <param name="main.buildToDelete" value="Test.war" />
+          <param name="main.contextRoot" value="${prop.contextRootTest}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
+      <istrue value="${prop.packageIntDev}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="integratedDev" />
+          <!-- for int dev, since directly deployed, give new context root -->
+          <param name="main.arSuffix" value="IntDev${prop.contextRootIntDev}" />
+          <param name="main.buildToDelete" value="IntDev.ear" />
+          <param name="main.contextRoot" value="${prop.contextRootIntDev}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+
+  </target>
+
+>>>>>>> e9b8fcf505079d579d6fccabfbddabd8ecb043f8
 </project>
