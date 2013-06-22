@@ -11571,6 +11571,8 @@ public class TwoFactorServerUtils {
           throw new RuntimeException("Problem making temp dir, maybe specify location in twoFactor.server.properties", e);
         }
 
+      } else {
+        tempDirFile = new File(tempDirLocation);
       }
       tempDir = tempDirLocation;
       

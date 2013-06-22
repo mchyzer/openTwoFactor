@@ -46,58 +46,59 @@ ALTER TABLE TWO_FACTOR_USER ADD (
   
   
   
-CREATE TABLE TWO_FACTOR_BROWSER
+CREATE TABLE two_factor_browser
 (
   UUID                  VARCHAR2(40 CHAR)       NOT NULL,
   USER_UUID             VARCHAR2(40 CHAR),
   LAST_UPDATED          INTEGER                 NOT NULL,
   VERSION_NUMBER        INTEGER                 NOT NULL,
   DELETED_ON            INTEGER,
-  ENCRYPTION_TIMESTAMP  INTEGER,
   BROWSER_TRUSTED_UUID  VARCHAR2(40 CHAR)       NOT NULL,
   TRUSTED_BROWSER       VARCHAR2(1 BYTE)        NOT NULL,
   WHEN_TRUSTED          INTEGER
 );
 
-COMMENT ON TABLE TWO_FACTOR_BROWSER IS 'row for each browser that a user has';
+COMMENT ON TABLE two_factor_browser IS 'row for each browser that a user has';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.UUID IS 'uuid for this record';
+COMMENT ON COLUMN two_factor_browser.UUID IS 'uuid for this record';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.USER_UUID IS 'foreign key to the user table';
+COMMENT ON COLUMN two_factor_browser.USER_UUID IS 'foreign key to the user table';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.LAST_UPDATED IS 'millis since 1970 when this browser was last updated';
+COMMENT ON COLUMN two_factor_browser.LAST_UPDATED IS 'millis since 1970 when this browser was last updated';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.VERSION_NUMBER IS 'increments each time the record is stored, for optimistic locking';
+COMMENT ON COLUMN two_factor_browser.VERSION_NUMBER IS 'increments each time the record is stored, for optimistic locking';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.DELETED_ON IS 'if this row is to be deleted, this is the number of millis since 1970, then a week later it will actually be deleted';
+COMMENT ON COLUMN two_factor_browser.DELETED_ON IS 'if this row is to be deleted, this is the number of millis since 1970, then a week later it will actually be deleted';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.ENCRYPTION_TIMESTAMP IS 'when the browser uuid was encrypted';
+COMMENT ON COLUMN two_factor_browser.BROWSER_TRUSTED_UUID IS 'the cookie value of the browser, encrypted';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.BROWSER_TRUSTED_UUID IS 'the cookie value of the browser, encrypted';
+COMMENT ON COLUMN two_factor_browser.TRUSTED_BROWSER IS 'if the browser is trusted (indicated by user)';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.TRUSTED_BROWSER IS 'if the browser is trusted (indicated by user)';
-
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.WHEN_TRUSTED IS 'timestamp of when the browser was last trusted';
+COMMENT ON COLUMN two_factor_browser.WHEN_TRUSTED IS 'timestamp of when the browser was last trusted';
 
 
 
-CREATE UNIQUE INDEX TWO_FACTOR_BROWSER_PK ON TWO_FACTOR_BROWSER
-(UUID);
+CREATE UNIQUE INDEX two_factor_browser_pk ON two_factor_browser(UUID);
 
 
-CREATE INDEX TWO_FACTOR_BROWSER_USER_ID_IDX ON TWO_FACTOR_BROWSER
-(USER_UUID);
+CREATE INDEX two_factor_browser_user_id_idx ON two_factor_browser(USER_UUID);
+
+CREATE INDEX tf_browser_delete_idx ON two_factor_browser(DELETED_ON);
 
 
-ALTER TABLE TWO_FACTOR_BROWSER ADD (
-  CONSTRAINT TWO_FACTOR_BROWSER_PK
+CREATE UNIQUE INDEX two_factor_browser_cook_idx ON two_factor_browser(BROWSER_TRUSTED_UUID);
+
+
+
+ALTER TABLE two_factor_browser ADD (
+  CONSTRAINT two_factor_browser_pk
   PRIMARY KEY
   (UUID)
-  USING INDEX TWO_FACTOR_BROWSER_PK);
+  USING INDEX two_factor_browser_pk);
 
 
-ALTER TABLE TWO_FACTOR_BROWSER ADD (
-  CONSTRAINT TWO_FACTOR_BROWSER_R01 
+ALTER TABLE two_factor_browser ADD (
+  CONSTRAINT two_factor_browser_r01 
   FOREIGN KEY (USER_UUID) 
   REFERENCES TWO_FACTOR_USER (UUID));
 
@@ -507,7 +508,7 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
 ALTER TABLE TWO_FACTOR_AUDIT ADD (
   CONSTRAINT TWO_FACTOR_AUDIT_R02 
   FOREIGN KEY (BROWSER_UUID) 
-  REFERENCES TWO_FACTOR_BROWSER (UUID));
+  REFERENCES two_factor_browser (UUID));
 
 ALTER TABLE TWO_FACTOR_AUDIT ADD (
   CONSTRAINT TWO_FACTOR_AUDIT_R03 

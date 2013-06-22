@@ -24,6 +24,13 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
 
   /**
+   * truncate fields for db
+   */
+  public void truncate() {
+    this.description = TwoFactorServerUtils.truncateAscii(this.description, 1000);
+  }
+
+  /**
    * create and store an audit
    * @param twoFactorDaoFactory 
    * @param twoFactorAuditAction 
@@ -461,10 +468,8 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     }
     
     //max length if 1000, chop off some for invalid chars
-    if (this.description != null) {
-      this.description = StringUtils.abbreviate(this.description, 975);
-    }
-
+    this.truncate();
+    
     twoFactorDaoFactory.getTwoFactorAudit().store(this);
     testInsertsAndUpdates++;
 

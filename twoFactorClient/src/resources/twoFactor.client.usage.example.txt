@@ -3,7 +3,7 @@ Two Factor Client USAGE:
 This program runs queries against a Two Factor Web Service
 The system exit code will be 0 for success, and not 0 for failure
 Output data is printed to stdout, error messages are printed to stderr or logs (configured in twoFactor.client.properties)
-Two Factor Client webpage: https://flash.isc-seo.upenn.edu/confluence/display/FAST/Two+Factor+Client
+Two Factor Client webpage: http://opentwofactor.org
 
 Arguments are in the format: --argName=argValue
 Example argument: --userBrowserUuid=abc123
