@@ -598,7 +598,7 @@ public class TfRestLogic {
             if (debug) {
               tfCheckPasswordResponse.appendDebug("found twoFactorBrowser by cookie uuid");
             }
-            browserPreviouslyTrusted = twoFactorBrowser.isTrustedBrowser();
+            browserPreviouslyTrusted = twoFactorBrowser.isTrustedBrowserCalculateDate();
           }
         }
       }

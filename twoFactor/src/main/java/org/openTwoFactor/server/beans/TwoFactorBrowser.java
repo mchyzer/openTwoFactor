@@ -7,12 +7,14 @@ package org.openTwoFactor.server.beans;
 
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
@@ -128,6 +130,20 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
     return this.trustedBrowser;
   }
 
+  /**
+   * based on when this browser was trusted, is it still trusted
+   * @return true if trusted and still trusted
+   */
+  public boolean isTrustedBrowserCalculateDate() {
+    if (!this.trustedBrowser) {
+      return false;
+    }
+    
+    int daysTrustLasts = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.trustBrowserForDays", 30);
+    
+    return (System.currentTimeMillis() - this.whenTrusted) < ((long)daysTrustLasts * 24L * 60L * 60L * 1000L);
+    
+  }
   
   /**
    * TRUSTED_BROWSER       VARCHAR2(1 BYTE)        NOT NULL,
