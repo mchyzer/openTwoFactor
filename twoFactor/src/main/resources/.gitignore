@@ -11,3 +11,4 @@
 /krb5.conf
 /sources.mysql.xml
 /twoFactor.server.properties
+/twoFactor.server.local.properties

@@ -4,8 +4,10 @@
  */
 package org.openTwoFactor.server.j2ee;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -167,7 +169,7 @@ public class TwoFactorRestServlet extends HttpServlet {
   protected void service(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
 
-    long servetStarted = System.nanoTime();
+    long serviceStarted = System.nanoTime();
 
     request = new TfHttpServletRequest(request);
     TwoFactorFilterJ2ee.assignHttpServletRequest(request);
@@ -182,7 +184,11 @@ public class TwoFactorRestServlet extends HttpServlet {
     TfRestContentType wsRestContentType = TfRestContentType.json;
     TfRestContentType.assignContentType(wsRestContentType);
 
+    boolean logRequestsResponses = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponses", false);
+
     boolean indent = false;
+    
+    String body = null;
     
     try {
       
@@ -197,7 +203,7 @@ public class TwoFactorRestServlet extends HttpServlet {
       int urlStringsLength = TwoFactorServerUtils.length(urlStrings);
 
       //get the body and convert to an object
-      String body = TwoFactorServerUtils.toString(request.getReader());
+      body = TwoFactorServerUtils.toString(request.getReader());
 
       TfWsVersion clientVersion = null;
 
@@ -293,9 +299,13 @@ public class TwoFactorRestServlet extends HttpServlet {
     }
     
     //set http status code, content type, and write the response
+    StringBuilder urlBuilder = null;
+    String responseString = null;
+    String responseStringForLog = null;
+
     try {
       { 
-        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder = new StringBuilder();
         {
           String url = request.getRequestURL().toString();
           url = TwoFactorServerUtils.prefixOrSuffix(url, "?", true);
@@ -354,13 +364,20 @@ public class TwoFactorRestServlet extends HttpServlet {
       
       //twoFactorResponseBeanBase.getResponseMeta().setMillis(millisUuid);
       
-      String responseString = wsRestContentType.writeString(twoFactorResponseBeanBase);
+      responseString = wsRestContentType.writeString(twoFactorResponseBeanBase);
       
       if (indent) {
         responseString = wsRestContentType.indent(responseString);
+        if (logRequestsResponses) {
+          responseStringForLog = responseString;
+        }
+      } else {
+        if (logRequestsResponses) {
+          responseStringForLog = wsRestContentType.indent(responseString);
+        }
       }
       
-      responseString = TwoFactorServerUtils.replace(responseString, Long.toString(millisUuid), Long.toString(((System.nanoTime()-servetStarted) / 1000000)));
+      responseString = TwoFactorServerUtils.replace(responseString, Long.toString(millisUuid), Long.toString(((System.nanoTime()-serviceStarted) / 1000000)));
       
       try {
         response.getWriter().write(responseString);
@@ -383,9 +400,37 @@ public class TwoFactorRestServlet extends HttpServlet {
     if (httpSession != null) {
       httpSession.invalidate();
     }
-
+    
+    //lets write the response to file
+    if (logRequestsResponses) {
+      //make a file:
+      StringBuilder fileContents = new StringBuilder();
+      Date currentDate = new Date();
+      fileContents.append("Timestamp: ").append(currentDate).append("\n");
+      fileContents.append("Millis: ").append(Long.toString(((System.nanoTime()-serviceStarted) / 1000000))).append("\n");
+      fileContents.append("URL: ").append(urlBuilder).append("\n");
+      fileContents.append("Request body: ").append(body).append("\n\n");
+      fileContents.append("Response body: ").append(responseStringForLog).append("\n\n");
+      String tempDirLocation = TwoFactorServerUtils.tempFileDirLocation();
+      
+      File logdir = new File(tempDirLocation + "wsLogs");
+      TwoFactorServerUtils.mkdirs(logdir);
+      
+      long myRequestIndex = 0;
+      synchronized(TwoFactorRestServlet.class) {
+        myRequestIndex = ++requestIndex;
+      }
+      File file = new File(tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + ".txt");
+      file.createNewFile();
+      TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
+      
+    }
+    
   }
 
+  /** unique id for requests */
+  private static long requestIndex = 0;
+  
   /**
    * for error messages, get a detailed report of the request
    * @param request
