@@ -65,6 +65,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javassist.util.proxy.ProxyObject;
 
@@ -152,6 +153,119 @@ public class TwoFactorServerUtils {
    */
   private static Pattern emailPattern = Pattern.compile("^[^@]+@[^.]+\\..+$");
   
+  /**
+   * find a valid file name from one that could not be valid.
+   * remove special chars<br />
+   * If file is named: "My file(by me).doc" this method will change
+   * to "Myfilebyme.doc"
+   * @param fileName
+   * @return the new filename
+   */
+  public static String validFileName(String fileName) {
+    
+    fileName = fastIncludeExcludeRegex(
+        fileName, 
+        // %5F is underscore
+        "^[a-zA-Z0-9%5F\\-\\.]$", true, true);
+
+    if (StringUtils.isEmpty(fileName)) {
+      fileName = uniqueId();
+    }    
+    
+    return fileName;
+    
+  }
+
+  /**
+   * compile a regex so it can be done in a static declaration
+   * @param regex
+   * @return the pattern
+   */
+  public static Pattern compile(String regex) {
+    try {
+      return Pattern.compile(regex);
+    } catch (PatternSyntaxException pse) {
+      String error = "Error compiling regex: '" + regex + "'";
+      throw new RuntimeException(error, pse);
+    }
+  }
+
+  /**
+   * include or exclude chars based on a regex
+   * @param x
+   * @param regex
+   * @param isInclude
+   * @param unescape
+   * @return the formatted string
+   */
+  public static String fastIncludeExcludeRegex(String x, String regex, boolean isInclude,
+      boolean unescape) {
+  
+    //done if empty
+    if (isEmpty(x)) {
+      return x;
+    }
+  
+    //replace special chars from regex for ease of config
+    if (unescape) {
+      regex = specialChars(regex, false);
+    }
+    
+    Pattern re = compile(regex);
+  
+    StringBuffer result = new StringBuffer();
+    String curChar = null;
+  
+    int i = 0;
+    while (i < x.length()) {
+      //get the current char
+      curChar = Character.toString(x.charAt(i));
+      //if it matches or not based on input
+      if ((re.matcher(curChar).find()) == isInclude) {
+        result.append(curChar);
+      }
+      i++;
+    }
+  
+    return result.toString();
+  }
+
+  /** special chars array to replace */
+  private static final String[] SPECIAL_CHARS_FROM = new String[] { "%", "(", ")", ",",
+      "\\", ";", "\"", "'", "_" };
+
+  /** special chars array to replace with */
+  private static final String[] SPECIAL_CHARS_TO = new String[] { "%25", "%28", "%29",
+      "%2C", "%5C", "%3B", "%22", "%27", "%5F" };
+
+  /**
+   * Unsubstitute special chars from inputs (at least used for regex). If you
+   * change this, change the equivalent Javascript method.
+   * 
+   * %28 -> ( %29 -> ) %2C -> , %3B -> ; %22 -> " %27 -> ' %25 -> % %5F -> _ %5C -> \
+   * 
+   * @param input
+   *          is the input string
+   * @param isToSpecialChars
+   *          true if the output has special chars, false if not
+   * @return the string subbed with special chars
+   */
+  public static String specialChars(String input, boolean isToSpecialChars) {
+    if (isEmpty(input)) {
+      return input;
+    }
+
+    if (isToSpecialChars) {
+
+      input = replace(input, SPECIAL_CHARS_FROM, SPECIAL_CHARS_TO);
+
+    } else {
+
+      input = replace(input, SPECIAL_CHARS_TO, SPECIAL_CHARS_FROM);
+    }
+    return input;
+  }
+
   /**
    * 
    * @param email

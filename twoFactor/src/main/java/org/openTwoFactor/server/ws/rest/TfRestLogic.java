@@ -606,6 +606,11 @@ public class TfRestLogic {
       tfCheckPasswordResponse.setUserBrowserUuidIsNew(needsNewCookieUuid);
       boolean requestIsTrusted = tfCheckPasswordRequest.getTrustedBrowser() != null && tfCheckPasswordRequest.getTrustedBrowser();
       
+      //if there is no code,  or it is wrong, then not a trusted browser
+      if (StringUtils.isBlank(twoFactorPassUnencrypted) || twoFactorPassResult == null || !twoFactorPassResult.isPasswordCorrect()) {
+        requestIsTrusted = false;
+      }
+      
       if (needsNewCookieUuid) {
         String newCookieUuid = TwoFactorServerUtils.uuid();
         tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);

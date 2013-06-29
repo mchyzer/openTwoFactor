@@ -24,6 +24,7 @@ import org.apache.log4j.NDC;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
 import org.openTwoFactor.server.subject.TfSubjectIdResolver;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import org.openTwoFactor.server.ws.corebeans.TfResultProblem;
 import org.openTwoFactor.server.ws.corebeans.TwoFactorResponseBeanBase;
@@ -33,6 +34,9 @@ import org.openTwoFactor.server.ws.rest.TfRestInvalidRequest;
 import org.openTwoFactor.server.ws.rest.TfWsVersion;
 import org.openTwoFactor.server.ws.security.WsTfCustomAuthentication;
 import org.openTwoFactor.server.ws.security.WsTfDefaultAuthentication;
+
+import edu.internet2.middleware.subject.Subject;
+import edu.internet2.middleware.subject.provider.SourceManager;
 
 
 
@@ -420,7 +424,47 @@ public class TwoFactorRestServlet extends HttpServlet {
       synchronized(TwoFactorRestServlet.class) {
         myRequestIndex = ++requestIndex;
       }
-      File file = new File(tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + ".txt");
+      
+      String usernameForFilePath = "";
+      
+      //maybe we want userids in the file name
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponsesLogSubjectId", false)) {
+        
+        String username = request.getParameter("username");
+        
+        if (!StringUtils.isBlank(username)) {
+          String subjectAttributeName = TwoFactorServerConfig.retrieveConfig()
+              .propertyValueString("twoFactorServer.ws.log.requestsResponsesLogSubjectAttribute");
+          
+          //maybe we are using netId instead of an opaque id
+          if (!StringUtils.isBlank(subjectAttributeName)) {
+            
+            try {
+              Subject subject = SourceManager.getInstance()
+                  .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(username, false);
+
+              if (subject != null) {
+                String attributeValue = subject.getAttributeValue(subjectAttributeName);
+                if (!StringUtils.isBlank(attributeValue)) {
+                  usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(attributeValue);
+                }
+              }
+              
+            } catch (RuntimeException re) {
+              LOG.error("Error finding subject: " + username, re);
+            }
+            
+          }
+          if (StringUtils.isBlank(usernameForFilePath) ) {
+            usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(username);
+          }
+          
+        }
+        
+      }
+      
+      String logfileName = tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + usernameForFilePath + ".txt";
+      File file = new File(logfileName);
       file.createNewFile();
       TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
       
