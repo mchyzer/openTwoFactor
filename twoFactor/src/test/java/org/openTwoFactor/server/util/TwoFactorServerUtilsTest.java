@@ -1,10 +1,8 @@
 package org.openTwoFactor.server.util;
 
-import java.security.SecureRandom;
-
 import junit.framework.TestCase;
+import junit.textui.TestRunner;
 
-import org.apache.commons.codec.binary.Base32;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 
 
@@ -20,7 +18,7 @@ public class TwoFactorServerUtilsTest extends TestCase {
    */
   public static void main(String[] args) {
     
-    //TestRunner.run(new TwoFactorServerUtilsTest("testGenerateRandomKey"));
+    TestRunner.run(new TwoFactorServerUtilsTest("testObscureName"));
     
 //    int secretSize = 10;
 //    int numOfScratchCodes = 5;
@@ -47,13 +45,15 @@ public class TwoFactorServerUtilsTest extends TestCase {
 //    String encodedKey = new String(bEncodedKey);
 //    System.out.println(encodedKey);
     
-    byte[] theBytes = new byte[10];
-    SecureRandom secureRandom = new SecureRandom();
-    secureRandom.nextBytes(theBytes);
-    Base32 codec = new Base32();
-    byte[] encoded = codec.encode(theBytes);
-    @SuppressWarnings("unused")
-    String secret = new String(encoded);
+//    byte[] theBytes = new byte[10];
+//    SecureRandom secureRandom = new SecureRandom();
+//    secureRandom.nextBytes(theBytes);
+//    Base32 codec = new Base32();
+//    byte[] encoded = codec.encode(theBytes);
+//    @SuppressWarnings("unused")
+//    String secret = new String(encoded);
+
+    
     //System.out.println(secret);
     
     //V7I7VOGZ4L24OC3J
@@ -85,4 +85,19 @@ public class TwoFactorServerUtilsTest extends TestCase {
       //System.out.println(generateBase32secret);
     }
   }
+  
+  /**
+   * 
+   */
+  public void testObscureName() {
+    
+    //* if name is Chris Hyzer   then convert to    Ch*** H****
+    assertEquals("Ch*** H****", TwoFactorServerUtils.obscureName("Chris Hyzer"));
+    
+    //* if name is Dr. Jim R. Hopkins   then convert to    Dr. Ji* R. H******
+    assertEquals("Dr. Ji* R. H******", TwoFactorServerUtils.obscureName("Dr. Jim R. Hopkins"));
+
+    
+  }
+  
 }

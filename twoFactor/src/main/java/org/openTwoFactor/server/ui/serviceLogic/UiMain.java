@@ -6,8 +6,10 @@ package org.openTwoFactor.server.ui.serviceLogic;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -507,15 +509,44 @@ public class UiMain extends UiServiceLogicBase {
     
     TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
     String twoFactorSecret = twoFactorUserLoggedIn.getTwoFactorSecretTempUnencrypted();
-    String accountSuffix = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.accountSuffix");
-    if (accountSuffix.startsWith("@")) {
-      accountSuffix = TwoFactorServerUtils.prefixOrSuffix(accountSuffix, "@", false);
+
+    String accountSuffix = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.accountSuffix");
+    //# you need an account suffix for qr codes.  e.g. institution.edu
+    //twoFactorServer.accountEl = ${subject.getAttributeValue('pennname')}@test.upenn.edu
+    String accountEl = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.accountEl");
+    if (StringUtils.isBlank(accountSuffix) && StringUtils.isBlank(accountEl)) {
+      throw new RuntimeException("You need to set twoFactorServer.accountSuffix or twoFactorServer.accountEl");
+    }
+    if (!StringUtils.isBlank(accountSuffix) && !StringUtils.isBlank(accountEl)) {
+      throw new RuntimeException("You cant set both twoFactorServer.accountSuffix and twoFactorServer.accountEl");
     }
     if (StringUtils.isBlank(twoFactorUserLoggedIn.getLoginid())) {
       throw new RuntimeException("Why is login blank??? " + twoFactorUserLoggedIn.getUuid());
     }
+    String accountName = null;
+    
+    //this will either be subjectId@accountSuffix, or a custom EL if you want to get your netId in there...
+    
+    if (!StringUtils.isBlank(accountSuffix)) {
+      if (accountSuffix.startsWith("@")) {
+        accountSuffix = TwoFactorServerUtils.prefixOrSuffix(accountSuffix, "@", false);
+      }
+      accountName = twoFactorUserLoggedIn.getLoginid() + "@" + accountSuffix;
+    } else {
+      //else we are doing el
+      Subject subject = SourceManager.getInstance()
+          .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(twoFactorUserLoggedIn.getLoginid(), false);
+
+      Map<String, Object> substituteMap = new HashMap<String, Object>();
+      substituteMap.put("subject", subject);
+      substituteMap.put("twoFactorRequestContainer", TwoFactorRequestContainer.retrieveFromRequest());
+      substituteMap.put("request", TwoFactorFilterJ2ee.retrieveHttpServletRequest());
+      
+      accountName = TwoFactorServerUtils.substituteExpressionLanguage(accountEl, substituteMap, true, true, true);
+
+    }
     //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
-    String uri = "otpauth://totp/" + twoFactorUserLoggedIn.getLoginid() + "@" + accountSuffix + "?secret=" + twoFactorSecret;
+    String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
     TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateQrFile(uri, qrImageFile, qrImageWidth);
 
     TwoFactorServerUtils.sendFileToBrowser(qrImageFile.getAbsolutePath(), false, true, true, null, null, true);

@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorUser;
@@ -29,7 +30,11 @@ import org.openTwoFactor.server.ui.UiServiceLogicBase;
 import org.openTwoFactor.server.ui.beans.TwoFactorHelpLoggingInContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorPhoneForScreen;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.internet2.middleware.subject.Subject;
+import edu.internet2.middleware.subject.provider.SourceManager;
 
 
 
@@ -39,6 +44,9 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 public class UiMainPublic extends UiServiceLogicBase {
 
   
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(UiMainPublic.class);
+
   /**
    * if a user wants their colleagues to opt them out
    * @param httpServletRequest
@@ -433,18 +441,31 @@ public class UiMainPublic extends UiServiceLogicBase {
         String colleagueLoginId = colleagueLoginIds.get(i);
         if (!StringUtils.isBlank(colleagueLoginId)) {
           twoFactorHelpLoggingInContainer.setHasColleagueLoginids(true);
-          //escape it
-          String afterAt = TwoFactorServerUtils.prefixOrSuffix(colleagueLoginId, "@", false);
-          if (!StringUtils.isBlank(afterAt)) {
-            colleagueLoginId = TwoFactorServerUtils.prefixOrSuffix(colleagueLoginId, "@", true);
+
+          //lets resolve and try to get the name
+          String nameToEscape = null;
+          
+          try {
+            Subject subject = SourceManager.getInstance()
+                .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(colleagueLoginId, false);
+
+            if (subject != null) {
+              nameToEscape = subject.getName();
+            }
+          } catch (RuntimeException re) {
+            LOG.error("Error finding subject: " + colleagueLoginId, re);
           }
-          int length = colleagueLoginId.length();
-          if (colleagueLoginId.length() >= 5) {
-            colleagueLoginId = colleagueLoginId.substring(0, 2) + StringUtils.repeat("*", length-2);
-          } else {
-            colleagueLoginId = colleagueLoginId.substring(0, 1) + StringUtils.repeat("*", length-1);
+          if (StringUtils.isBlank(nameToEscape)) {
+            nameToEscape = colleagueLoginId;
+            //escape it
+            String afterAt = TwoFactorServerUtils.prefixOrSuffix(colleagueLoginId, "@", false);
+            if (!StringUtils.isBlank(afterAt)) {
+              colleagueLoginId = TwoFactorServerUtils.prefixOrSuffix(colleagueLoginId, "@", true);
+            }
+            
           }
-          colleagueLoginIds.set(i, colleagueLoginId);
+          nameToEscape = TwoFactorServerUtils.obscureName(nameToEscape);
+          colleagueLoginIds.set(i, nameToEscape);
         }
       }
       twoFactorHelpLoggingInContainer.setColleagueLoginidsForScreen(colleagueLoginIds);

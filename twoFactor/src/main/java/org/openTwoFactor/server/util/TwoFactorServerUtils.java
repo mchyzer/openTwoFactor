@@ -9429,6 +9429,93 @@ public class TwoFactorServerUtils {
   }
 
   /**
+   * <pre>
+   * take a name, and obscure part of it.
+   * if name is Chris Hyzer   then convert to    Ch*** H****
+   * if name is Dr. Jim R. Hopkins   then convert to    Dr. Ji* R. H******
+   * </pre>
+   * @param fullName
+   * @return the obscured name
+   */
+  public static String obscureName(String fullName) {
+    
+    //split names
+    List<String> names = splitTrimToList(fullName, " ");
+    
+    StringBuilder result = new StringBuilder();
+
+    boolean onFirstName = true;
+    
+    for (String namePart: names) {
+      
+      String namePartConverted = obscureNamePart(namePart, onFirstName ? 2 : 1);
+      
+      if (!StringUtils.equals(namePart, namePartConverted)) {
+        onFirstName = false;
+      }
+      
+      if (result.length() > 0) {
+        result.append(" ");
+      }
+      
+      result.append(namePartConverted);
+      
+    }
+    return result.toString();
+  }
+
+  /**
+   * <pre>
+   * take a name, and obscure part of it.
+   * if namePart is Chris, and show 2 chars,   then convert to    Ch***
+   * if name is Dr., and show 2 chars,   then convert to    Dr.
+   * </pre>
+   * @param namePart
+   * @param numberOfCharsToShow
+   * @return the obscured name part
+   */
+  public static String obscureNamePart(String namePart, int numberOfCharsToShow) {
+    
+    //if blank or the number of chars in the name part already fits under the limit
+    if (isBlank(namePart) || namePart.length() <= numberOfCharsToShow) {
+      return namePart;
+    }
+
+    int lengthWithoutTrailingInvalidChars = namePart.length();
+    //lets see how long the name part is without considering invalid chars at the end (e.g. dot)
+    for (int i=namePart.length()-1;i>=0;i--) {
+      
+      Character theChar = namePart.charAt(i);
+      if (theChar.isLetterOrDigit(theChar)) {
+        break;
+      }
+      
+      lengthWithoutTrailingInvalidChars--;
+    }
+    
+    //this is the case where Dr. with length 2 should be returned Dr.
+    if (lengthWithoutTrailingInvalidChars <= numberOfCharsToShow) {
+      return namePart;
+    }
+    
+    //replace letters with asterisks
+    StringBuilder result = new StringBuilder();
+    
+    for (int i=0; i<namePart.length(); i++) {
+      if (i<numberOfCharsToShow) {
+        
+        result.append(namePart.charAt(i));
+        
+      } else {
+        
+        result.append('*');
+        
+      }
+    }
+    return result.toString();
+  }
+  
+  /**
    * make sure a value exists in properties
    * @param resourceName
    * @param key
