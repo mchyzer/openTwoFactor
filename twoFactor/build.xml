@@ -386,6 +386,18 @@
       </then>
     </if>
     <if>
+      <istrue value="${prop.packageProdWs}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="prodWs" />
+          <param name="main.arSuffix" value="ProdWs" />
+          <param name="main.buildToDelete" value="ProdWs.war" />
+          <param name="main.contextRoot" value="${prop.contextRootProdWs}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
       <istrue value="${prop.packageTest}" />
       <then>
         <antcall target="packageEnvHelper">
@@ -393,6 +405,18 @@
           <param name="main.arSuffix" value="Test" />
           <param name="main.buildToDelete" value="Test.war" />
           <param name="main.contextRoot" value="${prop.contextRootTest}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
+      <istrue value="${prop.packageTestWs}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="testWs" />
+          <param name="main.arSuffix" value="WsTest" />
+          <param name="main.buildToDelete" value="WsTest.war" />
+          <param name="main.contextRoot" value="${prop.contextRootTestWs}" />
           <param name="main.buildEar" value="true" />
         </antcall>
       </then>

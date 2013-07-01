@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
 import org.openTwoFactor.server.exceptions.TfAjaxException;
 import org.openTwoFactor.server.ui.beans.TextContainer;
@@ -80,6 +81,11 @@ public class TwoFactorUiServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
   
+    // if the UI should run in this env
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.runUi", true)) {
+      throw new RuntimeException("UI doesnt run in this env per: twoFactorServer.runUi");
+    }
+
     TwoFactorFilterJ2ee.assignHttpServlet(this);
     
     //set the text container

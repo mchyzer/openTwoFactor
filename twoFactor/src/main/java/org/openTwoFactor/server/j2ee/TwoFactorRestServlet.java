@@ -173,6 +173,11 @@ public class TwoFactorRestServlet extends HttpServlet {
   protected void service(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
 
+    // if the WS should run in this env
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.runWs", true)) {
+      throw new RuntimeException("WS doesnt run in this env per: twoFactorServer.runWs");
+    }
+    
     long serviceStarted = System.nanoTime();
 
     request = new TfHttpServletRequest(request);

@@ -19,7 +19,7 @@ public class TimePoc {
     System.out.println(new Date(1372437208564L));
     
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
-    System.out.println(simpleDateFormat.parse("2013/06/26 12:00:00").getTime());
+    System.out.println(simpleDateFormat.parse("2013/06/30 09:00:00").getTime());
     
   }
 
