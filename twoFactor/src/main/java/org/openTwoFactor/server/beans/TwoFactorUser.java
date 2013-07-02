@@ -36,6 +36,8 @@ import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 import edu.internet2.middleware.grouperClient.util.ExpirableCache;
+import edu.internet2.middleware.subject.Source;
+import edu.internet2.middleware.subject.Subject;
 
 
 /**
@@ -44,6 +46,35 @@ import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 @SuppressWarnings("serial")
 public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
+  /** subject source if need to lookup name / description */
+  private Source subjectSource = null;
+
+  /**
+   * subject source if need to lookup name
+   * @param subjectSource1
+   */
+  public void setSubjectSource(Source subjectSource1) {
+    this.subjectSource = subjectSource1;
+  }
+  
+  /**
+   * name from subject source, or if not found, the loginid
+   * 
+   * @return the name from subject source, or if not found, the loginid
+   */
+  public String getName() {
+    //TODO cache this somewhere
+    if (this.subjectSource != null) {
+      Subject subject = this.subjectSource.getSubjectByIdOrIdentifier(this.getLoginid(), false);
+      if (subject != null) {
+        if (!StringUtils.isBlank(subject.getName())) {
+          return subject.getName();
+        }
+      }
+    }
+    return this.getLoginid();
+  }
+  
   /**
    * number of inserts and updates
    */

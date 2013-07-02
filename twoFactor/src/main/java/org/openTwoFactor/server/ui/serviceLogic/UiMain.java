@@ -587,12 +587,14 @@ public class UiMain extends UiServiceLogicBase {
 
     String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOn");
 
+    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+
     optOutColleagueLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn);
+        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn, subjectSource);
 
     showJsp("helpColleague.jsp");
-    
+
   }
 
   /**
@@ -603,10 +605,11 @@ public class UiMain extends UiServiceLogicBase {
    * @param ipAddress 
    * @param userAgent 
    * @param userIdOperatingOn 
+   * @param subjectSource
    */
   public void optOutColleagueLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final String userIdOperatingOn) {
+      final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
     
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
@@ -678,7 +681,7 @@ public class UiMain extends UiServiceLogicBase {
 
     helpColleagueLogic(twoFactorDaoFactory, 
         twoFactorRequestContainer,
-        loggedInUser);
+        loggedInUser, subjectSource);
 
   }
 
@@ -693,8 +696,10 @@ public class UiMain extends UiServiceLogicBase {
 
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
 
+    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+
     helpColleagueLogic(TwoFactorDaoFactory.getFactory(), 
-        twoFactorRequestContainer, loggedInUser);
+        twoFactorRequestContainer, loggedInUser, subjectSource);
     
     showJsp("helpColleague.jsp");
     
@@ -708,7 +713,7 @@ public class UiMain extends UiServiceLogicBase {
    */
   public void helpColleagueLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
-      final String loggedInUser) {
+      final String loggedInUser, Source subjectSource) {
     
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
     
@@ -720,6 +725,7 @@ public class UiMain extends UiServiceLogicBase {
     for (int i=0;i<TwoFactorServerUtils.length(usersWhoPickedThisUserToOptOut);i++) {
       TwoFactorUser current = usersWhoPickedThisUserToOptOut.get(i);
       current = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, current.getLoginid());
+      current.setSubjectSource(subjectSource);
       usersWhoPickedThisUserToOptOut.set(i, current);
     }
     

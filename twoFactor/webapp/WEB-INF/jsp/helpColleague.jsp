@@ -43,7 +43,7 @@ ${textContainer.text['helpFriendParagraph2'] }
               
               </c:when>
               <c:otherwise>
-                 ${ fn:escapeXml(colleagueIdentifiedUser.loginid) } ${textContainer.text['helpFriendNotRequestedSuffix']}
+                 <b>${ fn:escapeXml(colleagueIdentifiedUser.name) }</b> ${textContainer.text['helpFriendNotRequestedSuffix']}
               </c:otherwise>
             </c:choose>
             <br />            
