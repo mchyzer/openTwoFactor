@@ -121,19 +121,6 @@ public class TwoFactorUiServlet extends HttpServlet {
       if (!classAndMethodName.matches("^[a-zA-Z0-9]+\\.[a-zA-Z0-9]+$")) {
         throw new RuntimeException("Invalid class and method name: '" + classAndMethodName + "'");
       }
-  
-      //I think we are all post all the time, right?  ok, most of the time
-      if (!StringUtils.equalsIgnoreCase("post", request.getMethod() )) {
-        if (!operationsOkGet.contains(classAndMethodName)) {
-          String errorMessage = "Cant process method: " + request.getMethod() + " for operation: " + classAndMethodName + ", do not bookmark, hit the back button or refresh";
-          LOG.info(errorMessage);
-          TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
-          twoFactorRequestContainer.setError(errorMessage);
-
-          new UiMainPublic().index(request, response);
-          return;
-        }
-      }
       
       String className = TwoFactorServerUtils.prefixOrSuffix(classAndMethodName, ".", true);
       
@@ -141,6 +128,11 @@ public class TwoFactorUiServlet extends HttpServlet {
       className = UiMain.class.getPackage().getName() + "." + className;
       
       Class logicClass = TwoFactorServerUtils.forName(className);
+
+      boolean realmUnprotectedUi = false;
+      boolean realmPublicUi = false;
+      boolean realmUi = false;
+      boolean realmAdminUi = false;
       
       //lets check security
       //    /twoFactorMchyzer/twoFactorUi/app/UiMain.userAudits
@@ -155,21 +147,49 @@ public class TwoFactorUiServlet extends HttpServlet {
         //lets check
         if (StringUtils.equals(servlet, "twoFactorUnprotectedUi")) {
           ok = UiMainUnprotected.class.equals(logicClass);
+          realmUnprotectedUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorPublicUi")) {
           ok = UiMainPublic.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
+          realmPublicUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorUi")) {
           ok = UiMain.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
+          realmUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorAdminUi")) {
           ok = UiMainAdmin.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
+          realmAdminUi = true;
         }
         if (!ok) {
           throw new RuntimeException("The servlet does not match the logic class: " + servlet + ", " + logicClass.getSimpleName());
         }
       }
+
       
+      //I think we are all post all the time, right?  ok, most of the time
+      if (!StringUtils.equalsIgnoreCase("post", request.getMethod() )) {
+        if (!operationsOkGet.contains(classAndMethodName)) {
+          String errorMessage = "Cant process method: " + request.getMethod() + " for operation: " + classAndMethodName + ", do not bookmark, hit the back button or refresh";
+          LOG.info(errorMessage);
+          TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+          twoFactorRequestContainer.setError(errorMessage);
+          
+          new UiMainUnprotected().index(request, response);
+          //go to the admin page in that realm
+          //if (realmAdminUi) {
+          //  new UiMainAdmin().adminIndex(request, response);
+          //} else if (realmPublicUi) {
+          //  new UiMainPublic().index(request, response);
+          //} else if (realmUi) {
+          //  new UiMain().index(request, response);
+          //} else {
+          //  new UiMainUnprotected().index(request, response);
+          //}
+          return;
+        }
+      }
+
       String methodName = null;
       
       try {
