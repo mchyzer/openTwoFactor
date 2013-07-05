@@ -4,7 +4,10 @@
  */
 package org.openTwoFactor.server.util;
 
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.cache.TwoFactorCache;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 
 import edu.internet2.middleware.subject.Source;
@@ -17,7 +20,94 @@ import edu.internet2.middleware.subject.provider.SourceManager;
  */
 public class TfSourceUtils {
 
+  /**
+   * cache the source, and subjectIdOrIdentifier, to the subject
+   */
+  private static TwoFactorCache<MultiKey, Subject> subjectIdOrIdentifierToSubject = new TwoFactorCache<MultiKey, Subject>(
+       TfSourceUtils.class.getName() + ".subjectIdOrIdentifierToSubject");
+
+  /**
+   * resolve a subject by id or identifier
+   * @param subject
+   * @return the subject
+   */
+  public static String retrieveEmail(Subject subject) {
+    
+    return subject == null ? null : subject.getAttributeValueSingleValued("email");
+    
+  }
+    
+
+  /**
+   * resolve a subject by id or identifier
+   * @param source
+   * @param subjectIdOrIdentifier
+   * @param exceptionIfNotFound
+   * @return the subject
+   */
+  public static Subject retrieveSubjectByIdOrIdentifier(Source source, String subjectIdOrIdentifier, 
+      boolean okToReadFromCache, boolean exceptionIfNotFound) {
+
+    if (source == null) {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("source is null when looking up: '" + subjectIdOrIdentifier + "', stack: " 
+            + TwoFactorServerUtils.getFullStackTrace(new RuntimeException()));
+      }
+      return null;
+    }
+    
+    MultiKey multiKey = new MultiKey(source.getId(), subjectIdOrIdentifier);
+    
+    Subject subject = okToReadFromCache ? subjectIdOrIdentifierToSubject.get(multiKey) : null;
+
+    if (subject != null) {
+      return subject;
+    }
+    subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound);
+        
+    if (subject == null) {
+      return null;
+    }
+    //even if you arent reading from cache, you can put it back to cache
+    synchronized (TfSourceUtils.class) {
+      subjectIdOrIdentifierToSubject.put(multiKey, subject);      
+    }
+    
+    return subject;
+    
+  }
   
+  /**
+   * cache the logins in a hash cache
+   */
+  private static TwoFactorCache<String, String> principalToLoginId = new TwoFactorCache<String, String>(
+      TfSourceUtils.class.getName() + ".principalToLoginId");
+
+  /**
+   * resolve a subject id or netid into a subject id
+   * @param idOrIdentifier the subject id or eppn
+   * @return the resolved subject id
+   */
+  public static String resolveSubjectId(String idOrIdentifier) {
+
+    String subjectId = principalToLoginId.get(idOrIdentifier);
+    if (StringUtils.isBlank(subjectId)) {
+      
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
+          .getSource(TfSourceUtils.SOURCE_NAME), idOrIdentifier, true, true);
+      
+      subjectId = subject.getId();
+
+      if (StringUtils.isBlank(subjectId)) {
+        throw new RuntimeException("subjectId is blank for id: '" + idOrIdentifier + "'");
+      }
+      
+      principalToLoginId.put(idOrIdentifier, subjectId);
+      
+    }
+    return subjectId;
+  }
+
   
   /**
    * convert from subject to description
@@ -52,7 +142,7 @@ public class TfSourceUtils {
     
     for (Subject subject : SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME).searchPage("harvey active=all").getResults()) {
       System.out.println(subject.getName() + ", " + subject.getAttributeValue(emailAttributeName) 
-          + ", " + subject.getId() + ", " + subject.getAttributeValue("pennkey")
+          + ", " + subject.getId() + ", " + subject.getAttributeValue("pennname")
           + ", " + subject.getDescription() + ", active=" + subject.getAttributeValue("active"));
     }
     
@@ -62,7 +152,7 @@ public class TfSourceUtils {
 //      .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier("10021368", false);
 //
 //    System.out.println(subject.getName() + ", " + subject.getAttributeValue(emailAttributeName) 
-//        + ", " + subject.getId() + ", " + subject.getAttributeValue("pennkey")
+//        + ", " + subject.getId() + ", " + subject.getAttributeValue("pennname")
 //        + ", " + subject.getDescription() + ", active=" + subject.getAttributeValue("active"));
 
   }
@@ -96,6 +186,9 @@ public class TfSourceUtils {
     Source source = SourceManager.getInstance().getSource(SOURCE_NAME);
     return source.getInitParam("emailAttributeName");
   }
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(TfSourceUtils.class);
 
   
 }

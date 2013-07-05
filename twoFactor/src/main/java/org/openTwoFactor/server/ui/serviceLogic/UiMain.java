@@ -21,6 +21,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
@@ -30,6 +31,7 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dojo.DojoComboDataResponse;
 import org.openTwoFactor.server.dojo.DojoComboDataResponseItem;
+import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
@@ -49,6 +51,7 @@ import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
+import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 import edu.internet2.middleware.subject.provider.SourceManager;
@@ -58,6 +61,9 @@ import edu.internet2.middleware.subject.provider.SourceManager;
  * UI main 
  */
 public class UiMain extends UiServiceLogicBase {
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(UiMain.class);
 
   /**
    * main page
@@ -116,9 +122,9 @@ public class UiMain extends UiServiceLogicBase {
     
     if (isLookup) {
 
-      Subject subject = SourceManager.getInstance()
-          .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(query, false);
-        
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
+          .getSource(TfSourceUtils.SOURCE_NAME), query, true, false);
+                  
       if (subject != null) {
         subjects.add(subject);
       }
@@ -270,7 +276,8 @@ public class UiMain extends UiServiceLogicBase {
     if (subjectSource != null) {
       
       //resolve subject
-      Subject subject = subjectSource.getSubjectByIdOrIdentifier(twoFactorUser.getLoginid(), false);
+      Subject subject =  TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+          twoFactorUser.getLoginid(), true, false);
       if (subject != null) {
         
         //try the description, then the name
@@ -466,9 +473,11 @@ public class UiMain extends UiServiceLogicBase {
 
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
 
+    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+
     optoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"));
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
     
     showJsp("twoFactorIndex.jsp");
   }
@@ -534,8 +543,8 @@ public class UiMain extends UiServiceLogicBase {
       accountName = twoFactorUserLoggedIn.getLoginid() + "@" + accountSuffix;
     } else {
       //else we are doing el
-      Subject subject = SourceManager.getInstance()
-          .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(twoFactorUserLoggedIn.getLoginid(), false);
+      Subject subject =  TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
+          .getSource(TfSourceUtils.SOURCE_NAME), twoFactorUserLoggedIn.getLoginid(), true, false);
 
       Map<String, Object> substituteMap = new HashMap<String, Object>();
       substituteMap.put("subject", subject);
@@ -566,9 +575,11 @@ public class UiMain extends UiServiceLogicBase {
 
     String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
 
+    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+    
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), twoFactorPass);
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource);
 
     showJsp(optinTestSubmitView.getJsp());
 
@@ -817,14 +828,15 @@ public class UiMain extends UiServiceLogicBase {
    * @param userAgent 
    * @param loggedInUser
    * @param twoFactorPass 
+   * @param subjectSource
    * @return error message if there is one and jsp
    */
   public OptinTestSubmitView optinTestSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final String twoFactorPass) {
+      final String userAgent, final String twoFactorPass, final Source subjectSource) {
     
-    return (OptinTestSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+    OptinTestSubmitView result =  (OptinTestSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
@@ -833,6 +845,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
       
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
         
         String twoFactorSecret = twoFactorUser.getTwoFactorSecretTempUnencrypted();
         
@@ -884,6 +898,68 @@ public class UiMain extends UiServiceLogicBase {
         return OptinTestSubmitView.optinSuccess;
       }
     });
+    
+    String userEmail = null;
+    try {
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptin", true)) {
+        
+        Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        
+        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
+        subject = TextContainer.massageText("emailOptInSubject", subject);
+
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInBody");
+        body = TextContainer.massageText("emailOptInBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+          emailAddressFromDatabase = null;
+        }
+        
+        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
+
+        boolean sendEmail = true;
+        
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
+    }
+    
+    
+    return result;
   }
 
   /**
@@ -893,10 +969,11 @@ public class UiMain extends UiServiceLogicBase {
    * @param ipAddress 
    * @param userAgent 
    * @param loggedInUser
+   * @param subjectSource
    */
   public void optoutLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent) {
+      final String userAgent, final Source subjectSource) {
     
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
@@ -907,6 +984,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
       
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
         
         twoFactorUser.setTwoFactorSecretTemp(null);
         String resultMessage = null;
@@ -936,6 +1015,68 @@ public class UiMain extends UiServiceLogicBase {
         return resultMessage;
       }
     });
+    
+    
+    String userEmail = null;
+    try {
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptout", true)) {
+        
+        Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        
+        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutSubject");
+        subject = TextContainer.massageText("emailOptOutSubject", subject);
+
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutBody");
+        body = TextContainer.massageText("emailOptOutBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optouts");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+          emailAddressFromDatabase = null;
+        }
+        
+        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
+        
+        boolean sendEmail = true;
+        
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
+    }
+
+    
   }
 
 
@@ -1081,7 +1222,8 @@ public class UiMain extends UiServiceLogicBase {
     if (StringUtils.isBlank(twoFactorUser.getEmail0()) && subjectSource != null) {
       
       //resolve subject
-      Subject subject = subjectSource.getSubjectByIdOrIdentifier(loggedInUser, false);
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+          loggedInUser, true, false);
       if (subject != null) {
         twoFactorProfileContainer.setEmail0(subject.getAttributeValueSingleValued("email"));
         
@@ -1107,7 +1249,8 @@ public class UiMain extends UiServiceLogicBase {
         if (colleagueUser != null) {
           twoFactorProfileContainer.setColleagueLogin0(colleagueUser.getLoginid());
           
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(colleagueUser.getLoginid(), false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription0(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
 
         }
@@ -1121,7 +1264,8 @@ public class UiMain extends UiServiceLogicBase {
         if (colleagueUser != null) {
           twoFactorProfileContainer.setColleagueLogin1(colleagueUser.getLoginid());
 
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(colleagueUser.getLoginid(), false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription1(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
 
         }
@@ -1135,7 +1279,8 @@ public class UiMain extends UiServiceLogicBase {
         if (colleagueUser != null) {
           twoFactorProfileContainer.setColleagueLogin2(colleagueUser.getLoginid());
           
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(colleagueUser.getLoginid(), false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription2(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
 
         }
@@ -1149,7 +1294,8 @@ public class UiMain extends UiServiceLogicBase {
         if (colleagueUser != null) {
           twoFactorProfileContainer.setColleagueLogin3(colleagueUser.getLoginid());
           
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(colleagueUser.getLoginid(), false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription3(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
 
         }
@@ -1162,7 +1308,8 @@ public class UiMain extends UiServiceLogicBase {
         if (colleagueUser != null) {
           twoFactorProfileContainer.setColleagueLogin4(colleagueUser.getLoginid());
           
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(colleagueUser.getLoginid(), false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription4(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
 
         }
@@ -1313,7 +1460,9 @@ public class UiMain extends UiServiceLogicBase {
         if (StringUtils.isBlank(twoFactorProfileContainer.getEmail0()) && subjectSource != null) {
           
           //resolve subject
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(loggedInUser, false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              loggedInUser, true, false);
+
           if (subject != null) {
             
             twoFactorProfileContainer.setEmail0(subject.getAttributeValueSingleValued("email"));
@@ -1661,7 +1810,8 @@ public class UiMain extends UiServiceLogicBase {
         } else {
 
           //if not editable, get from the subject source
-          Subject subject = subjectSource.getSubjectByIdOrIdentifier(loggedInUser, false);
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              loggedInUser, true, false);
           if (subject != null) {
             hasEmail = !StringUtils.isBlank(subject.getAttributeValueSingleValued("email"));
           }

@@ -446,8 +446,8 @@ public class UiMainPublic extends UiServiceLogicBase {
           String nameToEscape = null;
           
           try {
-            Subject subject = SourceManager.getInstance()
-                .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(colleagueLoginId, false);
+            Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
+                .getSource(TfSourceUtils.SOURCE_NAME), colleagueLoginId, true, false);
 
             if (subject != null) {
               nameToEscape = subject.getName();

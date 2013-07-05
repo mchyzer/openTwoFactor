@@ -26,7 +26,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/hibernate-jpa-2.0-api.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/p6spy.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/jta.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/twoFactor/ojdbc14.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/antlr.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/mysql-connector-java-bin.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/standard.jar"/>
@@ -45,5 +44,10 @@
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/morphString.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-httpclient.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/mail.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/httpclient-4.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/httpcore-4.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/ojdbc6_g.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/twilio-java-sdk-3.3.15.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/twilioDeps.jar"/>
 	<classpathentry kind="output" path="webapp/WEB-INF/classes"/>
 </classpath>

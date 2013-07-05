@@ -205,7 +205,7 @@ public class TwoFactorUiServlet extends HttpServlet {
         TwoFactorServerUtils.printToScreen("Problem with request", null, true, true);
       }
     } else {
-      String error = "Error: cant find logic to execute";
+      String error = "Error: cant find logic to execute: " + request.getRequestURI();
       
       LOG.error(error);
       TwoFactorServerUtils.printToScreen(error, null, true, true);

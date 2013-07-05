@@ -4,6 +4,9 @@
  */
 package org.openTwoFactor.server.daemon;
 
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -77,9 +80,63 @@ public class DaemonController {
         return;
       }
       try {
-        scheduleDaemon(TfAuditClearingJob.class);
-        scheduleDaemon(TfDeletedClearingJob.class);
+        //maybe we dont run on this server...
+        //# if this is true, then dont run daemons here
+        //twoFactorServer.dontRunDaemonsHere = false
+        
+        //# if we arent restricting daemons in twoFactorServer.dontRunDaemonsHere, then if server
+        //# names are listed here, then only run on this server
+        //twoFactorServer.runOnlyOnServerNames = fasttest-small-d-01
+        
+        boolean runDaemons = true;
+        
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.dontRunDaemonsHere", false)) {
           
+          LOG.warn("Daemons dont run here since this is set in twoFactor.server properties file overlay: " +
+          		"twoFactorServer.dontRunDaemonsHere, hostname: " + TwoFactorServerUtils.hostname());
+
+          runDaemons = false;
+        }
+
+        if (runDaemons) {
+          
+          String serverNamesString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.runOnlyOnServerNames");
+          
+          if (!StringUtils.isBlank(serverNamesString)) {
+            
+            List<String> serverNamesList = TwoFactorServerUtils.splitTrimToList(serverNamesString, ",");
+            runDaemons = false;
+            for (String serverName : serverNamesList) {
+              
+              if (StringUtils.equalsIgnoreCase(serverName, TwoFactorServerUtils.hostname())) {
+                
+                runDaemons = true;
+                LOG.warn("Daemons running since " + serverName + "  is in the list of allowed servernames from twoFactor.server config file: " +
+                		"twoFactorServer.runOnlyOnServerNames: " + serverNamesString );
+                break;
+                
+              }
+              
+            }
+            
+            if (!runDaemons) {
+
+              LOG.warn("Daemons dont run here since " + TwoFactorServerUtils.hostname() + " is not in the list of allowed servernames " +
+              		"from twoFactor.server config file: " +
+                  "twoFactorServer.runOnlyOnServerNames: " + serverNamesString );
+              
+            }
+            
+          }
+          
+          
+        }
+        
+        if (runDaemons) {
+          scheduleDaemon(TfAuditClearingJob.class);
+          scheduleDaemon(TfDeletedClearingJob.class);
+        }
+        
         scheduledJobs = true;
       } catch (Throwable t) {
         LOG.error("Error scheduling jobs once", t);

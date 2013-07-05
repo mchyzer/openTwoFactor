@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.log4j.NDC;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
-import org.openTwoFactor.server.subject.TfSubjectIdResolver;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import org.openTwoFactor.server.ws.corebeans.TfResultProblem;
@@ -90,7 +89,7 @@ public class TwoFactorRestServlet extends HttpServlet {
 
     //see if we need to resolve the subject id
     if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnWsLogin", true)) {
-      userIdLoggedIn = TfSubjectIdResolver.resolveSubjectId(userIdLoggedIn);
+      userIdLoggedIn = TfSourceUtils.resolveSubjectId(userIdLoggedIn);
     }
     
     //puts it in the log4j ndc context so userid is logged
@@ -445,8 +444,8 @@ public class TwoFactorRestServlet extends HttpServlet {
           if (!StringUtils.isBlank(subjectAttributeName)) {
             
             try {
-              Subject subject = SourceManager.getInstance()
-                  .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier(username, false);
+              Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(
+                  SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME), username, true, false);
 
               if (subject != null) {
                 String attributeValue = subject.getAttributeValue(subjectAttributeName);

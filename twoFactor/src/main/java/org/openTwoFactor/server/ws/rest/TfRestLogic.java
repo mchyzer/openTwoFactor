@@ -17,7 +17,7 @@ import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
-import org.openTwoFactor.server.subject.TfSubjectIdResolver;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordRequest;
@@ -121,13 +121,13 @@ public class TfRestLogic {
     }
 
     {
-      //username: pennkey of the authenticated user
+      //username: pennname of the authenticated user
       String username = params.get("username");
       
       //see if we need to resolve the subject id
       if (!StringUtils.isBlank(username) 
           && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiBackdoorLogin", true)) {
-        username = TfSubjectIdResolver.resolveSubjectId(username);
+        username = TfSourceUtils.resolveSubjectId(username);
       }
       
       tfCheckPasswordRequest.assignUsername(username);

@@ -53,6 +53,18 @@ public class TextContainer {
   private static String textValue(String key) {
     TwoFactorTextConfig twoFactorTextConfig = TwoFactorTextConfig.retrieveTextConfig();
     String value = twoFactorTextConfig.propertyValueString(key);
+    value = massageText(key, value);
+    return value;
+
+  }
+
+  /**
+   * massage text with substitutions etc
+   * @param key
+   * @param value
+   * @return the text
+   */
+  public static String massageText(String key, String value) {
     if (StringUtils.isBlank(value)) {
       LOG.error("Cant find text for variable: '" + key + "'");
       return "$$not found: " + key + "$$";
@@ -66,11 +78,9 @@ public class TextContainer {
       substituteMap.put("textContainer", TextContainer.retrieveFromRequest());
       value = TwoFactorServerUtils.substituteExpressionLanguage(value, substituteMap, true, false, false);
     }
-    
     return value;
-
   }
-
+  
   /**
    * escape single quotes in javascript
    * @param string
@@ -98,6 +108,7 @@ public class TextContainer {
   /**
    * text map
    */
+  @SuppressWarnings("serial")
   private Map<String, String> textMap = new HashMap<String, String>() {
 
     /**
@@ -113,6 +124,7 @@ public class TextContainer {
   /**
    * text map
    */
+  @SuppressWarnings("serial")
   private Map<String, String> textEscapeSingleMap = new HashMap<String, String>() {
 
     /**
@@ -128,6 +140,7 @@ public class TextContainer {
   /**
    * text map
    */
+  @SuppressWarnings("serial")
   private Map<String, String> textEscapeXmlMap = new HashMap<String, String>() {
 
     /**
@@ -143,6 +156,7 @@ public class TextContainer {
   /**
    * text map
    */
+  @SuppressWarnings("serial")
   private Map<String, String> textEscapeDoubleMap = new HashMap<String, String>() {
 
     /**
@@ -158,6 +172,7 @@ public class TextContainer {
   /**
    * text map
    */
+  @SuppressWarnings("serial")
   private Map<String, String> textEscapeSingleDoubleMap = new HashMap<String, String>() {
 
     /**

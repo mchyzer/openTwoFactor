@@ -127,7 +127,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.admin;
         }
         
-        Subject subject = subjectSource.getSubjectByIdOrIdentifier(userIdOperatingOn, false);
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false);
 
         TwoFactorUser twoFactorUserOperatingOn = null;
 
@@ -250,7 +251,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.admin;
         }
 
-        Subject subject = subjectSource.getSubjectByIdOrIdentifier(userIdOperatingOn, false);
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false);
         String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {
@@ -351,7 +353,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.admin;
         }
 
-        Subject subject = subjectSource.getSubjectByIdOrIdentifier(userIdOperatingOn, false);
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false);
         String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {

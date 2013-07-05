@@ -73,7 +73,7 @@
     statistics="false"
   />
 
-  <cache name="org.openTwoFactor.server.subject.TfSubjectIdResolver.principalToLoginId"
+  <cache name="org.openTwoFactor.server.util.TfSourceUtils.principalToLoginId"
     maxElementsInMemory="10000"
     eternal="false"
     timeToIdleSeconds="300"
@@ -81,5 +81,16 @@
     overflowToDisk="false"
     statistics="false"
   />
+
+  <cache name="org.openTwoFactor.server.util.TfSourceUtils.subjectIdOrIdentifierToSubject"
+    maxElementsInMemory="10000"
+    eternal="false"
+    timeToIdleSeconds="300"
+    timeToLiveSeconds="300"
+    overflowToDisk="false"
+    statistics="false"
+  />
+
+
 
 </ehcache>

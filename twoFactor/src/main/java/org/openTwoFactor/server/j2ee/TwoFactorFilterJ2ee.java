@@ -23,7 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
-import org.openTwoFactor.server.subject.TfSubjectIdResolver;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -119,7 +119,7 @@ public class TwoFactorFilterJ2ee implements Filter {
     //see if we need to resolve the subject id
     if (fromUi && !StringUtils.isBlank(principalName) 
         && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiLogin", true)) {
-      principalName = TfSubjectIdResolver.resolveSubjectId(principalName);
+      principalName = TfSourceUtils.resolveSubjectId(principalName);
     }
     
     return principalName;
@@ -161,7 +161,7 @@ public class TwoFactorFilterJ2ee implements Filter {
           
           //see if we need to resolve the subject id
           if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiBackdoorLogin", true)) {
-            urlActAsLoginid = TfSubjectIdResolver.resolveSubjectId(urlActAsLoginid);
+            urlActAsLoginid = TfSourceUtils.resolveSubjectId(urlActAsLoginid);
           }
 
           httpSession.setAttribute("twoFactorActAsUserId", urlActAsLoginid);
