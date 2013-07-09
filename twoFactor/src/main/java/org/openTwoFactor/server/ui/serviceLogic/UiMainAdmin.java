@@ -126,7 +126,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
         TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
         
         twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
         //make sure user is an admin
         if (!twoFactorUserUsingApp[0].isAdmin()) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
@@ -171,6 +173,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserGettingOptedOut[0]);
  
         twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
+        twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
         
         if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
           
@@ -335,7 +338,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
         TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
         
         TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-
+        
+        twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+        
         //make sure user is an admin
         if (!twoFactorUserLoggedIn.isAdmin()) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
@@ -352,6 +357,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
             userIdOperatingOn, true, false);
+        
+        twoFactorAdminContainer.setSubjectOperatingOn(subject);
+        
         String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {
@@ -375,6 +383,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.admin;
         }
         
+        twoFactorUserOperatingOn.setSubjectSource(subjectSource);
+
         //we found a user!
         twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserOperatingOn);
 
@@ -437,7 +447,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
         TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
 
         TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-
+        twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+        
         //make sure user is an admin
         if (!twoFactorUserLoggedIn.isAdmin()) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
@@ -477,7 +488,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.admin;
         }
 
-        
+        twoFactorUserOperatingOn.setSubjectSource(subjectSource);
         
         //we found a user!
         twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserOperatingOn);
@@ -510,6 +521,10 @@ public class UiMainAdmin extends UiServiceLogicBase {
           
           
         }
+        
+        UiMain.auditHelper(twoFactorDaoFactory, twoFactorRequestContainer, 
+            twoFactorUserOperatingOn, subjectSource);
+        
         twoFactorRequestContainer.getTwoFactorUntrustBrowserContainer().setNumberOfBrowsers(TwoFactorServerUtils.length(twoFactorBrowsers));
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminUntrustBrowserSuccess"));
           

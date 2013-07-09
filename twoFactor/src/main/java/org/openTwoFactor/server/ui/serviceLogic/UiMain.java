@@ -649,6 +649,9 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
         
         twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+
         
         //if invalid uuid, something fishy is going on
         if(!alphaNumericMatcher.matcher(userIdOperatingOn).matches()) {
@@ -660,7 +663,11 @@ public class UiMain extends UiServiceLogicBase {
         if (twoFactorUserGettingOptedOut[0] == null) {
           throw new RuntimeException("Why is uuid not found??? '" + userIdOperatingOn + "'");
         }
-        
+
+        twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setTwoFactorUserFriend(twoFactorUserGettingOptedOut[0]); 
+
+        twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+
         //make sure they have allowed people to opt them out
         if (!twoFactorUserGettingOptedOut[0].isInvitedColleaguesWithinAllottedTime()) {
           
@@ -721,9 +728,7 @@ public class UiMain extends UiServiceLogicBase {
     String userEmailLoggedIn = null;
     String userEmailColleague = null;
     try {
-      
-      twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setTwoFactorUserFriend(twoFactorUserGettingOptedOut[0]); 
-      
+            
       twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
       twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
       

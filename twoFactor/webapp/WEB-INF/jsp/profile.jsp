@@ -1,7 +1,7 @@
 <%@ include file="../assetsJsp/commonTop.jsp"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
 
-<title>Two Factor profile</title>
+<title>${textContainer.text['profileTitle'] }</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 

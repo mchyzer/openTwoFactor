@@ -8,6 +8,8 @@ import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 
+import edu.internet2.middleware.subject.Subject;
+
 
 
 /**
@@ -36,6 +38,27 @@ public class TwoFactorAdminContainer {
     return TwoFactorFilterJ2ee.allowedToActAsOtherUsers();
   }
   
+  /**
+   * subject operating on
+   */
+  private Subject subjectOperatingOn;
+  
+  /**
+   * subject operating on
+   * @return subject operating on
+   */
+  public Subject getSubjectOperatingOn() {
+    return this.subjectOperatingOn;
+  }
+
+  /**
+   * subject operating on
+   * @param subjectOperatingOn1
+   */
+  public void setSubjectOperatingOn(Subject subjectOperatingOn1) {
+    this.subjectOperatingOn = subjectOperatingOn1;
+  }
+
   /**
    * the user being operated on
    */
