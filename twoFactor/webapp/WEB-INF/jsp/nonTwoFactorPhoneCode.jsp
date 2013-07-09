@@ -22,31 +22,6 @@
   ${textContainer.text['phoneCodeParagraph1']}
   
   <%@ include file="../assetsJsp/commonError.jsp"%>
-<%--
-    <c:choose>
-      <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
-
-        Note: Only the last verification code sent to you will work.  And this it will only work for a few minutes.
-        <br /><br />
-        <form action="UiMainPublic.phoneCodeSubmit" method="post">
-          <div class="formBox">
-            <div class="formRow">
-              <div class="formLabel" style="white-space: nowrap; text-align: right"><b><label for="twoFactorCode">Code sent to phone</label></b></div>
-              <div class="formValue"><input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" /></div>
-              <div class="formFooter">&nbsp;</div>
-            </div>
-          </div>
-          <br />
-          <input value="Submit" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
-            type="submit" onclick="if (document.getElementById('twoFactorCustomCodeId').value != null && document.getElementById('twoFactorCustomCodeId').value != '') {alert('If you enter a custom secret, you must click the button: Submit custom secret'); return false; }" />
-        </form>
-
-      </c:when>
-      <c:otherwise>
-        You are not currently enrolled in this service.
-      </c:otherwise>  
-    </c:choose> --%>
     <br /><br /><br />
     <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"

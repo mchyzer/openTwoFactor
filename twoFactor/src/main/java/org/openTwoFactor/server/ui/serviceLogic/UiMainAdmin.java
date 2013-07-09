@@ -140,7 +140,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
           return AdminSubmitView.admin;
         }
-        
+
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
             userIdOperatingOn, true, false);
 

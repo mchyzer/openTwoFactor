@@ -8,6 +8,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
@@ -94,7 +96,7 @@ public class UiMain extends UiServiceLogicBase {
     //https://server.url/twoFactorMchyzer/twoFactorUi/app/UiMain.personPicker?name=ab*&start=0&count=Infinity
 
 //    TwoFactorServerUtils.printToScreen("{\"label\":\"name\", \"identifier\":\"id\",\"items\":[{\"id\":\"10021368\",\"name\":\"Chris Hyzer (mchyzer, 10021368) (active) Staff - Astt And Information Security - Application Architect (also: Alumni)\"},{\"id\":\"10193029\",\"name\":\"Chyze-Whee Ang (angcw, 10193029) (active) Alumni\"}]}", "application/json", false, false);
-         
+
     boolean filteringInactives = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.filteringInactives", false);
     
     String query = TwoFactorServerUtils.defaultString(httpServletRequest.getParameter("id"));
@@ -127,6 +129,7 @@ public class UiMain extends UiServiceLogicBase {
           .getSource(TfSourceUtils.SOURCE_NAME), query, true, false);
                   
       if (subject != null) {
+        
         subjects.add(subject);
       }
 
@@ -141,7 +144,7 @@ public class UiMain extends UiServiceLogicBase {
             .getSource(TfSourceUtils.SOURCE_NAME).searchPage(query).getResults()));
         
         //dont filter inactive if not need to
-        if (filteringInactives && allowInactives) {
+        if (filteringInactives && !allowInactives) {
           
           String queryPrepend = 
             SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME).getInitParam("statusLabel") + "="
@@ -160,29 +163,41 @@ public class UiMain extends UiServiceLogicBase {
       DojoComboDataResponseItem dojoComboDataResponseItem = new DojoComboDataResponseItem(null, 
           TextContainer.retrieveFromRequest().getText().get("comboNotEnoughChars"));
       dojoComboDataResponse = new DojoComboDataResponse(TwoFactorServerUtils.toList(dojoComboDataResponseItem));
-      
-    } else if (subjects.size() == 0) {
-      dojoComboDataResponse = new DojoComboDataResponse();
     } else {
-      
-      List<DojoComboDataResponseItem> items = new ArrayList<DojoComboDataResponseItem>();
 
-      //convert subject to item
-      for (Subject subject : subjects) {
-        
-        //description could be null?
-        String description = TfSourceUtils.subjectDescription(subject, null);
-        
-        DojoComboDataResponseItem item = new DojoComboDataResponseItem(subject.getId(), description);
-        items.add(item);
-        
+      if (subjects.size() > 0 && filteringInactives && !allowInactives) {
+        //filter out inactives
+        Iterator<Subject> iterator = subjects.iterator();
+        while (iterator.hasNext()) {
+          Subject subject = iterator.next();
+          if (!TfSourceUtils.subjectIsActive(subject)) {
+            iterator.remove();
+          }
+        }
       }
       
-      dojoComboDataResponse = new DojoComboDataResponse(
-        TwoFactorServerUtils.toArray(items, DojoComboDataResponseItem.class));
-
-    }  
-
+      if (subjects.size() == 0) {
+        dojoComboDataResponse = new DojoComboDataResponse();
+      } else {
+        
+        List<DojoComboDataResponseItem> items = new ArrayList<DojoComboDataResponseItem>();
+  
+        //convert subject to item
+        for (Subject subject : subjects) {
+          
+          //description could be null?
+          String description = TfSourceUtils.subjectDescription(subject, null);
+          
+          DojoComboDataResponseItem item = new DojoComboDataResponseItem(subject.getId(), description);
+          items.add(item);
+          
+        }
+        
+        dojoComboDataResponse = new DojoComboDataResponse(
+          TwoFactorServerUtils.toArray(items, DojoComboDataResponseItem.class));
+  
+      }  
+    }
     String json = TwoFactorServerUtils.jsonConvertTo(dojoComboDataResponse, false);
     
     //write json to screen
@@ -632,12 +647,21 @@ public class UiMain extends UiServiceLogicBase {
       
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-
+        
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
-      
+        
         twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
         
+        //if invalid uuid, something fishy is going on
+        if(!alphaNumericMatcher.matcher(userIdOperatingOn).matches()) {
+          throw new RuntimeException("Why is userIdOperatingOn not alphanumeric???? '" + userIdOperatingOn + "'");
+        }
+        
         twoFactorUserGettingOptedOut[0] = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, userIdOperatingOn);
+
+        if (twoFactorUserGettingOptedOut[0] == null) {
+          throw new RuntimeException("Why is uuid not found??? '" + userIdOperatingOn + "'");
+        }
         
         //make sure they have allowed people to opt them out
         if (!twoFactorUserGettingOptedOut[0].isInvitedColleaguesWithinAllottedTime()) {
@@ -910,6 +934,17 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * matcher for numbers and whitespace
+   */
+  private static Pattern numberMatcher = Pattern.compile("^[0-9 ]+$");
+
+  /**
+   * matcher for numbers and whitespace
+   */
+  private static Pattern alphaNumericMatcher = Pattern.compile("^[0-9a-zA-Z ]+$");
+
+  
+  /**
    * optin to two factor
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
@@ -948,6 +983,12 @@ public class UiMain extends UiServiceLogicBase {
         
         if (StringUtils.isBlank(twoFactorPass)) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          return OptinTestSubmitView.optin;
+        }
+        
+        //validate
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
         }
         
@@ -1603,8 +1644,23 @@ public class UiMain extends UiServiceLogicBase {
         if (StringUtils.isBlank(errorMessage)) {
           errorMessage = validatePhoneType(phone2, phoneText2, phoneVoice2, TextContainer.retrieveFromRequest().getText().get("profileErrorLabelPhone3"));
         }
+        if (StringUtils.isBlank(errorMessage)) {
+          errorMessage = validateFriend(subjectSource, colleagueLogin0, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend1invalid"));
+        }
+        if (StringUtils.isBlank(errorMessage)) {
+          errorMessage = validateFriend(subjectSource, colleagueLogin1, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend2invalid"));
+        }
+        if (StringUtils.isBlank(errorMessage)) {
+          errorMessage = validateFriend(subjectSource, colleagueLogin2, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend3invalid"));
+        }
+        if (StringUtils.isBlank(errorMessage)) {
+          errorMessage = validateFriend(subjectSource, colleagueLogin3, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend4invalid"));
+        }
+        if (StringUtils.isBlank(errorMessage)) {
+          errorMessage = validateFriend(subjectSource, colleagueLogin4, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend5invalid"));
+        }
         
-        if (lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
+        if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
             phone0, phone1, phone2) < 2) {
           errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
         }
@@ -1838,6 +1894,12 @@ public class UiMain extends UiServiceLogicBase {
       if (dotIndex <= 0) {
         return TextContainer.retrieveFromRequest().getText().get("profileErrorEmailInvalid");
       }
+      
+      //validate with commons email validator
+      if (!EmailValidator.getInstance().isValid(email)) {
+        return TextContainer.retrieveFromRequest().getText().get("profileErrorEmailInvalid");
+      }
+      
     }
     return null;
   }
@@ -1878,6 +1940,28 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * validate a friend lookup
+   * @param subjectSource to look up the friend
+   * @param friendLookup 
+   * @param errorMessage
+   * @return the error or null
+   */
+  public static String validateFriend(Source subjectSource, String friendLookup, String errorMessage) {
+    if (StringUtils.isBlank(friendLookup)) {
+      return null;
+    }
+    //see if valid subject
+    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, friendLookup, true, false);
+    if (subject == null) {
+      return errorMessage;
+    }
+    if (!TfSourceUtils.subjectIsActive(subject)) {
+      return errorMessage;
+    }
+    return null;
+  }
+
+  /**
    * validate phone type checkboxes
    * @param phone
    * @param phoneText
@@ -1904,9 +1988,9 @@ public class UiMain extends UiServiceLogicBase {
    */
   public void optinCustom(HttpServletRequest httpServletRequest, 
       HttpServletResponse httpServletResponse) {
-    
+
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
-  
+
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     String twoFactorCustomCode = httpServletRequest.getParameter("twoFactorCustomCode");
     Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
