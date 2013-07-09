@@ -343,6 +343,8 @@
       <fileset dir="webapp">
         <exclude name="WEB-INF/**" />
       </fileset>
+      <fileset dir="servers/all/webapp" />
+   	
       <webinf dir="dist/bin/${main.serverDirName}/war/WEB-INF">
       </webinf>
       <lib file="${main.outputDir}/${main.appName}.jar" />
