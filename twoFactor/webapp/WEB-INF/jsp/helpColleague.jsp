@@ -34,7 +34,7 @@ ${textContainer.text['helpFriendParagraph2'] }
               <c:when test="${colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
                 
                 <form action="UiMain.optOutColleague" method="post" style="display: inline">
-                  <input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.loginid) }" class="tfBlueButton"
+                  <input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" class="tfBlueButton"
                     onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
                     onclick="return confirm('${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirm']}');" />
                   <input type="hidden" name="userIdOperatingOn" 
