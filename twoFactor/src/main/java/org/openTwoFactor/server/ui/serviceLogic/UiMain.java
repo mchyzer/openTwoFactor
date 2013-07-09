@@ -1592,15 +1592,17 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorProfileContainer.setEmail0(localEmail0);
         twoFactorProfileContainer.setProfileForOptin(profileForOptin);
         
+        Subject loggedInSubject = null;
+        
         if (StringUtils.isBlank(twoFactorProfileContainer.getEmail0()) && subjectSource != null) {
           
           //resolve subject
-          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+          loggedInSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               loggedInUser, true, false);
 
-          if (subject != null) {
+          if (loggedInSubject != null) {
             
-            twoFactorProfileContainer.setEmail0(subject.getAttributeValueSingleValued("email"));
+            twoFactorProfileContainer.setEmail0(loggedInSubject.getAttributeValueSingleValued("email"));
             localEmail0 = twoFactorProfileContainer.getEmail0();
           }
         }
@@ -1644,20 +1646,28 @@ public class UiMain extends UiServiceLogicBase {
         if (StringUtils.isBlank(errorMessage)) {
           errorMessage = validatePhoneType(phone2, phoneText2, phoneVoice2, TextContainer.retrieveFromRequest().getText().get("profileErrorLabelPhone3"));
         }
+        
+        String selfErrorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorFriendIsSelf");
+        
         if (StringUtils.isBlank(errorMessage)) {
-          errorMessage = validateFriend(subjectSource, colleagueLogin0, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend1invalid"));
+          errorMessage = validateFriend(loggedInSubject, subjectSource, colleagueLogin0, 
+              TextContainer.retrieveFromRequest().getText().get("profileErrorFriend1invalid"), selfErrorMessage);
         }
         if (StringUtils.isBlank(errorMessage)) {
-          errorMessage = validateFriend(subjectSource, colleagueLogin1, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend2invalid"));
+          errorMessage = validateFriend(loggedInSubject, subjectSource, colleagueLogin1, 
+              TextContainer.retrieveFromRequest().getText().get("profileErrorFriend2invalid"), selfErrorMessage);
         }
         if (StringUtils.isBlank(errorMessage)) {
-          errorMessage = validateFriend(subjectSource, colleagueLogin2, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend3invalid"));
+          errorMessage = validateFriend(loggedInSubject, subjectSource, colleagueLogin2, 
+              TextContainer.retrieveFromRequest().getText().get("profileErrorFriend3invalid"), selfErrorMessage);
         }
         if (StringUtils.isBlank(errorMessage)) {
-          errorMessage = validateFriend(subjectSource, colleagueLogin3, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend4invalid"));
+          errorMessage = validateFriend(loggedInSubject, subjectSource, colleagueLogin3, 
+              TextContainer.retrieveFromRequest().getText().get("profileErrorFriend4invalid"), selfErrorMessage);
         }
         if (StringUtils.isBlank(errorMessage)) {
-          errorMessage = validateFriend(subjectSource, colleagueLogin4, TextContainer.retrieveFromRequest().getText().get("profileErrorFriend5invalid"));
+          errorMessage = validateFriend(loggedInSubject, subjectSource, colleagueLogin4, 
+              TextContainer.retrieveFromRequest().getText().get("profileErrorFriend5invalid"), selfErrorMessage);
         }
         
         if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
@@ -1944,9 +1954,10 @@ public class UiMain extends UiServiceLogicBase {
    * @param subjectSource to look up the friend
    * @param friendLookup 
    * @param errorMessage
+   * @param errorMessageIfSelf
    * @return the error or null
    */
-  public static String validateFriend(Source subjectSource, String friendLookup, String errorMessage) {
+  public static String validateFriend(Subject loggedInSubject, Source subjectSource, String friendLookup, String errorMessage, String errorMessageIfSelf) {
     if (StringUtils.isBlank(friendLookup)) {
       return null;
     }
@@ -1958,6 +1969,13 @@ public class UiMain extends UiServiceLogicBase {
     if (!TfSourceUtils.subjectIsActive(subject)) {
       return errorMessage;
     }
+    if (StringUtils.equals(subject.getId(), loggedInSubject.getId()) && StringUtils.equals(subject.getSourceId(), loggedInSubject.getSourceId())) {
+      
+      return errorMessageIfSelf;
+      
+    }
+    
+    
     return null;
   }
 
