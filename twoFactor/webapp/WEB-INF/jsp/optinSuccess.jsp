@@ -10,7 +10,15 @@
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
 <div id="theForm">
-  <h1>${textContainer.text['pageHeader']}</h1>
+  <div id="headerDiv">
+    <div class="alignleft"><h1 style="display: inline;">${textContainer.text['pageHeader'] }</h1></div>
+    <div class="alignright">
+      <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+        <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      </c:if>    
+    </div> 
+    <div class="clearboth"></div> 
+  </div> 
   <br />
   <b>${textContainer.text['optinSuccessSubheader']}</b>
   <br /><br />
@@ -23,10 +31,12 @@
   ${textContainer.text['optinSuccessParagraph2']}
   </div>
   <br /><br />
-    <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-    <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
-    &nbsp; &nbsp;
-    </c:if>
+  <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+    <div class="logoutBottom">
+      <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      &nbsp; &nbsp;      
+    </div>
+  </c:if>    
     <form action="UiMain.index" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
       onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />

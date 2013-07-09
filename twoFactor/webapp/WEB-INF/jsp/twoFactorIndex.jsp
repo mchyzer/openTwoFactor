@@ -15,9 +15,16 @@
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
 <div id="theForm">
-  <h1>${textContainer.text['pageHeader'] }</h1>
+  <div id="headerDiv">
+    <div class="alignleft"><h1 style="display: inline;">${textContainer.text['pageHeader'] }</h1></div>
+    <div class="alignright">
+      <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+        <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      </c:if>    
+    </div> 
+    <div class="clearboth"></div> 
+  </div> 
   <br />
-  
   <%@ include file="../assetsJsp/commonError.jsp"%>
   
     <c:choose>
@@ -49,10 +56,6 @@
     <br /><br />
     <br /><br />
     
-    <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-    <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
-      &nbsp; 
-    </c:if>    
     <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
     
       <form action="../../twoFactorUi/app/UiMain.optout" method="get" style="display: inline">
@@ -126,7 +129,12 @@
 
         </c:when>
       </c:choose>
-
+      <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+        <div class="logoutBottom">
+          <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+          &nbsp;
+        </div>
+      </c:if>    
    <br /><br />
   <%@ include file="../assetsJsp/commonAbout.jsp"%>
 </div>

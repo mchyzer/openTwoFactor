@@ -65,6 +65,34 @@ h4 {
   
 }
 
+#headerDiv {
+  width: 30em;    
+  margin: 0px;
+  padding: 0px;
+}
+
+.alignleft { 
+  float: left; 
+  width: 75%; 
+  text-align:left; 
+} 
+
+.alignright { 
+  float: left; 
+  width: 25%; 
+  text-align:right; 
+} 
+
+#headerDiv .alignright{
+  margin-top: 0.1em;
+}
+
+.clearboth {
+  margin: 0px;
+  padding: 0px;
+  clear: both;
+}
+
 #bannerImage {
   width: 220px;
 }
@@ -73,8 +101,44 @@ h4 {
   width: 19.5em;
 }
 
+.logoutBottom {
+  display: none;
+}
+
 /* lets say the min width for the screen is 220px */
+@media screen and (max-width: 46.5em) {
+  
+  #headerDiv {
+    width: 80%;
+  }
+}
+
+/* lets say the min width for the screen is 220px */
+@media screen and (max-width: 25em) {
+  
+  .alignleft { 
+    float: none;
+    width: 100%; 
+  } 
+  
+  .alignright { 
+    float: none; 
+    width: 100%; 
+    text-align:left; 
+  } 
+  #headerDiv .alignright{
+    display: none;
+  }
+
+  .logoutBottom {
+    display: inline;
+  }
+
+}
+
+/* lets say the min width for the screen is 440px */
 @media screen and (max-width: 440px) {
+  
   #theForm {
     width: 80%;    
     margin-left: 16%;

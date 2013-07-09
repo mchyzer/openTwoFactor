@@ -11,7 +11,15 @@
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
 <div id="theForm">
-  <h1>${textContainer.text['pageHeader']}</h1>
+  <div id="headerDiv">
+    <div class="alignleft"><h1 style="display: inline;">${textContainer.text['pageHeader'] }</h1></div>
+    <div class="alignright">
+      <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+        <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      </c:if>    
+    </div> 
+    <div class="clearboth"></div> 
+  </div> 
   <br />
   <b>${textContainer.text['profileSubheader']}</b>
   <br /><br />
@@ -147,6 +155,13 @@
   <br />
   <br /> 
   
+  <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+    <div class="logoutBottom" style="font-size: smaller">
+      <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      &nbsp; &nbsp;      
+    </div>
+  </c:if>    
+
   <form action="UiMain.index" method="get" style="display: inline; font-size: smaller">
     <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfLinkButton"
     type="submit" />

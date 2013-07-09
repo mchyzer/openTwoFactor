@@ -14,7 +14,15 @@
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
 <div id="theForm">
-  <h1>Penn WebLogin</h1>
+  <div id="headerDiv">
+    <div class="alignleft"><h1 style="display: inline;">${textContainer.text['pageHeader'] }</h1></div>
+    <div class="alignright">
+      <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
+        <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      </c:if>    
+    </div> 
+    <div class="clearboth"></div> 
+  </div> 
   <br />
   <b>${textContainer.text['auditsSubheader']}</b>
   <br /><br />
@@ -31,9 +39,11 @@
   <br /><br />
   
   <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-    <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
-    &nbsp; &nbsp;
-  </c:if>
+    <div class="logoutBottom">
+      <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+      &nbsp;&nbsp;      
+    </div>
+  </c:if>    
   
   <form action="UiMain.index" method="get" style="display: inline">
     <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
