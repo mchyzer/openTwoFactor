@@ -166,9 +166,13 @@ public class TwoFactorRequestContainer {
     if (TwoFactorServerUtils.isBlank(loggedInUser)) {
       throw new RuntimeException("There is no user logged in");
     }
-    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, loggedInUser);
-    
-    this.setTwoFactorUserLoggedIn(twoFactorUser);
+    if (this.getTwoFactorUserLoggedIn() == null) {
+
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, loggedInUser);
+      
+      this.setTwoFactorUserLoggedIn(twoFactorUser);
+      
+    }
     
   }
   

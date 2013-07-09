@@ -15,6 +15,30 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 public class TwoFactorProfileContainer {
 
   /**
+   * friend object for sending email
+   */
+  private TwoFactorUser twoFactorUserFriend;
+  
+  
+  
+  /**
+   * friend object for sending email
+   * @return the friend user object
+   */
+  public TwoFactorUser getTwoFactorUserFriend() {
+    return this.twoFactorUserFriend;
+  }
+
+
+  /**
+   * friend object for sending email
+   * @param twoFactorUserFriend1
+   */
+  public void setTwoFactorUserFriend(TwoFactorUser twoFactorUserFriend1) {
+    this.twoFactorUserFriend = twoFactorUserFriend1;
+  }
+
+  /**
    * this is the friend, phone, etc label for what has the problem
    */
   private String errorFieldLabel;

@@ -47,6 +47,9 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
   
     The first virtual attribute is accessible via: subject.getAttributeValue("loginIdLfNameLoginId");
   
+      you can set these c3p0 settings: maxConnectionAge (seconds), testConnectionOnCheckout (true|false), 
+      preferredTestQuery (e.g. select 1 from dual), idleConnectionTestPeriod (seconds)
+  
    -->
   
     <!-- This is an alternate jdbc source which allows for more complex searches, assumes 

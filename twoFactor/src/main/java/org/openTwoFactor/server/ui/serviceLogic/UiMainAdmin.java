@@ -10,10 +10,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
@@ -29,6 +32,7 @@ import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
+import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 import edu.internet2.middleware.subject.provider.SourceManager;
@@ -38,6 +42,10 @@ import edu.internet2.middleware.subject.provider.SourceManager;
  * admin methods for two factor
  */
 public class UiMainAdmin extends UiServiceLogicBase {
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(UiMainAdmin.class);
+
 
   /**
    * admin page combobox
@@ -101,7 +109,13 @@ public class UiMainAdmin extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
 
-    return (AdminSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+    final boolean[] success = new boolean[]{false};
+
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+    
+    final TwoFactorUser[] twoFactorUserGettingOptedOut = new TwoFactorUser[1];
+
+    AdminSubmitView adminSubmitView = (AdminSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
@@ -111,10 +125,10 @@ public class UiMainAdmin extends UiServiceLogicBase {
       
         TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
         
-        TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
 
         //make sure user is an admin
-        if (!twoFactorUserLoggedIn.isAdmin()) {
+        if (!twoFactorUserUsingApp[0].isAdmin()) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
           return AdminSubmitView.index;
         }
@@ -130,8 +144,6 @@ public class UiMainAdmin extends UiServiceLogicBase {
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
             userIdOperatingOn, true, false);
 
-        TwoFactorUser twoFactorUserOperatingOn = null;
-
         String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {
@@ -140,9 +152,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
           
         }
         
-        twoFactorUserOperatingOn = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        twoFactorUserGettingOptedOut[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
         
-        if (twoFactorUserOperatingOn == null) {
+        if (twoFactorUserGettingOptedOut[0] == null) {
           
           if (subject == null) {
             
@@ -156,11 +168,11 @@ public class UiMainAdmin extends UiServiceLogicBase {
         }
         
         //we found a user!
-        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserOperatingOn);
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserGettingOptedOut[0]);
  
-        twoFactorUserOperatingOn.setTwoFactorSecretTemp(null);
+        twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
         
-        if (StringUtils.isBlank(twoFactorUserOperatingOn.getTwoFactorSecret())) {
+        if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
           
@@ -170,21 +182,108 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
         }
         
-        twoFactorUserOperatingOn.setTwoFactorSecret(null);
+        twoFactorUserGettingOptedOut[0].setTwoFactorSecret(null);
         
-        twoFactorUserOperatingOn.setOptedIn(false);
-        twoFactorUserOperatingOn.setSequentialPassIndex(1L);
+        twoFactorUserGettingOptedOut[0].setOptedIn(false);
+        twoFactorUserGettingOptedOut[0].setSequentialPassIndex(1L);
 
-        twoFactorUserOperatingOn.store(twoFactorDaoFactory);
+        twoFactorUserGettingOptedOut[0].store(twoFactorDaoFactory);
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTOUT_TWO_FACTOR, ipAddress, 
-            userAgent, twoFactorUserOperatingOn.getUuid(), twoFactorUserLoggedIn.getUuid());
-
+            userAgent, twoFactorUserGettingOptedOut[0].getUuid(), twoFactorUserUsingApp[0].getUuid());
+        
+        success[0] = true;
         
         return AdminSubmitView.admin;
       }
     });
+    
+    //send emails if successful
+    String userEmailLoggedIn = null;
+    String userEmailColleague = null;
+    try {
+      
+      twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+      twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (success[0] && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptoutByAdmin", true)) {
+        
+        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            twoFactorUserGettingOptedOut[0].getLoginid(), true, false);
+        
+        String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+        String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
+
+        String emailAddressFromSubjectPersonPicked = TfSourceUtils.retrieveEmail(sourceSubjectPersonPicked);
+        String emailAddressFromDatabasePersonPicked = twoFactorUserGettingOptedOut[0].getEmail0();
+
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutByAdminSubject");
+        subject = TextContainer.massageText("emailOptOutByAdminSubject", subject);
+
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutByAdminBody");
+        body = TextContainer.massageText("emailOptOutByAdminBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.adminOptouts");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
+          emailAddressFromDatabaseLoggedIn = null;
+        }
+        
+        userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectPersonPicked, emailAddressFromDatabasePersonPicked)) {
+          emailAddressFromDatabasePersonPicked = null;
+        }
+        
+        userEmailColleague = emailAddressFromSubjectPersonPicked + ", " + emailAddressFromDatabasePersonPicked;
+        
+        boolean sendEmail = true;
+        boolean sendToFriend = true;
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubjectPersonPicked) && StringUtils.isBlank(emailAddressFromDatabasePersonPicked)) {
+          sendToFriend = false;
+          LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubjectPersonPicked).addTo(emailAddressFromDatabasePersonPicked);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+        } else {
+          twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmailColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+    }
+    
+    
+    return adminSubmitView;
+    
   }
 
   /**

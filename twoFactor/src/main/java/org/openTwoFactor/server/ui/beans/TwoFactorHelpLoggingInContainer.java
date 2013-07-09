@@ -15,6 +15,29 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 public class TwoFactorHelpLoggingInContainer {
 
   /**
+   * friend object for sending email
+   */
+  private TwoFactorUser twoFactorUserFriend;
+  
+  /**
+   * friend object for sending email
+   * @return the friend user object
+   */
+  public TwoFactorUser getTwoFactorUserFriend() {
+    return this.twoFactorUserFriend;
+  }
+
+
+  /**
+   * friend object for sending email
+   * @param twoFactorUserFriend1
+   */
+  public void setTwoFactorUserFriend(TwoFactorUser twoFactorUserFriend1) {
+    this.twoFactorUserFriend = twoFactorUserFriend1;
+  }
+
+  
+  /**
    * phone numbers for screen: 21* *** **34
    */
   private List<TwoFactorPhoneForScreen> phonesForScreen;

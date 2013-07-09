@@ -7,6 +7,7 @@ package org.openTwoFactor.server.ui.serviceLogic;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -621,7 +622,11 @@ public class UiMain extends UiServiceLogicBase {
   public void optOutColleagueLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
+
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
     
+    final TwoFactorUser[] twoFactorUserGettingOptedOut = new TwoFactorUser[1];
+
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -630,32 +635,32 @@ public class UiMain extends UiServiceLogicBase {
 
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
       
-        TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
         
-        TwoFactorUser twoFactorUserGettingOptedOut = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, userIdOperatingOn);
+        twoFactorUserGettingOptedOut[0] = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, userIdOperatingOn);
         
         //make sure they have allowed people to opt them out
-        if (!twoFactorUserGettingOptedOut.isInvitedColleaguesWithinAllottedTime()) {
+        if (!twoFactorUserGettingOptedOut[0].isInvitedColleaguesWithinAllottedTime()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendErrorUserDidntAllow"));
           return null;
         }
         
         //make sure the user has identified this user to opt them out
-        if (!StringUtils.equals(twoFactorUserUsingApp.getUuid(), twoFactorUserGettingOptedOut.getColleagueUserUuid0())
-            && !StringUtils.equals(twoFactorUserUsingApp.getUuid(), twoFactorUserGettingOptedOut.getColleagueUserUuid1())
-            && !StringUtils.equals(twoFactorUserUsingApp.getUuid(), twoFactorUserGettingOptedOut.getColleagueUserUuid2())
-            && !StringUtils.equals(twoFactorUserUsingApp.getUuid(), twoFactorUserGettingOptedOut.getColleagueUserUuid3())
-            && !StringUtils.equals(twoFactorUserUsingApp.getUuid(), twoFactorUserGettingOptedOut.getColleagueUserUuid4()) ) {
+        if (!StringUtils.equals(twoFactorUserUsingApp[0].getUuid(), twoFactorUserGettingOptedOut[0].getColleagueUserUuid0())
+            && !StringUtils.equals(twoFactorUserUsingApp[0].getUuid(), twoFactorUserGettingOptedOut[0].getColleagueUserUuid1())
+            && !StringUtils.equals(twoFactorUserUsingApp[0].getUuid(), twoFactorUserGettingOptedOut[0].getColleagueUserUuid2())
+            && !StringUtils.equals(twoFactorUserUsingApp[0].getUuid(), twoFactorUserGettingOptedOut[0].getColleagueUserUuid3())
+            && !StringUtils.equals(twoFactorUserUsingApp[0].getUuid(), twoFactorUserGettingOptedOut[0].getColleagueUserUuid4()) ) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendErrorUserNotFriend"));
           return null;
           
         }
         
         
-        twoFactorUserGettingOptedOut.setTwoFactorSecretTemp(null);
+        twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
         
-        if (StringUtils.isBlank(twoFactorUserGettingOptedOut.getTwoFactorSecret()) || !twoFactorUserGettingOptedOut.isOptedIn()) {
+        if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret()) || !twoFactorUserGettingOptedOut[0].isOptedIn()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendWarnNotOptedIn"));
           
@@ -665,31 +670,115 @@ public class UiMain extends UiServiceLogicBase {
 
         }
         
-        twoFactorUserGettingOptedOut.setTwoFactorSecret(null);
+        twoFactorUserGettingOptedOut[0].setTwoFactorSecret(null);
         
-        twoFactorUserGettingOptedOut.setOptedIn(false);
-        twoFactorUserGettingOptedOut.setSequentialPassIndex(1L);
+        twoFactorUserGettingOptedOut[0].setOptedIn(false);
+        twoFactorUserGettingOptedOut[0].setSequentialPassIndex(1L);
 
-        twoFactorUserGettingOptedOut.setDateInvitedColleagues(null);
+        twoFactorUserGettingOptedOut[0].setDateInvitedColleagues(null);
         
-        twoFactorUserGettingOptedOut.store(twoFactorDaoFactory);
+        twoFactorUserGettingOptedOut[0].store(twoFactorDaoFactory);
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTED_OUT_A_COLLEAGUE, ipAddress, 
-            userAgent, twoFactorUserUsingApp.getUuid(), twoFactorUserUsingApp.getUuid(), 
+            userAgent, twoFactorUserUsingApp[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
             TextContainer.retrieveFromRequest().getText().get("helpFriendAuditDescriptionPrefix") 
-              + " " + twoFactorUserGettingOptedOut.getLoginid());
+              + " " + twoFactorUserGettingOptedOut[0].getLoginid());
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.COLLEAGUE_OPTED_ME_OUT, ipAddress, 
-            userAgent, twoFactorUserGettingOptedOut.getUuid(), twoFactorUserUsingApp.getUuid(), 
+            userAgent, twoFactorUserGettingOptedOut[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
             TextContainer.retrieveFromRequest().getText().get("helpFriendAuditDescriptionForFriendPrefix")
-              + " " + twoFactorUserUsingApp.getLoginid());
+              + " " + twoFactorUserUsingApp[0].getLoginid());
 
-        return OptinTestSubmitView.optinSuccess;
+        return null;
       }
     });
 
+    //send emails if successful
+    String userEmailLoggedIn = null;
+    String userEmailColleague = null;
+    try {
+      
+      twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setTwoFactorUserFriend(twoFactorUserGettingOptedOut[0]); 
+      
+      twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+      twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptoutFriend", true)) {
+        
+        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            twoFactorUserGettingOptedOut[0].getLoginid(), true, false);
+        
+        String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+        String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
+
+        String emailAddressFromSubjectColleaguePicked = TfSourceUtils.retrieveEmail(sourceSubjectColleaguePicked);
+        String emailAddressFromDatabaseColleaguePicked = twoFactorUserGettingOptedOut[0].getEmail0();
+
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutFriendSubject");
+        subject = TextContainer.massageText("emailOptOutFriendSubject", subject);
+
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutFriendBody");
+        body = TextContainer.massageText("emailOptOutFriendBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.friendOptouts");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
+          emailAddressFromDatabaseLoggedIn = null;
+        }
+        
+        userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectColleaguePicked, emailAddressFromDatabaseColleaguePicked)) {
+          emailAddressFromDatabaseColleaguePicked = null;
+        }
+        
+        userEmailColleague = emailAddressFromSubjectColleaguePicked + ", " + emailAddressFromDatabaseColleaguePicked;
+        
+        boolean sendEmail = true;
+        boolean sendToFriend = true;
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubjectColleaguePicked) && StringUtils.isBlank(emailAddressFromDatabaseColleaguePicked)) {
+          sendToFriend = false;
+          LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubjectColleaguePicked).addTo(emailAddressFromDatabaseColleaguePicked);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+        } else {
+          twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmailColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+    }
+    
     helpColleagueLogic(twoFactorDaoFactory, 
         twoFactorRequestContainer,
         loggedInUser, subjectSource);
@@ -899,65 +988,66 @@ public class UiMain extends UiServiceLogicBase {
       }
     });
     
-    String userEmail = null;
-    try {
-      
-      //see if there
-      
-      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
-      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptin", true)) {
+    if (result == OptinTestSubmitView.optinSuccess) {
+      String userEmail = null;
+      try {
         
-        Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        //see if there
         
-        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
-        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
-        
-        //set the default text container...
-        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
-        subject = TextContainer.massageText("emailOptInSubject", subject);
-
-        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInBody");
-        body = TextContainer.massageText("emailOptInBody", body);
-        
-        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
-        
-        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
-        
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
-          emailAddressFromDatabase = null;
-        }
-        
-        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
-
-        boolean sendEmail = true;
-        
-        //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
-          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
-          if (StringUtils.isBlank(bccsString)) {
-            sendEmail = false;
-          } else {
-            twoFactorMail.addTo(bccsString);
+        //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+        if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+            && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptin", true)) {
+          
+          Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+          
+          String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+          String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+          
+          //set the default text container...
+          String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
+          subject = TextContainer.massageText("emailOptInSubject", subject);
+  
+          String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInBody");
+          body = TextContainer.massageText("emailOptInBody", body);
+          
+          String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+          
+          TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+          
+          if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+            emailAddressFromDatabase = null;
           }
-        } else {
-          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
-          twoFactorMail.addBcc(bccsString);
+          
+          userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
+  
+          boolean sendEmail = true;
+          
+          //there is no email address????
+          if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+            LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+            if (StringUtils.isBlank(bccsString)) {
+              sendEmail = false;
+            } else {
+              twoFactorMail.addTo(bccsString);
+            }
+          } else {
+            twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+            twoFactorMail.addBcc(bccsString);
+          }
+          
+          if (sendEmail) {
+            twoFactorMail.assignBody(body);
+            twoFactorMail.assignSubject(subject);
+            twoFactorMail.send();
+          }
+          
         }
         
-        if (sendEmail) {
-          twoFactorMail.assignBody(body);
-          twoFactorMail.assignSubject(subject);
-          twoFactorMail.send();
-        }
-        
+      } catch (Exception e) {
+        //non fatal, just log this
+        LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
       }
-      
-    } catch (Exception e) {
-      //non fatal, just log this
-      LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
-    }
-    
+    }    
     
     return result;
   }
@@ -1439,7 +1529,9 @@ public class UiMain extends UiServiceLogicBase {
       final String phone1, final String phoneVoice1, final String phoneText1, final String phone2, 
       final String phoneVoice2, final String phoneText2, final Source subjectSource, final boolean profileForOptin) {
     
-    return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+    final Set<TwoFactorUser> newColleagues = new HashSet<TwoFactorUser>();
+    
+    boolean result = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
@@ -1451,6 +1543,8 @@ public class UiMain extends UiServiceLogicBase {
         
         //generate the codes
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
         
         TwoFactorProfileContainer twoFactorProfileContainer = twoFactorRequestContainer.getTwoFactorProfileContainer();
         
@@ -1469,7 +1563,6 @@ public class UiMain extends UiServiceLogicBase {
             localEmail0 = twoFactorProfileContainer.getEmail0();
           }
         }
-
         
         twoFactorProfileContainer.setColleagueLogin0(colleagueLogin0);
         twoFactorProfileContainer.setColleagueLogin1(colleagueLogin1);
@@ -1531,12 +1624,38 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhoneIsVoice0(StringUtils.equals(phoneVoice0, "true") ? true : false);
         twoFactorUser.setPhoneIsVoice1(StringUtils.equals(phoneVoice1, "true") ? true : false);
         twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
+
+        Set<String> previousColleagueUuids = new HashSet<String>();
+        
+        if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid0())) {
+          previousColleagueUuids.add(twoFactorUser.getColleagueUserUuid0());
+        }
+        if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid1())) {
+          previousColleagueUuids.add(twoFactorUser.getColleagueUserUuid1());
+        }
+        if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid2())) {
+          previousColleagueUuids.add(twoFactorUser.getColleagueUserUuid2());
+        }
+        if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid3())) {
+          previousColleagueUuids.add(twoFactorUser.getColleagueUserUuid3());
+        }
+        if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid4())) {
+          previousColleagueUuids.add(twoFactorUser.getColleagueUserUuid4());
+        }
+
+        //get the new colleagues
+        
         
         if (StringUtils.isBlank(colleagueLogin0)) {
           twoFactorUser.setColleagueUserUuid0(null);
         } else {
           TwoFactorUser colleagueUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, colleagueLogin0);
           twoFactorUser.setColleagueUserUuid0(colleagueUser.getUuid());
+          
+          if (!previousColleagueUuids.contains(colleagueUser.getUuid())) {
+            newColleagues.add(colleagueUser);
+          }
+          
         }
         
         if (StringUtils.isBlank(colleagueLogin1)) {
@@ -1544,6 +1663,11 @@ public class UiMain extends UiServiceLogicBase {
         } else {
           TwoFactorUser colleagueUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, colleagueLogin1);
           twoFactorUser.setColleagueUserUuid1(colleagueUser.getUuid());
+          
+          if (!previousColleagueUuids.contains(colleagueUser.getUuid())) {
+            newColleagues.add(colleagueUser);
+          }
+          
         }
         
         if (StringUtils.isBlank(colleagueLogin2)) {
@@ -1551,6 +1675,11 @@ public class UiMain extends UiServiceLogicBase {
         } else {
           TwoFactorUser colleagueUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, colleagueLogin2);
           twoFactorUser.setColleagueUserUuid2(colleagueUser.getUuid());
+          
+          if (!previousColleagueUuids.contains(colleagueUser.getUuid())) {
+            newColleagues.add(colleagueUser);
+          }
+          
         }
         
         if (StringUtils.isBlank(colleagueLogin3)) {
@@ -1558,6 +1687,11 @@ public class UiMain extends UiServiceLogicBase {
         } else {
           TwoFactorUser colleagueUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, colleagueLogin3);
           twoFactorUser.setColleagueUserUuid3(colleagueUser.getUuid());
+          
+          if (!previousColleagueUuids.contains(colleagueUser.getUuid())) {
+            newColleagues.add(colleagueUser);
+          }
+          
         }
         
         if (StringUtils.isBlank(colleagueLogin4)) {
@@ -1565,6 +1699,11 @@ public class UiMain extends UiServiceLogicBase {
         } else {
           TwoFactorUser colleagueUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, colleagueLogin4);
           twoFactorUser.setColleagueUserUuid4(colleagueUser.getUuid());
+          
+          if (!previousColleagueUuids.contains(colleagueUser.getUuid())) {
+            newColleagues.add(colleagueUser);
+          }
+          
         }
         
         twoFactorUser.store(twoFactorDaoFactory);
@@ -1581,6 +1720,103 @@ public class UiMain extends UiServiceLogicBase {
         return true;
       }
     });
+    
+    if (result) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+      
+      twoFactorUser.setSubjectSource(subjectSource);
+      
+      
+      for (TwoFactorUser newColleague : newColleagues) {
+
+        newColleague.setSubjectSource(subjectSource);
+        
+        twoFactorRequestContainer.getTwoFactorProfileContainer().setTwoFactorUserFriend(newColleague);
+        
+        String userEmailLoggedIn = null;
+        String userEmailNewColleague = null;
+        try {
+          
+          //see if there
+          
+          //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+          if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+              && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForSelectFriend", true)) {
+            
+            Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+            Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, newColleague.getLoginid(), true, false);
+            
+            String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+            String emailAddressFromDatabaseLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+
+            String emailAddressFromSubjectColleaguePicked = TfSourceUtils.retrieveEmail(sourceSubjectColleaguePicked);
+            String emailAddressFromDatabaseColleaguePicked = newColleague.getEmail0();
+
+            //set the default text container...
+            String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailFriendSubject");
+            subject = TextContainer.massageText("emailFriendSubject", subject);
+
+            String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailFriendBody");
+            body = TextContainer.massageText("emailFriendBody", body);
+            
+            String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.selectFriends");
+            
+            TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+            
+            if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
+              emailAddressFromDatabaseLoggedIn = null;
+            }
+            
+            userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
+            
+            if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectColleaguePicked, emailAddressFromDatabaseColleaguePicked)) {
+              emailAddressFromDatabaseColleaguePicked = null;
+            }
+            
+            userEmailNewColleague = emailAddressFromSubjectColleaguePicked + ", " + emailAddressFromDatabaseColleaguePicked;
+            
+            boolean sendEmail = true;
+            boolean sendToFriend = true;
+            //there is no email address????
+            if (StringUtils.isBlank(emailAddressFromSubjectColleaguePicked) && StringUtils.isBlank(emailAddressFromDatabaseColleaguePicked)) {
+              sendToFriend = false;
+              LOG.warn("Did not send email to logged in user: " + newColleague + ", no email address...");
+              if (StringUtils.isBlank(bccsString)) {
+                sendEmail = false;
+              } else {
+                twoFactorMail.addTo(bccsString);
+              }
+            } else {
+              twoFactorMail.addTo(emailAddressFromSubjectColleaguePicked).addTo(emailAddressFromDatabaseColleaguePicked);
+              twoFactorMail.addBcc(bccsString);
+            }
+            
+            if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+              LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+            } else {
+              twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+            }
+            
+            if (sendEmail) {
+              twoFactorMail.assignBody(body);
+              twoFactorMail.assignSubject(subject);
+              twoFactorMail.send();
+            }
+            
+          }
+          
+        } catch (Exception e) {
+          //non fatal, just log this
+          LOG.error("Error sending email to: " + userEmailNewColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+        }
+
+      }
+      
+    }
+    
+    return result;
+    
   }
   
   /**
