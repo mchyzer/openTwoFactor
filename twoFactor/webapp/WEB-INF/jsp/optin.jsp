@@ -63,7 +63,6 @@
       
   </div>
   <br />
-  <hr />
   <a name="qrCode"></a>
     <img src="UiMain.qrCode.gif" height="300" width="300" />
   <br />

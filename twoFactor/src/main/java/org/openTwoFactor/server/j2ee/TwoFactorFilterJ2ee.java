@@ -5,6 +5,8 @@ package org.openTwoFactor.server.j2ee;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.Filter;
@@ -13,6 +15,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,6 +28,9 @@ import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.upenn.isc.proxyWrapper.ProxyServletRequestWrapper;
+import edu.upenn.isc.proxyWrapper.ProxyWrapperFilter;
 
 
 
@@ -278,6 +284,22 @@ public class TwoFactorFilterJ2ee implements Filter {
   }
 
   /**
+   * instance for automatic proxy wrapper
+   */
+  private ProxyWrapperFilter autoProxyWrapperFilter = null;
+    
+  /**
+   * create this instance if not exists
+   * @return the instance
+   */
+  private ProxyWrapperFilter autoProxyWrapperFilter() {
+    if (this.autoProxyWrapperFilter == null) {
+      this.autoProxyWrapperFilter = new ProxyWrapperFilter();
+  }
+    return this.autoProxyWrapperFilter;
+  }
+
+  /**
    * 
    * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest, javax.servlet.ServletResponse, javax.servlet.FilterChain)
    */
@@ -288,6 +310,12 @@ public class TwoFactorFilterJ2ee implements Filter {
   
       threadLocalOriginalRequest.set((HttpServletRequest) request);
 
+      //if behind a proxy, wrap request so it thinks it isnt
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.autoProxyWrapper", false)) {
+        request = new ProxyServletRequestWrapper((HttpServletRequest)request);
+      }
+
+      
       //wrap this for single valued params or whatever
       request = new TfHttpServletRequest((HttpServletRequest)request);
       
@@ -316,7 +344,10 @@ public class TwoFactorFilterJ2ee implements Filter {
    * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
    */
   @Override
-  public void init(FilterConfig arg0) throws ServletException {
+  public void init(FilterConfig filterConfig) throws ServletException {
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.autoProxyWrapper", false)) {
+      autoProxyWrapperFilter().init(filterConfig);
+    }
     try {
       DaemonController.scheduleJobsOnce();
     } catch (RuntimeException re) {
@@ -325,5 +356,64 @@ public class TwoFactorFilterJ2ee implements Filter {
     }
   }
 
+  /**
+   * get a cookie value by name, null if not there
+   * @param prefix
+   */
+  public static void removeCookiesByPrefix(String prefix) {
+    HttpServletResponse httpServletResponse = retrieveHttpServletResponse();
+    
+    List<Cookie> cookies = findCookiesByPrefix(prefix);
+    for (Cookie cookie : cookies) {
+      cookie.setMaxAge(0);
+      //note: this is needed for websec cookies... is it for all cookies?
+      cookie.setPath("/");
+      cookie.setValue(null);
+      httpServletResponse.addCookie(cookie);
+      
+      if (httpServletResponse.isCommitted()) {
+        LOG.error("Trying to kill cookie: " + cookie.getName() + ", but the response is committed!", new RuntimeException("stack"));
+      }
+      
+    }
+  }
+
+
+  /**
+   * find a cookie or empty list if cant find
+   * @param name
+   * @return the cookies or empty list if not found
+   */
+  public static List<Cookie> findCookiesByPrefix(String name) {
+    
+    HttpServletRequest httpServletRequest = retrieveHttpServletRequest();
+    StringBuilder allCookies = null;
+    boolean isDebug = LOG.isDebugEnabled();
+    if (isDebug) {
+      allCookies = new StringBuilder("Looking for cookie with prefix: '" + name + "'");
+    }
+  
+    List<Cookie> cookieList = new ArrayList<Cookie>();
+    Cookie[] cookies = httpServletRequest.getCookies();
+    //go through all cookies and find the cookie by name
+    int cookiesLength = TwoFactorServerUtils.length(cookies);
+    for (int i=0;i<cookiesLength;i++) {
+      if (StringUtils.indexOf(cookies[i].getName(), name) == 0) {
+        cookieList.add(cookies[i]);
+        if (isDebug) {
+          allCookies.append(", Found cookie: " + cookies[i].getName());
+        }
+      } else {
+        if (isDebug) {
+          allCookies.append(", Didnt find cookie: " + cookies[i].getName());
+        }
+      }
+      
+    }
+    if (isDebug) {
+      LOG.debug(allCookies.toString());
+    }
+    return cookieList;
+  }
 
 }

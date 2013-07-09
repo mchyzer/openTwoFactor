@@ -84,7 +84,7 @@
 
         <c:choose>
           <c:when test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.trustedBrowserCount > 0}">
-            <form action="UiMainAdmin.untrustBrowsers" method="get" style="display: inline">
+            <form action="UiMainAdmin.untrustBrowsers" method="post" style="display: inline">
               <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" 
               class="tfBlueButton"
               onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
@@ -93,6 +93,13 @@
                 value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
             </form>
           </c:when>
+          <c:otherwise>
+              <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" 
+                class="tfBlueButton"
+                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                onclick="alert('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersNone']}'); return false;" />
+          </c:otherwise>
+          
         </c:choose>
         
         <br /><br />

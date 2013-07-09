@@ -51,5 +51,6 @@
 	<classpathentry kind="lib" path="lib/twoFactor/twilioDeps.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/mchange-commons-java.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/commons-validator.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/proxyWrapper.jar"/>
 	<classpathentry kind="output" path="webapp/WEB-INF/classes"/>
 </classpath>

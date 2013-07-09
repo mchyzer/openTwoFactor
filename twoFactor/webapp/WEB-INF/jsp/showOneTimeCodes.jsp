@@ -39,7 +39,7 @@
   <br />
   <div class="tfPrinterFriendlyNot">
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-    <a href="../../twoFactorUnprotectedUi/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+    <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
     &nbsp; &nbsp;
     </c:if>
     <form action="UiMain.index" method="get" style="display: inline">

@@ -50,7 +50,7 @@
     <br /><br />
     
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-      <a href="../../twoFactorUnprotectedUi/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
+    <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
       &nbsp; 
     </c:if>    
     <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
@@ -94,6 +94,13 @@
               </form>
               &nbsp;
             </c:when>
+            <c:otherwise>
+              <input value="${textContainer.textEscapeDouble['buttonUntrustBrowsers']}" class="tfBlueButton"
+                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                onclick="alert('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersNone']}'); return false;" />
+            &nbsp;
+            
+            </c:otherwise>
           </c:choose>
 
         </c:when>
