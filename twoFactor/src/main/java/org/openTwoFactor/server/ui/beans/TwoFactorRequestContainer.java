@@ -101,6 +101,22 @@ public class TwoFactorRequestContainer {
   }
   
   /**
+   * two factor config container
+   */
+  private TwoFactorConfigContainer twoFactorConfigContainer = null;
+  
+    /**
+   * two factor config container, lazy load
+   * @return the twoFactorConfigContainer
+   */
+  public TwoFactorConfigContainer getTwoFactorConfigContainer() {
+    if (this.twoFactorConfigContainer == null) {
+      this.twoFactorConfigContainer = new TwoFactorConfigContainer();
+    }
+    return this.twoFactorConfigContainer;
+  }
+  
+  /**
    * two factor untrust browser container, lazy load
    * @return the twoFactorUntrustBrowserContainer
    */

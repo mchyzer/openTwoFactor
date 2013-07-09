@@ -296,10 +296,8 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorUser.getLoginid(), true, false);
       if (subject != null) {
         
-        //try the description, then the name
-        if (!StringUtils.isBlank(subject.getDescription())) {
-          twoFactorRequestContainer.getTwoFactorAuditContainer().setUserString(subject.getDescription());
-        } else if (!StringUtils.isBlank(subject.getName())) {
+        //try the name
+        if (!StringUtils.isBlank(subject.getName())) {
           twoFactorRequestContainer.getTwoFactorAuditContainer().setUserString(subject.getName());
         }
       }
