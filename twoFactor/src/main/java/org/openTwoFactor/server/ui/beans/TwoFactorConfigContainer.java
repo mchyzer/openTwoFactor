@@ -13,4 +13,12 @@ public class TwoFactorConfigContainer {
     return TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.appUrlBase");
   }
   
+  /**
+   * 
+   * @return the app url friendly
+   */
+  public String getAppUrlFriendly() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.appUrlFriendly");
+  }
+  
 }

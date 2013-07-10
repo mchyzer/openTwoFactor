@@ -105,8 +105,12 @@ h4 {
   display: none;
 }
 
+ol.bold {
+  font-weight: bold;
+}
+
 .paragraphs {
-  width: 35em;
+  width: 40em;
 }
 
 /* lets say the min width for the screen is 220px */
