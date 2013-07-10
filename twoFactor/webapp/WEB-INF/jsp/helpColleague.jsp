@@ -22,16 +22,20 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-<b>${textContainer.text['helpFriendSubheader'] }</b>
-<br /> <br />
-${textContainer.text['helpFriendParagraph1'] }
-<br /><br />
-${textContainer.text['helpFriendParagraph2'] }
-  <br />
-  <br />
-  <%@ include file="../assetsJsp/commonError.jsp"%>
+  <div class="paragraphs">
   
+    <br />
+    <b>${textContainer.text['helpFriendSubheader'] }</b>
+    <br /> <br />
+    ${textContainer.text['helpFriendParagraph1'] }
+    <br /><br />
+    ${textContainer.text['helpFriendParagraph2'] }
+    <br />
+    <br />
+    <%@ include file="../assetsJsp/commonError.jsp"%>
+
+  </div>
+
       <c:choose>
         <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasColleaguesIdentifiedUser}" >
   
@@ -65,14 +69,14 @@ ${textContainer.text['helpFriendParagraph2'] }
   
     <br /><br />
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-      <div class="logoutBottom">
+      <div class="logoutBottom" style="font-size: smaller">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
         &nbsp; &nbsp;      
       </div>
     </c:if>    
-    <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline">
-      <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+    <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfLinkButton"
+      type="submit" />
     </form>
     
 

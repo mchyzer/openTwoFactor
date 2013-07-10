@@ -20,55 +20,58 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['optinSubheader']}</b>
-  <br /><br />
-  <%@ include file="../assetsJsp/commonError.jsp"%>
-  ${textContainer.text['optinStep1description']}
-  <br /><br />
-  <div class="substep">
-    ${textContainer.text['optinStep1substep']}
-  </div><br />
-  ${textContainer.text['optinStep2description']}
-  <br /><br />
-  <div class="substep">
-    <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedFormatted}</b> 
-    &nbsp; &nbsp;  ${textContainer.text['optinStep2advancedPrefix']}
-    <span id="otherOptionsLink"><a href="#" onclick="document.getElementById('otherOptions').style.display = 'block'; document.getElementById('otherOptionsLink').style.display = 'none';">${textContainer.text['optinStep2advancedLink']}</a>${textContainer.text['optinStep2advancedSuffix']}</span>
+  <div class="paragraphs">
+  
+    <br />
+    <b>${textContainer.text['optinSubheader']}</b>
     <br /><br />
-    <div id="otherOptions" style="display: none;">
-      <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedHexFormatted}</b>
-      &nbsp; &nbsp; ${textContainer.text['optinHexLabel']}
+    <%@ include file="../assetsJsp/commonError.jsp"%>
+    ${textContainer.text['optinStep1description']}
+    <br /><br />
+    <div class="substep">
+      ${textContainer.text['optinStep1substep']}
+    </div><br />
+    ${textContainer.text['optinStep2description']}
+    <br /><br />
+    <div class="substep">
+      <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedFormatted}</b> 
+      &nbsp; &nbsp;  ${textContainer.text['optinStep2advancedPrefix']}
+      <span id="otherOptionsLink"><a href="#" onclick="document.getElementById('otherOptions').style.display = 'block'; document.getElementById('otherOptionsLink').style.display = 'none';">${textContainer.text['optinStep2advancedLink']}</a>${textContainer.text['optinStep2advancedSuffix']}</span>
       <br /><br />
-      <div style="border: 1px solid #95956F; padding: 3px">
-        ${textContainer.text['optinStep2customSecretLabel']} &nbsp;
-          <form action="../../twoFactorUi/app/UiMain.optinCustom" method="post" style="display: inline; white-space: nowrap;">
-            <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="30" autocomplete="off" class="textfield" /> &nbsp;
-            <input value="${textContainer.textEscapeDouble['optinStep2submitCustomSecretButton']}" class="tfBlueButton" 
-            style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
-            type="submit" />
-          </form>
-        <br /> 
-        ${textContainer.text['optinStep2advancedCustomSecretDescription']}
+      <div id="otherOptions" style="display: none;">
+        <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedHexFormatted}</b>
+        &nbsp; &nbsp; ${textContainer.text['optinHexLabel']}
+        <br /><br />
+        <div style="border: 1px solid #95956F; padding: 3px">
+          ${textContainer.text['optinStep2customSecretLabel']} &nbsp;
+            <form action="../../twoFactorUi/app/UiMain.optinCustom" method="post" style="display: inline; white-space: nowrap;">
+              <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="30" autocomplete="off" class="textfield" /> &nbsp;
+              <input value="${textContainer.textEscapeDouble['optinStep2submitCustomSecretButton']}" class="tfBlueButton" 
+              style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
+              type="submit" />
+            </form>
+          <br /> 
+          ${textContainer.text['optinStep2advancedCustomSecretDescription']}
+        </div>
+        <br /><br />
       </div>
-      <br /><br />
+      ${textContainer.text['optinStep2bottom']}
+    </div><br />
+    ${textContainer.text['optinStep3description']}
+    <br /><br />
+    <form action="UiMain.optinTestSubmit" method="post">
+    <div class="substep">
+      ${textContainer.text['optinStep3substep']} <br /><br />
+        ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
+        <br /><br />
+          <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"
+        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
+        type="submit" onclick="if (document.getElementById('twoFactorCustomCodeId').value != null && document.getElementById('twoFactorCustomCodeId').value != '') {alert('If you enter a custom secret, you must click the button: Submit custom secret'); return false; }" />
+        
+      <br /><br />       
+      ${textContainer.text['optinStep3bottom']}
+        
     </div>
-    ${textContainer.text['optinStep2bottom']}
-  </div><br />
-  ${textContainer.text['optinStep3description']}
-  <br /><br />
-  <form action="UiMain.optinTestSubmit" method="post">
-  <div class="substep">
-    ${textContainer.text['optinStep3substep']} <br /><br />
-      ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
-      <br /><br />
-        <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
-      type="submit" onclick="if (document.getElementById('twoFactorCustomCodeId').value != null && document.getElementById('twoFactorCustomCodeId').value != '') {alert('If you enter a custom secret, you must click the button: Submit custom secret'); return false; }" />
-      
-    <br /><br />       
-    ${textContainer.text['optinStep3bottom']}
-      
   </div>
   <br />
   <a name="qrCode"></a>

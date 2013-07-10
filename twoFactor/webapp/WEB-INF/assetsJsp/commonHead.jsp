@@ -18,6 +18,6 @@
 
 </script>
 
-<link type="text/css" rel="stylesheet" href="../../assets/twoFactor.css?v=1.0.12" />
-<link type="text/css" rel="stylesheet" href="../../assets/twoFactorPrint.css?v=1.0.12" media="print" />
+<link type="text/css" rel="stylesheet" href="../../assets/twoFactor.css?v=1.0.13" />
+<link type="text/css" rel="stylesheet" href="../../assets/twoFactorPrint.css?v=1.0.13" media="print" />
     

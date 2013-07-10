@@ -27,32 +27,35 @@
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
   
-    <c:choose>
-      <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
-        <b>${textContainer.text['indexOptedInSubheader'] }</b>
-        <br />
-        <br />
-        <div style="width: 30em">
+    <div class="paragraphs">
+      <c:choose>
+        <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
+          <b>${textContainer.text['indexOptedInSubheader'] }</b>
+          <br />
+          <br />
+          
           ${textContainer.text['indexOptedInSubtext'] }
           
-        </div>
-      </c:when>
-    <c:otherwise>
+        </c:when>
+      <c:otherwise>
+  
+          <b>${textContainer.text['indexNotOptedInSubheader']}</b>
+          <br />
+          <br />
+          ${textContainer.text['indexNotOptedInSubtext1']}
+          <br />
+          <br />
+  
+          <a href="../../twoFactorUi/app/UiMain.optin">${textContainer.text['indexNotOptedInLoginLink']}</a>
+  
+          <br />
+          ${textContainer.text['indexNotOptedInSubtext2']}
+         
+        </c:otherwise>  
+      </c:choose>
 
-        <b>${textContainer.text['indexNotOptedInSubheader']}</b>
-        <br />
-        <br />
-        ${textContainer.text['indexNotOptedInSubtext1']}
-        <br />
-        <br />
+    </div>
 
-        <a href="../../twoFactorUi/app/UiMain.optin">${textContainer.text['indexNotOptedInLoginLink']}</a>
-
-        <br />
-        ${textContainer.text['indexNotOptedInSubtext2']}
-       
-      </c:otherwise>  
-    </c:choose>
     <br /><br />
     <br /><br />
     

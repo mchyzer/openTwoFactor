@@ -1,5 +1,5 @@
 <%@ include file="../assetsJsp/commonTaglib.jsp"%>
-  <div style="width:45em">
+  <div class="paragraphs">
     <c:if test="${!twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
       ${textContainer.text['profileInstructionsOptedInTop']}
     </c:if>

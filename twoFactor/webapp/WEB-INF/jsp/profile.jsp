@@ -162,7 +162,7 @@
     </div>
   </c:if>    
 
-  <form action="UiMain.index" method="get" style="display: inline; font-size: smaller">
+  <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline; font-size: smaller">
     <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfLinkButton"
     type="submit" />
   </form>

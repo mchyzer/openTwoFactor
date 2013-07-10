@@ -19,7 +19,12 @@
   <br />
   <b>${textContainer.text['indexNotOptedInSubheader']}</b>
   <br /><br />
-  ${textContainer.text['indexNotOptedInSubtext1']}
+  <div class="paragraphs">
+  
+    ${textContainer.text['indexNotOptedInSubtext1']}
+    
+  </div>
+    
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>

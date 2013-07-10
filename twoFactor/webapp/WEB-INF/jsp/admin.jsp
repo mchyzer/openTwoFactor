@@ -124,26 +124,23 @@
   <br />
   <br /> 
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-      <div class="logoutBottom">
+      <div class="logoutBottom" style="font-size: smaller">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
         &nbsp; &nbsp;      
       </div>
     </c:if>    
-  <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline">
-    <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+  <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline; font-size: smaller">
+    <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfLinkButton"
+    type="submit" />
   </form>
 
   &nbsp; &nbsp;
     
-  <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminIndex" method="get" style="display: inline">
-    <input value="${textContainer.textEscapeDouble['buttonAdminHome']}" class="tfBlueButton"
-    onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+  <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminIndex" method="get" style="display: inline; font-size: smaller">
+    <input value="${textContainer.textEscapeDouble['buttonAdminHome']}" class="tfLinkButton"
+    type="submit" />
   </form>
   
-
-  <br />
-  <br />
   
   <br /><br />
   

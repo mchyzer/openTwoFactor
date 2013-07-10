@@ -105,6 +105,19 @@ h4 {
   display: none;
 }
 
+.paragraphs {
+  width: 35em;
+}
+
+/* lets say the min width for the screen is 220px */
+@media screen and (max-width: 51.5em) {
+  
+  .paragraphs {
+    width: 80%;
+  }
+}
+
+
 /* lets say the min width for the screen is 220px */
 @media screen and (max-width: 46.5em) {
   
@@ -132,6 +145,9 @@ h4 {
 
   .logoutBottom {
     display: inline;
+  }
+  .paragraphs {
+    width: 15em;
   }
 
 }

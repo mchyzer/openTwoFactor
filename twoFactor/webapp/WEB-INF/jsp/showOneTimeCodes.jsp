@@ -24,7 +24,7 @@
   <b>${textContainer.text['codesSubheader']}</b>
   <br />
   <br />
-  <div style="width: 35em">
+  <div class="paragraphs">
   ${textContainer.text['codesParagraph1']}
   <br /><br />
   ${textContainer.text['codesParagraph2']}
@@ -47,14 +47,14 @@
   <br />
   <div class="tfPrinterFriendlyNot">
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
-      <div class="logoutBottom">
+      <div class="logoutBottom" style="font-size: smaller">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
         &nbsp; &nbsp;      
       </div>
     </c:if>    
-    <form action="UiMain.index" method="get" style="display: inline">
-      <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+    <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfLinkButton"
+      type="submit" />
     </form>
     <br /><br />
   </div>
