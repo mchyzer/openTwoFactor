@@ -851,16 +851,28 @@ public class UiMain extends UiServiceLogicBase {
     TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
 
     List<TwoFactorUser> usersWhoPickedThisUserToOptOut = twoFactorDaoFactory.getTwoFactorUser().retrieveUsersWhoPickedThisUserToOptThemOut(twoFactorUser.getUuid());
-
+    
+    boolean hasAuthorized = false;
+    boolean hasNotAuthorized = false;
+    
     //TODO batch this up
     for (int i=0;i<TwoFactorServerUtils.length(usersWhoPickedThisUserToOptOut);i++) {
       TwoFactorUser current = usersWhoPickedThisUserToOptOut.get(i);
       current = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, current.getLoginid());
       current.setSubjectSource(subjectSource);
       usersWhoPickedThisUserToOptOut.set(i, current);
+      
+      if (current.isInvitedColleaguesWithinAllottedTime()) {
+        hasAuthorized = true;
+      } else {
+        hasNotAuthorized = true;
+      }
+      
     }
     
     twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setColleaguesIdentifiedUser(usersWhoPickedThisUserToOptOut);
+    twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setHasColleaguesAuthorizedUser(hasAuthorized);
+    twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setHasColleaguesNotAuthorizedUser(hasNotAuthorized);
     
     twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setHasColleaguesIdentifiedUser(TwoFactorServerUtils.length(usersWhoPickedThisUserToOptOut) > 0);
     

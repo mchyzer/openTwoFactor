@@ -27,42 +27,54 @@
     <br />
     <b>${textContainer.text['helpFriendSubheader'] }</b>
     <br /> <br />
+    <%@ include file="../assetsJsp/commonError.jsp"%>
     ${textContainer.text['helpFriendParagraph1'] }
     <br /><br />
     ${textContainer.text['helpFriendParagraph2'] }
-    <br />
-    <br />
-    <%@ include file="../assetsJsp/commonError.jsp"%>
+    <br /><br />
 
   </div>
 
       <c:choose>
         <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasColleaguesIdentifiedUser}" >
-  
-          <c:forEach items="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.colleaguesIdentifiedUser}" 
-              var="colleagueIdentifiedUser"  >
-            
-            <c:choose>
-              <c:when test="${colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
-                
+          
+          <c:if test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasColleaguesAuthorizedUser}" >
+            ${textContainer.text['helpFriendParagraph3'] }
+            <br />
+            <br />
+            <c:forEach items="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.colleaguesIdentifiedUser}" 
+                var="colleagueIdentifiedUser"  >
+              <c:if test="${colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
+                  
                 <form action="UiMain.optOutColleague" method="post" style="display: inline">
                   <input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" class="tfBlueButton"
                     onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
-                    onclick="return confirm('${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirm']}');" />
+                    onclick="return confirm('${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirmPrefix']} ${twoFactor:escapeSingleQuotesAndXml(colleagueIdentifiedUser.name)} ${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirmSuffix']}');" />
                   <input type="hidden" name="userIdOperatingOn" 
                     value="${fn:escapeXml(colleagueIdentifiedUser.uuid) }" />
                 </form>
+                <br />            
+               </c:if>
+            </c:forEach>
+            <br /><br />
+          </c:if>
+          <c:if test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasColleaguesNotAuthorizedUser}" >
+            ${textContainer.text['helpFriendListNotAuthorized'] }
+            <br /><br />
+            <c:forEach items="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.colleaguesIdentifiedUser}" 
+                var="colleagueIdentifiedUser"  >
               
-              </c:when>
-              <c:otherwise>
-                 <b>${ fn:escapeXml(colleagueIdentifiedUser.name) }</b> ${textContainer.text['helpFriendNotRequestedSuffix']}
-              </c:otherwise>
-            </c:choose>
-            <br />            
-          </c:forEach>
+              <c:if test="${!colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
+                  
+                  <b>${ fn:escapeXml(colleagueIdentifiedUser.name) }</b>
+                  <br />            
+                
+              </c:if>
+            </c:forEach>
+          </c:if>
         </c:when>
         <c:otherwise>
-          ${textContainer.text['helpFriendNoFriends'] }
+          ${textContainer.text['helpFriendNoIdentifiedFriends'] }
         </c:otherwise>      
       </c:choose>
 

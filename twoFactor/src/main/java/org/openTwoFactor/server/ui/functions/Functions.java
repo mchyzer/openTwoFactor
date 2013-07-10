@@ -4,6 +4,8 @@
  */
 package org.openTwoFactor.server.ui.functions;
 
+import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
 
 
 /**
@@ -20,5 +22,17 @@ public class Functions {
     if (input == null) return "";
     return input.replace("'", "\'");
   }
+ 
+  /**
+   * escape single quotes
+   * @param input
+   * @return the escaped string
+   */
+  public static String escapeSingleQuotesAndXml(String input) {
+    if (input == null) return "";
+    input = TwoFactorServerUtils.xmlEscape(input, true);
+    return input.replace("'", "\'");
+  }
+ 
   
 }

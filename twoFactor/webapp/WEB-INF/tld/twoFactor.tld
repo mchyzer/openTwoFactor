@@ -98,5 +98,16 @@
     </example>
   </function>
   
+  <function>
+    <description>
+      Escapes single quotes and xml for javascript
+    </description>
+    <name>escapeSingleQuotesAndXml</name>
+    <function-class>org.openTwoFactor.server.ui.functions.Functions</function-class>
+    <function-signature>java.lang.String escapeSingleQuotesAndXml(java.lang.String)</function-signature>
+    <example>
+      ${twoFactor:escapeSingleQuotesAndXml(something)}
+    </example>
+  </function>
   
 </taglib>

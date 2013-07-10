@@ -101,6 +101,48 @@ public class TwoFactorHelpLoggingInContainer {
   }
 
   /**
+   * if there are colleagues authorized by the user
+   */
+  private boolean hasColleaguesAuthorizedUser;
+
+  /**
+   * if there are colleagues not authorized by the user
+   */
+  private boolean hasColleaguesNotAuthorizedUser;
+  
+  /**
+   * if there are colleagues authorized by the user
+   * @return if there are colleagues authorized by the user
+   */
+  public boolean isHasColleaguesAuthorizedUser() {
+    return this.hasColleaguesAuthorizedUser;
+  }
+
+  /**
+   * if there are colleagues authorized by the user
+   * @param hasColleaguesAuthorizedUser1
+   */
+  public void setHasColleaguesAuthorizedUser(boolean hasColleaguesAuthorizedUser1) {
+    this.hasColleaguesAuthorizedUser = hasColleaguesAuthorizedUser1;
+  }
+
+  /**
+   * if there are colleagues authorized by the user
+   * @return if there are colleagues authorized by the user
+   */
+  public boolean isHasColleaguesNotAuthorizedUser() {
+    return this.hasColleaguesNotAuthorizedUser;
+  }
+
+  /**
+   * if there are colleagues authorized by the user
+   * @param hasColleaguesNotAuthorizedUser1
+   */
+  public void setHasColleaguesNotAuthorizedUser(boolean hasColleaguesNotAuthorizedUser1) {
+    this.hasColleaguesNotAuthorizedUser = hasColleaguesNotAuthorizedUser1;
+  }
+
+  /**
    * if a colleague has identified this user
    * as someone who can opt them out
    */
