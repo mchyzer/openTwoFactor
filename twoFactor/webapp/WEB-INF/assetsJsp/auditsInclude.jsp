@@ -26,7 +26,7 @@
             <td>${fn:escapeXml(twoFactorAuditView.userAgentOperatingSystem)}</td>
             <td>${fn:escapeXml(twoFactorAuditView.userAgentBrowser)}</td>
             <td>${twoFactorAuditView.trustedBrowser == null ? textContainer.text['no'] : (twoFactorAuditView.trustedBrowser == 'T' ? textContainer.text['yes'] : textContainer.text['no'])}</td>
-            <td>${fn:escapeXml(twoFactorAuditView.userUsingLoginid)}</td>
+            <td>${fn:escapeXml(twoFactorAuditView.userUsingName)}</td>
             <td>${fn:escapeXml(twoFactorAuditView.description)}</td>
           </tr>
           <c:set var="i" value="${i+1}" />

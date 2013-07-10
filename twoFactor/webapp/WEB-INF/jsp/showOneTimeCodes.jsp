@@ -40,7 +40,7 @@
   ${textContainer.text['codesPrintedInstructions']}
   </span>
   <%@ include file="../assetsJsp/commonError.jsp"%>
-  <pre class="codes" >
+  <pre class="codes" style="width: 30em" >
     <c:forEach items="${twoFactorRequestContainer.oneTimePassRows}" var="oneTimePassRow">
   ${oneTimePassRow.oneTimePassCol1}   ${oneTimePassRow.oneTimePassCol2}</c:forEach>
   </pre>  

@@ -7,17 +7,23 @@ package org.openTwoFactor.server.beans;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 import org.openTwoFactor.server.ui.beans.TextContainer;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.internet2.middleware.subject.Source;
+import edu.internet2.middleware.subject.Subject;
 
 
 
 /**
  * view on audit records to make them more human readable
  */
+@SuppressWarnings("serial")
 public class TwoFactorAuditView extends TwoFactorHibernateBeanBase {
 
   /** constant for field name for: action */
@@ -300,7 +306,32 @@ public class TwoFactorAuditView extends TwoFactorHibernateBeanBase {
     return this.userUsingLoginid;
   }
 
+  /** subject source if need to lookup name / description */
+  private Source subjectSource = null;
+
+  /**
+   * subject source if need to lookup name
+   * @param subjectSource1
+   */
+  public void setSubjectSource(Source subjectSource1) {
+    this.subjectSource = subjectSource1;
+  }
   
+  /**
+   * name from subject source, or if not found, the loginid
+   * 
+   * @return the name from subject source, or if not found, the loginid
+   */
+  public String getUserUsingName() {
+    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getUserUsingLoginid(), true, false);
+    if (subject != null) {
+      if (!StringUtils.isBlank(subject.getName())) {
+        return subject.getName();
+      }
+    }
+    return this.getUserUsingLoginid();
+  }
+
   /**
    * loginid of the user using the app
    * @param userUsingLoginid1 the userUsingLoginid to set

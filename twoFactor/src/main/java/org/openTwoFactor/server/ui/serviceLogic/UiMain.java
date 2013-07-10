@@ -316,6 +316,10 @@ public class UiMain extends UiServiceLogicBase {
       .getTwoFactorAudit().retrieveByUser(twoFactorUser.getUuid(), 
         tfQueryOptions);
 
+    for (TwoFactorAuditView twoFactorAuditView : TwoFactorServerUtils.nonNull(twoFactorAuditViews)) {
+      twoFactorAuditView.setSubjectSource(subjectSource);
+    }
+    
     int count = tfQueryOptions.getQueryPaging().getTotalRecordCount();
     if (count < 0) {
       throw new RuntimeException("Why is there no count for audits retrieved???");
@@ -712,13 +716,13 @@ public class UiMain extends UiServiceLogicBase {
             TwoFactorAuditAction.OPTED_OUT_A_COLLEAGUE, ipAddress, 
             userAgent, twoFactorUserUsingApp[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
             TextContainer.retrieveFromRequest().getText().get("helpFriendAuditDescriptionPrefix") 
-              + " " + twoFactorUserGettingOptedOut[0].getLoginid());
+              + " " + twoFactorUserGettingOptedOut[0].getName() +  " (" + twoFactorUserGettingOptedOut[0].getLoginid() + ")");
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.COLLEAGUE_OPTED_ME_OUT, ipAddress, 
             userAgent, twoFactorUserGettingOptedOut[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
             TextContainer.retrieveFromRequest().getText().get("helpFriendAuditDescriptionForFriendPrefix")
-              + " " + twoFactorUserUsingApp[0].getLoginid());
+            + " " + twoFactorUserUsingApp[0].getName() +  " (" + twoFactorUserUsingApp[0].getLoginid() + ")");
 
         return null;
       }
