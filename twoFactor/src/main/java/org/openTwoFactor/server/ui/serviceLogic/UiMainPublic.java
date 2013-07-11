@@ -27,6 +27,7 @@ import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.ui.UiServiceLogicBase;
+import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorHelpLoggingInContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorPhoneForScreen;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
@@ -268,6 +269,8 @@ public class UiMainPublic extends UiServiceLogicBase {
       }
     });
 
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("havingTroubleAuthSuccess"));
+    
     setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
 
     

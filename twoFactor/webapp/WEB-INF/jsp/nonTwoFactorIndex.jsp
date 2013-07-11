@@ -101,7 +101,14 @@
           <c:choose>
             <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasColleagueLoginids}" >
   
-              ${textContainer.text['havingTroubleFriendAllowedToOptYouOut']}
+              <c:choose>
+                <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" >
+                  ${textContainer.text['havingTroubleFriendsInvitedSubtitle']}
+                </c:when>
+                <c:otherwise>
+                  ${textContainer.text['havingTroubleFriendsNotInvitedSubtitle']}
+                </c:otherwise>
+              </c:choose>
               <br /><br />
               
               <c:set var="i" value="0" />
@@ -119,22 +126,22 @@
               <br />
               <c:choose>
                 <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" >
-                  ${textContainer.text['havingTroubleYouHaveFriendsSubtitle']}
+                  ${textContainer.text['havingTroubleYouHaveAllowedFriendParagraph']}
                 </c:when>
                 <c:otherwise>
                   <form action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline">
                     <input value="${textContainer.textEscapeDouble['havingTroubleAllowFriendButton']}" class="tfBlueButton"
                       onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
                   </form> &nbsp;
+                  <br /><br />
+                  ${textContainer.text['havingTroubleAllowFriendsPrefix']} <c:if test="${!twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" ><form
+                   action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline"><input
+                      value="${textContainer.textEscapeDouble['havingTroubleAllowFriendsLink']}" class="tfBlueButton"
+                        style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
+                        type="submit" /></form></c:if> ${textContainer.text['havingTroubleAllowFriendsSuffix']}
                                 
                 </c:otherwise>
               </c:choose>
-              <br /><br />
-              ${textContainer.text['havingTroubleAllowFriendsPrefix']} <c:if test="${!twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" ><form
-               action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline"><input
-                  value="${textContainer.textEscapeDouble['havingTroubleAllowFriendsLink']}" class="tfBlueButton"
-                    style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
-                    type="submit" /></form></c:if> ${textContainer.text['havingTroubleAllowFriendsSuffix']}
               <br /><br />
   
             </c:when>
