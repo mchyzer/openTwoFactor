@@ -19,6 +19,13 @@ import org.openTwoFactor.server.hibernate.TfQueryOptions;
 public interface TwoFactorAuditDao {
 
   /**
+   * count of records for optin/optout
+   * @param userUuid
+   * @return the count
+   */
+  public int retrieveCountOptinOptouts(String userUuid);
+  
+  /**
    * retrieve audits by age but not deleted.  Should be in a reasonable batch (e.g. 1000?)
    * @param actions are the actions to retrieve
    * @param selectBeforeThisMilli is the millis since 1970 where records should be older

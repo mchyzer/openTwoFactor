@@ -215,11 +215,57 @@ public class UiMain extends UiServiceLogicBase {
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
-    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
-        
+    hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    
     showJsp("twoFactorIndex.jsp");
+
   }
 
+  /**
+   * see if too many users, and this user has never opted in and set a message if so
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @return if too many users
+   */
+  public boolean hasTooManyUsersLockoutLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    int maxRegistrations = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.max.registrations", -1);
+    if (maxRegistrations >= 0) {
+
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+      
+      if (!twoFactorUser.isOptedIn()) {
+        
+        //lets see how many opted in users there are
+        int usersOptedIn = twoFactorDaoFactory.getTwoFactorUser().retrieveCountOfOptedInUsers(); 
+        
+        if (usersOptedIn >= maxRegistrations) {
+          
+          
+          //lets see if this user has ever opted in
+          int countOfOptinsOptouts = twoFactorUser == null ? 0 
+              : twoFactorDaoFactory.getTwoFactorAudit().retrieveCountOptinOptouts(twoFactorUser.getUuid());
+          
+          //if the user has never opted in...
+          if (countOfOptinsOptouts == 0) {
+
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("cantOptInSinceTooManyUsers"));
+            return true;
+          }
+          
+        }
+        
+      }
+      
+    }
+    return false;
+    
+  }
+  
   /**
    * 
    * @param args
@@ -928,6 +974,10 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
+    index("twoFactorIndex.jsp"),
+
+    /**
+     */
     profile("profile.jsp");
     
     /**
@@ -979,6 +1029,10 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String twoFactorPass, final Source subjectSource) {
     
+    if (hasTooManyUsersLockoutLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser)) {
+      return OptinTestSubmitView.index;
+    }
+
     OptinTestSubmitView result =  (OptinTestSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -2154,6 +2208,12 @@ public class UiMain extends UiServiceLogicBase {
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, final String userAgent,
       final String twoFactorCode, final Source subjectSource) {
+    
+    if (hasTooManyUsersLockoutLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser)) {
+      return OptinView.index;
+    }
+    
+    
     return (OptinView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       

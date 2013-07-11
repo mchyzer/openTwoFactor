@@ -23,6 +23,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  */
 public class HibernateTwoFactorAuditDao implements TwoFactorAuditDao {
 
+  
   /**
    * @see org.openTwoFactor.server.dao.TwoFactorAuditDao#delete(org.openTwoFactor.server.beans.TwoFactorAudit)
    */
@@ -109,6 +110,23 @@ public class HibernateTwoFactorAuditDao implements TwoFactorAuditDao {
       .options(new TfQueryOptions().paging(1000, 1,false))
       .list(TwoFactorAudit.class);
     return theList;
+  }
+
+  /**
+   * @see TwoFactorAuditDao#retrieveCountOptinOptouts(String)
+   */
+  @Override
+  public int retrieveCountOptinOptouts(String userUuid) {
+    ByHqlStatic byHqlStatic = HibernateSession.byHqlStatic();
+    
+    int count = byHqlStatic.createQuery(
+      "select count(tfa.uuid) from TwoFactorAudit as tfa where " +
+      " tfa.userUuid = :theUserUuid and tfa.action in ('OPTIN_TWO_FACTOR', 'OPTOUT_TWO_FACTOR') ")
+      .setString("theUserUuid", userUuid)
+      .setCacheable(true)
+      .setCacheRegion(HibernateTwoFactorAuditDao.class.getName() + ".retrieveCountOptinOptouts")
+      .uniqueResult(long.class).intValue();
+    return count;
   }
 
 }

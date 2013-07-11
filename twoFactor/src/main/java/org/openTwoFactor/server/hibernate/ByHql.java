@@ -239,10 +239,13 @@ public class ByHql extends HibernateDelegate implements HqlQuery {
       //hibernate error when it couldnt find what was in cache perhaps, run the query again without caching
       if (this.cacheable != null && this.cacheable) {
         this.cacheable = false;
-        theQuery = ByHql.this.attachQueryInfo(session);
-        object = (T) theQuery.uniqueResult();
-        //set this back
-        this.cacheable = true;
+        try {
+          theQuery = ByHql.this.attachQueryInfo(session);
+          object = (T) theQuery.uniqueResult();
+        } finally {
+          //set this back
+          this.cacheable = true;
+        }
       }
     }
     TfHibUtils.evict(hibernateSession, object, true);

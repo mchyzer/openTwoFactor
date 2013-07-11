@@ -309,4 +309,19 @@ public class TfMemoryAuditDao implements TwoFactorAuditDao {
 
   }
 
+  /**
+   * @see TwoFactorAuditDao#retrieveCountOptinOptouts(String)
+   */
+  @Override
+  public int retrieveCountOptinOptouts(String userUuid) {
+    int count = 0;
+    for (TwoFactorAudit current : audits) {
+      if ((StringUtils.equals(current.getAction(), "OPTOUT_TWO_FACTOR") || StringUtils.equals(current.getAction(), "OPTIN_TWO_FACTOR"))
+          && StringUtils.equals(current.getUserUuid(), userUuid)) { 
+        count++;
+      }
+    }
+    return count;
+  }
+
 }

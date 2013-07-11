@@ -91,6 +91,22 @@
     statistics="false"
   />
 
+  <cache name="org.openTwoFactor.server.hibernate.dao.HibernateTwoFactorUserDao.retrieveCountOfOptedInUsers"
+    maxElementsInMemory="100"
+    eternal="false"
+    timeToIdleSeconds="300"
+    timeToLiveSeconds="300"
+    overflowToDisk="false"
+    statistics="false"
+  />
 
+  <cache name="org.openTwoFactor.server.hibernate.dao.HibernateTwoFactorAuditDao.retrieveCountOptinOptouts"
+    maxElementsInMemory="100"
+    eternal="false"
+    timeToIdleSeconds="120"
+    timeToLiveSeconds="120"
+    overflowToDisk="false"
+    statistics="false"
+  />
 
 </ehcache>

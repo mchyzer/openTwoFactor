@@ -107,4 +107,20 @@ public class HibernateTwoFactorUserDao implements TwoFactorUserDao {
     return theList;
   }
 
+  /**
+   * @see TwoFactorUserDao#retrieveCountOfOptedInUsers()
+   */
+  @Override
+  public int retrieveCountOfOptedInUsers() {
+    int count = HibernateSession.byHqlStatic().createQuery(
+        "select count(tfu.uuid) from TwoFactorUser as tfu where exists " +
+          " (select tfua from TwoFactorUserAttr as tfua where tfua.userUuid = tfu.uuid " +
+            " and tfua.attributeValueString = 'T' " +
+            " and tfua.attributeName = 'opted_in'  ) ")
+        .setCacheable(true)
+        .setCacheRegion(HibernateTwoFactorUserDao.class.getName() + ".retrieveCountOfOptedInUsers")
+        .uniqueResult(long.class).intValue();
+    return count;
+  }
+
 }

@@ -115,4 +115,18 @@ public class TfMemoryUserDao implements TwoFactorUserDao {
     return result;
   }
 
+  /**
+   * @see TwoFactorUserDao#retrieveCountOfOptedInUsers()
+   */
+  @Override
+  public int retrieveCountOfOptedInUsers() {
+    int count = 0;
+    for (TwoFactorUser current : users) {
+      if (current.isOptedIn()) {
+        count++;
+      }
+    }
+    return count;
+  }
+
 }

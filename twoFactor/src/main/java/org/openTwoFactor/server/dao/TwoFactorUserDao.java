@@ -45,6 +45,12 @@ public interface TwoFactorUserDao {
   public TwoFactorUser retrieveByUuid(String uuid);
   
   /**
+   * retrieve count of opted in users
+   * @return the count
+   */
+  public int retrieveCountOfOptedInUsers();
+  
+  /**
    * insert or update to the DB, include attributes
    * @param twoFactorUser
    */
