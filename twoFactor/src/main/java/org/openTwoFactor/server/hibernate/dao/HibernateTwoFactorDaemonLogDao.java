@@ -87,4 +87,19 @@ public class HibernateTwoFactorDaemonLogDao implements TwoFactorDaemonLogDao {
     return theList;
   }
 
+  /**
+   * @see TwoFactorDaemonLogDao#retrieveMostRecentSuccessTimestamp(String)
+   */
+  @Override
+  public Long retrieveMostRecentSuccessTimestamp(String daemonName) {
+    Long result = HibernateSession.byHqlStatic().createQuery(
+        "select max(tfdl.theTimestamp) from TwoFactorDaemonLog as tfdl where " +
+        " tfdl.status = 'success' and tfdl.daemonName = :theDaemonName ")
+        .setString("theDaemonName", daemonName)
+        .uniqueResult(Long.class);
+
+    return result;
+    
+  }
+
 }

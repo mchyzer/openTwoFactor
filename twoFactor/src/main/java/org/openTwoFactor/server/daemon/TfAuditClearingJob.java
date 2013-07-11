@@ -61,6 +61,7 @@ public class TfAuditClearingJob implements Job {
     boolean hasError = false;
 
     long start = System.nanoTime();
+    Date startDate = new Date();
     int elapsedTime = -1;
     
     Map<String, Object> debugLog = new LinkedHashMap<String, Object>();
@@ -181,7 +182,7 @@ public class TfAuditClearingJob implements Job {
       twoFactorDaemonLog.setDaemonName(TwoFactorDaemonName.deleteOldAudits.name());
       twoFactorDaemonLog.setDetails(TwoFactorServerUtils.mapToString(debugLog));
       //2012-06-05 17:09:19
-      twoFactorDaemonLog.setStartedTimeDate(new Date(start/1000000));
+      twoFactorDaemonLog.setStartedTimeDate(startDate);
       twoFactorDaemonLog.setEndedTimeDate(new Date());
       twoFactorDaemonLog.setMillis(new Long(elapsedTime));
       twoFactorDaemonLog.setRecordsProcessed(new Long(count));

@@ -309,6 +309,11 @@
       <fileset dir="${main.confDir}">
       </fileset>
     </copy>
+    <copy toDir="dist/bin/${main.serverDirName}/war/resources/org/openTwoFactor/server" overwrite="true">
+      <fileset dir="misc">
+        <include name="version.properties" />
+      </fileset>
+    </copy>
     <if><available file="servers/${main.serverDirName}/resources" type="dir" />
       <then>
         <copy toDir="dist/bin/${main.serverDirName}/war/resources" overwrite="true">

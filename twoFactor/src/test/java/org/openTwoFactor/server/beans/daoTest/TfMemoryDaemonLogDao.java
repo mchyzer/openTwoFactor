@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorDaemonLog;
+import org.openTwoFactor.server.beans.TwoFactorDaemonLogStatus;
 import org.openTwoFactor.server.dao.TwoFactorDaemonLogDao;
 
 
@@ -102,4 +103,21 @@ public class TfMemoryDaemonLogDao implements TwoFactorDaemonLogDao {
     return result;
   }
 
+  /**
+   * @see TwoFactorDaemonLogDao#retrieveMostRecentSuccessTimestamp(String)
+   */
+  @Override
+  public Long retrieveMostRecentSuccessTimestamp(String daemonName) {
+    Long mostRecentSuccess = null;
+    for (TwoFactorDaemonLog current : daemonLogs) {
+      if (!current.isDeleted() && StringUtils.equals(current.getDaemonName(), daemonName)
+          && StringUtils.equalsIgnoreCase(TwoFactorDaemonLogStatus.success.name().toString(), current.getStatus())) {
+        if (current.getTheTimestamp() != null && current.getMillis() != null &&
+            (mostRecentSuccess == null || mostRecentSuccess < (current.getTheTimestamp() + current.getMillis()))) {
+          mostRecentSuccess = current.getTheTimestamp() + current.getMillis();
+        }
+      }
+    }
+    return mostRecentSuccess;
+  }
 }

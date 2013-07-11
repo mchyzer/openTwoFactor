@@ -124,10 +124,7 @@ public class TfSourceUtils {
     //description could be null?
     String description = subject.getDescription();
     if (StringUtils.isBlank(description)) {
-      description = subject.getName();
-    }
-    if (StringUtils.isBlank(description)) {
-      description = subject.getId();
+      description = subjectName(subject, subjectId);
     }
     return description;
   }
@@ -189,6 +186,32 @@ public class TfSourceUtils {
 
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(TfSourceUtils.class);
+
+  /**
+   * convert from subject to description
+   * @param subject
+   * @param subjectId is what was used to lookup if there is something, could be null if not applicable
+   * @return the description, or name, or id
+   */
+  public static String subjectName(Subject subject, String subjectId) {
+    
+    if (subject == null) {
+      return subjectId;
+    }
+    
+    //description could be null?
+    String name = subject.getName();
+    if (StringUtils.isBlank(name)) {
+      String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+      if (!StringUtils.isBlank(netIdAttribute)) {
+        name = subject.getAttributeValue(netIdAttribute);
+      }
+    }
+    if (StringUtils.isBlank(name)) {
+      name = subject.getId();
+    }
+    return name;
+  }
 
   
 }

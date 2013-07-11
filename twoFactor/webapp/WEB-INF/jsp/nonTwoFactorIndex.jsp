@@ -30,13 +30,13 @@
     <br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
 
-    ${textContainer.text['havingTroubleEnrolled']}
-    <br /><br />
-    ${textContainer.text['havingTroubleParagraph1']}
-    <br />
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
           
+          ${textContainer.text['havingTroubleEnrolled']}
+          <br /><br />
+          ${textContainer.text['havingTroubleParagraph1']}
+          <br />
           <c:choose>
             <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasPhoneNumbers}" >
               
@@ -142,13 +142,13 @@
               ${textContainer.text['havingTroubleNoFriends']}
             </c:otherwise>
           </c:choose>
+          ${textContainer.text['havingTroubleParagraph2end']}    
   
         </c:when>
         <c:otherwise>
           ${textContainer.text['havingTroubleNotEnrolled']}
         </c:otherwise>  
       </c:choose>
-      ${textContainer.text['havingTroubleParagraph2end']}    
       
     </div>
     <br /><br />

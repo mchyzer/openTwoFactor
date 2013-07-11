@@ -74,27 +74,27 @@
       <div class="formLabel">
          <b><label for="colleagueLogin0">${textContainer.text['profileFriendLabel1']}</label></b></div>
       <div class="formValue">
-         ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueDescription0) }</div>
+         ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName0) }</div>
       <div class="formFooter">&nbsp;</div>
     </div>
     <div class="formRow">
       <div class="formLabel"><b><label for="colleagueLogin1">${textContainer.text['profileFriendLabel2']}</label></b></div>
-      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueDescription1) }</div>
+      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName1) }</div>
       <div class="formFooter">&nbsp;</div>
     </div>
     <div class="formRow">
       <div class="formLabel"><b><label for="colleagueLogin2">${textContainer.text['profileFriendLabel3']}</label></b></div>
-      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueDescription2) }</div>
+      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName2) }</div>
       <div class="formFooter">&nbsp;</div>
     </div>
     <div class="formRow">
       <div class="formLabel"><b><label for="colleagueLogin3">${textContainer.text['profileFriendLabel4']}</label></b></div>
-      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueDescription3) }</div>
+      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName3) }</div>
       <div class="formFooter">&nbsp;</div>
     </div>
     <div class="formRow">
       <div class="formLabel"><b><label for="colleagueLogin4">${textContainer.text['profileFriendLabel5']}</label></b></div>
-      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueDescription4) }</div>
+      <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName4) }</div>
       <div class="formFooter">&nbsp;</div>
     </div>
     <div class="formRow">

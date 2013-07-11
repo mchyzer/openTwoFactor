@@ -30,6 +30,13 @@ public interface TwoFactorDaemonLogDao {
   public List<TwoFactorDaemonLog> retrieveOlderThanAge(long selectBeforeThisMilli);
 
   /**
+   * retrieve the timestamp of the most recent success
+   * @param daemonName is the daemon name checking
+   * @return the timestamp of the daemon
+   */
+  public Long retrieveMostRecentSuccessTimestamp(String daemonName);
+
+  /**
    * retrieve daemon log that is deleted for longer than a certain amount of time
    * @param selectBeforeThisMilli is the millis since 1970 where records should be older
    * @return the daemon log

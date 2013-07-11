@@ -86,6 +86,10 @@ public class TwoFactorUiServlet extends HttpServlet {
       throw new RuntimeException("UI doesnt run in this env per: twoFactorServer.runUi");
     }
 
+    if (StringUtils.equals("true",request.getParameter("status"))) {
+      return;
+    }
+    
     TwoFactorFilterJ2ee.assignHttpServlet(this);
     
     //set the text container
@@ -96,14 +100,14 @@ public class TwoFactorUiServlet extends HttpServlet {
     //lets do some defaults
     if (TwoFactorServerUtils.length(urlStrings) == 0) {
       //relative links break, send redirect
-      response.sendRedirect(request.getContextPath() + "/twoFactorPublicUi/app/UiMainUnprotected.index");
+      response.sendRedirect(request.getContextPath() + "/twoFactorUnprotectedUi/app/UiMainUnprotected.index");
       return;
     }
 
     //lets do some defaults
     if (TwoFactorServerUtils.length(urlStrings) == 1 && StringUtils.equals("app", urlStrings.get(0))) {
       //relative links break, send redirect
-      response.sendRedirect(request.getContextPath() + "/twoFactorPublicUi/app/UiMainUnprotected.index");
+      response.sendRedirect(request.getContextPath() + "/twoFactorUnprotectedUi/app/UiMainUnprotected.index");
       return;
     }
 

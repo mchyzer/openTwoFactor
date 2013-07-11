@@ -43,6 +43,17 @@
     <servlet-class>org.openTwoFactor.server.j2ee.TwoFactorUiServlet</servlet-class>
     <load-on-startup>1</load-on-startup>
   </servlet>
+  <servlet>
+    <servlet-name>StatusServlet</servlet-name>
+    <display-name>Status Servlet</display-name>
+    <servlet-class>org.openTwoFactor.server.j2ee.TwoFactorStatusServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>StatusServlet</servlet-name>
+    <url-pattern>/status</url-pattern>
+  </servlet-mapping>
+  
   <!-- this is not protected at all by authn -->
   <servlet-mapping>
     <servlet-name>TwoFactorUiServlet</servlet-name>

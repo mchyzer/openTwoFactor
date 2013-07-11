@@ -574,5 +574,121 @@ public class TwoFactorProfileContainer {
    * phone text checkbox
    */
   private String phoneText2;
+
+  /**
+   * colleague Name 0
+   */
+  private String colleagueName0;
+
+  /**
+   * colleague Name 1
+   */
+  private String colleagueName1;
+
+  /**
+   * colleague Name 2
+   */
+  private String colleagueName2;
+
+  /**
+   * colleague Name 3
+   */
+  private String colleagueName3;
+
+  /**
+   * colleague Name 4
+   */
+  private String colleagueName4;
+
+
+
+  /**
+   * colleague Name 0
+   * @return colleague Name
+   */
+  public String getColleagueName0() {
+    return this.colleagueName0;
+  }
+
+
+  /**
+   * colleague Name
+   * @param _colleagueName0
+   */
+  public void setColleagueName0(String _colleagueName0) {
+    this.colleagueName0 = _colleagueName0;
+  }
+
+
+  /**
+   * colleague Name 1
+   * @return colleague Name
+   */
+  public String getColleagueName1() {
+    return this.colleagueName1;
+  }
+
+
+  /**
+   * colleague Name 1
+   * @param _colleagueName1
+   */
+  public void setColleagueName1(String _colleagueName1) {
+    this.colleagueName1 = _colleagueName1;
+  }
+
+
+  /**
+   * colleague Name 2
+   * @return colleague Name 
+   */
+  public String getColleagueName2() {
+    return this.colleagueName2;
+  }
+
+
+  /**
+   * colleague Name 2
+   * @param _colleagueName2
+   */
+  public void setColleagueName2(String _colleagueName2) {
+    this.colleagueName2 = _colleagueName2;
+  }
+
+
+  /**
+   * colleague Name 3
+   * @return colleague Name 
+   */
+  public String getColleagueName3() {
+    return this.colleagueName3;
+  }
+
+
+  /**
+   * colleague Name 3
+   * @param _colleagueName3
+   */
+  public void setColleagueName3(String _colleagueName3) {
+    this.colleagueName3 = _colleagueName3;
+  }
+
+
+  /**
+   * colleague Name 4
+   * @return colleague Name 
+   */
+  public String getColleagueName4() {
+    return this.colleagueName4;
+  }
+
+
+  /**
+   * colleague Name 4
+   * @param _colleagueName4
+   */
+  public void setColleagueName4(String _colleagueName4) {
+    this.colleagueName4 = _colleagueName4;
+  }
   
 }

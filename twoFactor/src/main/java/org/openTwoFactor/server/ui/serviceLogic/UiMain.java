@@ -1402,6 +1402,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription0(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
+          twoFactorProfileContainer.setColleagueName0(TfSourceUtils.subjectName(subject, colleagueUser.getLoginid()));
 
         }
       }
@@ -1417,6 +1418,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription1(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
+          twoFactorProfileContainer.setColleagueName1(TfSourceUtils.subjectName(subject, colleagueUser.getLoginid()));
 
         }
       }
@@ -1432,6 +1434,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription2(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
+          twoFactorProfileContainer.setColleagueName2(TfSourceUtils.subjectName(subject, colleagueUser.getLoginid()));
 
         }
       }
@@ -1447,6 +1450,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription3(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
+          twoFactorProfileContainer.setColleagueName3(TfSourceUtils.subjectName(subject, colleagueUser.getLoginid()));
 
         }
       }
@@ -1461,6 +1465,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               colleagueUser.getLoginid(), true, false);
           twoFactorProfileContainer.setColleagueDescription4(TfSourceUtils.subjectDescription(subject, colleagueUser.getLoginid()));
+          twoFactorProfileContainer.setColleagueName4(TfSourceUtils.subjectName(subject, colleagueUser.getLoginid()));
 
         }
       }
