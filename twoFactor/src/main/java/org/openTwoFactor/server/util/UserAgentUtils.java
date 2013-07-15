@@ -4,9 +4,9 @@
  */
 package org.openTwoFactor.server.util;
 
-import nl.bitwalker.useragentutils.UserAgent;
-
 import org.apache.commons.logging.Log;
+
+import eu.bitwalker.useragentutils.UserAgent;
 
 
 /**

@@ -201,8 +201,9 @@ public class UiMainPublic extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.SEND_CODE_TO_PHONE, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), secretCode.charAt(0) + "#####");
-        
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+            TextContainer.retrieveFromRequest().getText().get("havingTroubleAuditPrefix") + " "
+            + secretCode.charAt(0) + "#####");
         
         return null;
       }

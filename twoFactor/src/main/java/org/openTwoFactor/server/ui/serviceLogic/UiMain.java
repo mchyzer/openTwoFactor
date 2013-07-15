@@ -215,12 +215,55 @@ public class UiMain extends UiServiceLogicBase {
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
-    hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+    
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
     
     showJsp("twoFactorIndex.jsp");
 
   }
 
+  /**
+   * see if user is active, if not print a message
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @return if user cant login
+   */
+  public boolean userCantLoginNotActiveLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, Source subjectSource) {
+    
+    //maybe we arent filtering inactives
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.filteringInactives", false)) {
+      return false;
+    }
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorUser.isOptedIn()) {
+      
+      Subject subject =  TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+          twoFactorUser.getLoginid(), true, false);
+      
+      if (subject == null || !TfSourceUtils.subjectIsActive(subject)) {
+        
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("cantOptInSinceNotActive"));
+        return true;
+      }
+      
+      
+    }
+    
+    return false;
+    
+  }
+  
   /**
    * see if too many users, and this user has never opted in and set a message if so
    * @param twoFactorDaoFactory
@@ -1029,7 +1072,13 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String twoFactorPass, final Source subjectSource) {
     
-    if (hasTooManyUsersLockoutLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser)) {
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+    
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
       return OptinTestSubmitView.index;
     }
 
@@ -2209,11 +2258,16 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, final String userAgent,
       final String twoFactorCode, final Source subjectSource) {
     
-    if (hasTooManyUsersLockoutLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser)) {
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+    
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
       return OptinView.index;
     }
-    
-    
+
     return (OptinView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -2223,6 +2277,13 @@ public class UiMain extends UiServiceLogicBase {
   
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
 
+        if (twoFactorUser.isOptedIn()) {
+
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinStep1optedIn"));
+
+          return OptinView.index;
+        }
+        
         twoFactorRequestContainer.getTwoFactorProfileContainer().setProfileForOptin(true);
         
         boolean hasEmail = false;

@@ -26,8 +26,20 @@ import org.openTwoFactor.server.util.UserAgentUtils;
 /**
  * list of user agents from browsers
  */
+@SuppressWarnings("serial")
 public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
 
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    UserAgentUtils userAgentUtils = new UserAgentUtils();
+    String userAgentString = "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0";
+    System.out.println(userAgentUtils.browser(userAgentString));
+    System.out.println(userAgentUtils.operatingSystem(userAgentString));
+    System.out.println(userAgentUtils.mobile(userAgentString));
+  }
 
   /**
    * if this seems like a mobile device from the user agent
