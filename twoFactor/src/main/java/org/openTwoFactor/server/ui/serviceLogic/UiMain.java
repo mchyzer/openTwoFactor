@@ -537,7 +537,7 @@ public class UiMain extends UiServiceLogicBase {
         }
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-            TwoFactorAuditAction.GENERATE_PASSWORDS, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            TwoFactorAuditAction.GENERATE_PASSWORDS, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
 
         return true;
       }
@@ -1145,7 +1145,7 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
         
         return OptinTestSubmitView.optinSuccess;
       }
@@ -1263,7 +1263,7 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTOUT_TWO_FACTOR, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
         
         return resultMessage;
       }
@@ -1401,7 +1401,7 @@ public class UiMain extends UiServiceLogicBase {
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.UNTRUST_BROWSERS, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
         
         return resultMessage;
       }
@@ -1902,7 +1902,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.store(twoFactorDaoFactory);
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-            TwoFactorAuditAction.EDIT_PROFILE, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            TwoFactorAuditAction.EDIT_PROFILE, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
   
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("profileSuccessMessage"));
   
@@ -2332,7 +2332,7 @@ public class UiMain extends UiServiceLogicBase {
         }
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-            TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
         
         return OptinView.optin;
       }

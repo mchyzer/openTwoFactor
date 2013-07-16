@@ -2112,6 +2112,13 @@ public class TwoFactorServerUtils {
   public static final String TIMESTAMP_NO_SLASH_FORMAT = "yyyyMMdd HH:mm:ss.SSS";
 
   /**
+   * format on screen of config for milestone: yyyy-MM-ddTHH:mm:ss.SSSZ
+   */
+  public static final String TIMESTAMP_STANDARD = "yyyy-MM-dd_HH:mm:ss.SSS_";
+
+  
+  
+  /**
    * date format, make sure to synchronize
    */
   final static SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
@@ -2132,6 +2139,11 @@ public class TwoFactorServerUtils {
    */
   final static SimpleDateFormat dateMinutesSecondsNoSlashFormat = new SimpleDateFormat(
       DATE_MINUTES_SECONDS_NO_SLASH_FORMAT);
+
+  /**
+   * <pre> format: yyyy-MM-ddTHH:mm:ss.SSSZ synchronize code that uses this standard formatter for timestamps </pre>
+   */
+  final static SimpleDateFormat timestampStandardFormat = new SimpleDateFormat(TIMESTAMP_STANDARD);
 
   /**
    * <pre> format: yyyy/MM/dd HH:mm:ss.SSS synchronize code that uses this standard formatter for timestamps </pre>
@@ -5413,6 +5425,12 @@ public class TwoFactorServerUtils {
           
           return dateFormat().parse(input);
         }
+        //standard format
+        if (contains(input, 'Z')) {
+          input = input.replace('Z', '_');
+          input = input.replace('T', '_');
+          return timestampStandardFormat.parse(input);
+        }
         if (!contains(input, '.')) {
           if (contains(input, '/')) {
             return dateMinutesSecondsFormat.parse(input);
@@ -5962,6 +5980,7 @@ public class TwoFactorServerUtils {
    * yyyy/MM/dd HH:mm:ss
    * yyyy/MM/dd HH:mm:ss.SSS
    * yyyy/MM/dd HH:mm:ss.SSSSSS
+   * yyyy-MM-ddTHH:mm:ss.SSSZ
    * 
    * @param input
    * @return the millis, -1 for null
@@ -5985,6 +6004,12 @@ public class TwoFactorServerUtils {
       if (input.length() == 10) {
         
         return dateFormat2().parse(input);
+      }
+      //standard format
+      if (contains(input, 'Z')) {
+        input = input.replace('Z', '_');
+        input = input.replace('T', '_');
+        return timestampStandardFormat.parse(input);
       }
       if (!contains(input, '.')) {
         if (contains(input, '/')) {

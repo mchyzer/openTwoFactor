@@ -194,7 +194,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTOUT_TWO_FACTOR, ipAddress, 
-            userAgent, twoFactorUserGettingOptedOut[0].getUuid(), twoFactorUserUsingApp[0].getUuid());
+            userAgent, twoFactorUserGettingOptedOut[0].getUuid(),
+            twoFactorUserUsingApp[0].getUuid(), null);
         
         success[0] = true;
         
@@ -517,7 +518,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
           TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
               TwoFactorAuditAction.UNTRUST_BROWSERS, ipAddress, 
-              userAgent, twoFactorUserOperatingOn.getUuid(), twoFactorUserLoggedIn.getUuid());
+              userAgent, twoFactorUserOperatingOn.getUuid(), 
+              twoFactorUserLoggedIn.getUuid(), null);
           
           
         }

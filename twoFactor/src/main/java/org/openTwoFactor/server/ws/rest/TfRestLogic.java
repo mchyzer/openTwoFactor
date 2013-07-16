@@ -269,7 +269,7 @@ public class TfRestLogic {
         String responseMessage = "Invalid request, username required";
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
-            null, responseMessage, serviceProviderId, serviceProviderName, null);
+            null, responseMessage, serviceProviderId, serviceProviderName, null, null);
   
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage("username required");
@@ -294,7 +294,7 @@ public class TfRestLogic {
         String responseMessage = "Invalid request, if serviceName is sent, then serviceId must be sent";
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage, serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+            twoFactorUser.getUuid(), responseMessage, serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
   
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage("serviceId is required if serviceName is sent");
@@ -423,7 +423,7 @@ public class TfRestLogic {
         
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_TWO_FACTOR_FORBIDDEN, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
 
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
@@ -448,7 +448,7 @@ public class TfRestLogic {
   
           TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
               TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
   
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
@@ -481,7 +481,7 @@ public class TfRestLogic {
           
           TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
               TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -500,7 +500,7 @@ public class TfRestLogic {
         //not opted in, service doesnt require two factor
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -659,7 +659,8 @@ public class TfRestLogic {
     
           TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
                 TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-                twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+                twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+                twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -686,7 +687,8 @@ public class TfRestLogic {
 
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_TWO_FACTOR, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+             twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -719,7 +721,8 @@ public class TfRestLogic {
       if (!requireReauth && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted) {
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_TRUSTED_BROWSER, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+            twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -740,7 +743,8 @@ public class TfRestLogic {
   
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+             twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -759,7 +763,8 @@ public class TfRestLogic {
       //finally, the service requires two factor, and the user is not enrolled
       TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
            TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
-           twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid());
+           twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+           twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
       tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
       tfCheckPasswordResponse.setErrorMessage(null);
       tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());

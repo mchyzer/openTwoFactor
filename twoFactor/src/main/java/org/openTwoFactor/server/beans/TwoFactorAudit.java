@@ -21,6 +21,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 /**
  * two factor audit object tied to audit db table
  */
+@SuppressWarnings("serial")
 public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
 
   /**
@@ -42,9 +43,9 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    */
   public static TwoFactorAudit createAndStore(TwoFactorDaoFactory twoFactorDaoFactory, 
       TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent, String userUuidOperatingOn, 
-      String userUuidLoggedIn) {
+      String userUuidLoggedIn, String uuidOfBrowserRecord) {
     return createAndStore(twoFactorDaoFactory, twoFactorAuditAction, ipAddress, 
-        userAgent, userUuidOperatingOn, userUuidLoggedIn, null);
+        userAgent, userUuidOperatingOn, userUuidLoggedIn, null, uuidOfBrowserRecord);
   }
 
   /**
@@ -57,13 +58,14 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    * @param userUuidLoggedIn 
    * @param description 
    * @return the audit
+   * @param uuidOfBrowserRecord
    */
   public static TwoFactorAudit createAndStore(TwoFactorDaoFactory twoFactorDaoFactory, 
       TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent, String userUuidOperatingOn, 
-      String userUuidLoggedIn, String description) {
+      String userUuidLoggedIn, String description, String uuidOfBrowserRecord) {
     
     TwoFactorAudit twoFactorAudit = create(twoFactorDaoFactory, twoFactorAuditAction,
-        ipAddress, userAgent, userUuidOperatingOn, userUuidLoggedIn);
+        ipAddress, userAgent, userUuidOperatingOn, userUuidLoggedIn, uuidOfBrowserRecord);
     twoFactorAudit.setDescription(description);
     twoFactorAudit.store(twoFactorDaoFactory);
     return twoFactorAudit;
@@ -95,7 +97,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
                 twoFactorAuditFailsafe.getIpAddress(),
                 twoFactorAuditFailsafe.getUserAgent(),
                 twoFactorAuditFailsafe.getUserUuid(), 
-                twoFactorAuditFailsafe.getUserUuidUsingApp());
+                twoFactorAuditFailsafe.getUserUuidUsingApp(), twoFactorAuditFailsafe.getUuidOfBrowserRecord());
             twoFactorAudit.assignServiceProvider(twoFactorAuditFailsafe.getTwoFactorDaoFactory(), 
                 twoFactorAuditFailsafe.getServiceProviderId(), twoFactorAuditFailsafe.getServiceProviderName());
             twoFactorAudit.setDescription(twoFactorAuditFailsafe.getDescription());
@@ -137,6 +139,27 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    */
   private static class TwoFactorAuditFailsafe {
     
+    /**
+     * uuid of the two_factor_browser entry (note, this is not the uuid in the browser cookie)
+     */
+    private String uuidOfBrowserRecord;
+    
+    /**
+     * uuid of the two_factor_browser entry (note, this is not the uuid in the browser cookie)
+     * @return uuid of browser record
+     */
+    public String getUuidOfBrowserRecord() {
+      return this.uuidOfBrowserRecord;
+    }
+
+    /**
+     * 
+     * @param uuidOfBrowserRecord1
+     */
+    public void setUuidOfBrowserRecord(String uuidOfBrowserRecord1) {
+      this.uuidOfBrowserRecord = uuidOfBrowserRecord1;
+    }
+
     /**
      * user uuid who is using the app
      */
@@ -366,7 +389,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    */
   public static void createAndStoreFailsafe(TwoFactorDaoFactory twoFactorDaoFactory, 
       TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent, String userUuidLoggedIn, String description,
-      String serviceProviderId, String serviceProviderName, String userUuidUsingApp
+      String serviceProviderId, String serviceProviderName, String userUuidUsingApp, String uuidOfBrowserRecord
       ) {
     
     storeThreadStartIfNotStarted();
@@ -381,6 +404,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     twoFactorAuditFailsafe.setUserUuidUsingApp(userUuidUsingApp);
     twoFactorAuditFailsafe.setServiceProviderId(serviceProviderId);
     twoFactorAuditFailsafe.setServiceProviderName(serviceProviderName);
+    twoFactorAuditFailsafe.setUuidOfBrowserRecord(uuidOfBrowserRecord);
     synchronized (TwoFactorAudit.class) {
       twoFactorAuditFailsafes.add(twoFactorAuditFailsafe);
     }
@@ -401,7 +425,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    */
   public static TwoFactorAudit create(TwoFactorDaoFactory twoFactorDaoFactory,
       TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent,
-      String userUuidOperatingOn,  String userUuidLoggedIn) {
+      String userUuidOperatingOn,  String userUuidLoggedIn, String uuidOfBrowserRecord) {
     TwoFactorAudit twoFactorAudit = new TwoFactorAudit();
     twoFactorAudit.setUuid(TwoFactorServerUtils.uuid());
     twoFactorAudit.setAction(twoFactorAuditAction.name());
@@ -410,6 +434,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     twoFactorAudit.setTheTimestamp(System.currentTimeMillis());
     twoFactorAudit.setUserUuid(userUuidOperatingOn);
     twoFactorAudit.setUserUuidUsingApp(userUuidLoggedIn);
+    twoFactorAudit.setBrowserUuid(uuidOfBrowserRecord);
     return twoFactorAudit;
   }
   

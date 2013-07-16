@@ -32,7 +32,20 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  */
 @SuppressWarnings("serial")
 public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
+  
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    TwoFactorBrowser twoFactorBrowser1 = new TwoFactorBrowser();
+    twoFactorBrowser1.setTrustedBrowser(true);
+    twoFactorBrowser1.setWhenTrusted(TwoFactorServerUtils.stringToTimestamp("2013-07-15T09:35:13.799Z").getTime());
 
+    boolean trusted = twoFactorBrowser1.retrieveTrustedCalculateDateHelper(TwoFactorServerUtils.stringToTimestamp("2013-07-16T09:32:13.799Z").getTime());
+    System.out.println(trusted);
+  }
+  
   /**
    * number of inserts and updates
    */
@@ -135,14 +148,23 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
    * @return true if trusted and still trusted
    */
   public boolean isTrustedBrowserCalculateDate() {
+    return retrieveTrustedCalculateDateHelper(System.currentTimeMillis());
+  }
+
+  /**
+   * helper to test trusted stuff
+   * @param now
+   * @return true if trusted, false if not
+   */
+  private boolean retrieveTrustedCalculateDateHelper(long now) {
     if (!this.trustedBrowser) {
       return false;
     }
     
     int daysTrustLasts = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.trustBrowserForDays", 30);
     
-    return (System.currentTimeMillis() - this.whenTrusted) < ((long)daysTrustLasts * 24L * 60L * 60L * 1000L);
-    
+    return (now - this.whenTrusted) < ((long)daysTrustLasts * 24L * 60L * 60L * 1000L);
+
   }
   
   /**

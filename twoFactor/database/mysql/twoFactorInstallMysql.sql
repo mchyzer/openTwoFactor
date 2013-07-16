@@ -593,7 +593,57 @@ AS
      FROM two_factor_audit tfa
     WHERE tfa.DELETED_ON IS NULL;
 
- 
+
+
+    
+    
+    
+CREATE OR REPLACE VIEW two_factor_browser_v
+(
+           loginid,
+           browser_trusted_uuid_hashed,
+           last_updated_date,
+           TRUSTED_BROWSER,
+           when_trusted_date,
+           USER_UUID,
+           UUID,
+           LAST_UPDATED,
+           WHEN_TRUSTED
+)
+AS
+   SELECT 
+   
+          (SELECT tfu.loginid
+             FROM two_factor_user tfu
+            WHERE TFU.UUID = TFB.USER_UUID)
+             AS loginid,
+           TFB.BROWSER_TRUSTED_UUID as browser_trusted_uuid_hashed,
+
+          (SELECT CASE
+             WHEN tfb.last_updated = 0 or tfb.last_updated is null THEN NULL
+             ELSE DATE_ADD( '1970-01-01', interval 
+                          (tfb.last_updated / 1000) SECOND)                          
+          END)
+             AS last_updated_date,
+         TFB.TRUSTED_BROWSER,
+          (SELECT CASE
+             WHEN tfb.WHEN_TRUSTED = 0 or tfb.when_trusted is null THEN NULL
+             ELSE DATE_ADD( '1970-01-01', interval 
+                          (tfb.WHEN_TRUSTED / 1000) SECOND)                          
+          END)
+             AS WHEN_TRUSTED_date,
+           TFB.USER_UUID,
+           TFB.UUID,
+           TFB.LAST_UPDATED,
+           TFB.WHEN_TRUSTED
+     FROM two_factor_browser tfb
+    WHERE TFb.DELETED_ON IS NULL;
+
+
+
+
+    
+    
 
 CREATE TABLE two_factor_sample_source
 (

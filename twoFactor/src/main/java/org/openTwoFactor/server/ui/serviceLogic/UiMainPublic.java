@@ -264,7 +264,7 @@ public class UiMainPublic extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.INVITE_COLLEAGUES, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid());
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
         
         return null;
       }

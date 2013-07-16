@@ -56,8 +56,6 @@ COMMENT ON COLUMN TWO_FACTOR_BROWSER.VERSION_NUMBER IS 'increments each time the
 
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.DELETED_ON IS 'if this row is to be deleted, this is the number of millis since 1970, then a week later it will actually be deleted';
 
-COMMENT ON COLUMN TWO_FACTOR_BROWSER.ENCRYPTION_TIMESTAMP IS 'when the browser uuid was encrypted';
-
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.BROWSER_TRUSTED_UUID IS 'the cookie value of the browser, encrypted';
 
 COMMENT ON COLUMN TWO_FACTOR_BROWSER.TRUSTED_BROWSER IS 'if the browser is trusted (indicated by user)';
@@ -879,7 +877,61 @@ COMMENT ON COLUMN TWO_FACTOR_AUDIT_V.USER_AGENT_UUID IS 'uuid of the user agent 
  
  
  
+
  
+ 
+ 
+CREATE OR REPLACE VIEW two_factor_browser_v
+(
+           loginid,
+           browser_trusted_uuid_hashed,
+           last_updated_date,
+           TRUSTED_BROWSER,
+           when_trusted_date,
+           USER_UUID,
+           UUID,
+           LAST_UPDATED,
+           WHEN_TRUSTED
+)
+AS
+   SELECT 
+   
+   (SELECT tfu.loginid
+             FROM two_factor_user tfu
+            WHERE TFU.UUID = TFB.USER_UUID)
+             AS loginid,
+           TFB.BROWSER_TRUSTED_UUID as browser_trusted_uuid_hashed,
+        CASE
+             WHEN tfb.last_updated = 0 or tfb.last_updated is null THEN NULL
+             ELSE to_timestamp(tfb.last_updated / 1000)
+          END
+             AS last_updated_date,
+          TFB.TRUSTED_BROWSER,
+        CASE
+             WHEN TFB.WHEN_TRUSTED = 0 or TFB.WHEN_TRUSTED is null THEN NULL
+             ELSE to_timestamp(TFB.WHEN_TRUSTED / 1000)
+          END
+             AS when_trusted_date,
+           TFB.USER_UUID,
+           TFB.UUID,
+           TFB.LAST_UPDATED,
+           TFB.WHEN_TRUSTED
+     FROM two_factor_browser tfb
+    WHERE TFb.DELETED_ON IS NULL;
+
+
+COMMENT ON VIEW two_factor_browser_v IS 'view on browser records';
+COMMENT ON COLUMN two_factor_browser_v.loginid IS 'subject id for user';
+COMMENT ON COLUMN two_factor_browser_v.browser_trusted_uuid_hashed IS 'hash of browser trusted uuid';
+COMMENT ON COLUMN two_factor_browser_v.last_updated_date IS 'date representation of last updated for record';
+COMMENT ON COLUMN two_factor_browser_v.trusted_browser IS 'T or F if this is a trusted browser';
+COMMENT ON COLUMN two_factor_browser_v.when_trusted_date IS 'date that this browser was trusted';
+COMMENT ON COLUMN two_factor_browser_v.user_uuid IS 'uuid of the user record';
+COMMENT ON COLUMN two_factor_browser_v.uuid IS 'uuid of this record';
+COMMENT ON COLUMN two_factor_browser_v.last_updated IS 'number of millis since 1970 since this was updated';
+COMMENT ON COLUMN two_factor_browser_v.when_trusted IS 'number of millis since 1970 since this was trusted';
+
+
  
 
 
