@@ -125,7 +125,7 @@ public class TwoFactorFilterJ2ee implements Filter {
     //see if we need to resolve the subject id
     if (fromUi && !StringUtils.isBlank(principalName) 
         && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiLogin", true)) {
-      principalName = TfSourceUtils.resolveSubjectId(principalName);
+      principalName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), principalName, true);
     }
     
     return principalName;
@@ -167,7 +167,7 @@ public class TwoFactorFilterJ2ee implements Filter {
           
           //see if we need to resolve the subject id
           if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiBackdoorLogin", true)) {
-            urlActAsLoginid = TfSourceUtils.resolveSubjectId(urlActAsLoginid);
+            urlActAsLoginid = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), urlActAsLoginid, true);
           }
 
           httpSession.setAttribute("twoFactorActAsUserId", urlActAsLoginid);

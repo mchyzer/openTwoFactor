@@ -323,7 +323,7 @@ public class TwoFactorAuditView extends TwoFactorHibernateBeanBase {
    * @return the name from subject source, or if not found, the loginid
    */
   public String getUserUsingName() {
-    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getUserUsingLoginid(), true, false);
+    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getUserUsingLoginid(), true, false, true);
     if (subject != null) {
       if (!StringUtils.isBlank(subject.getName())) {
         return subject.getName();

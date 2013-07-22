@@ -47,13 +47,15 @@
               <c:if test="${colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
                   
                 <form action="UiMain.optOutColleague" method="post" style="display: inline">
-                  <input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" class="tfBlueButton"
+                  <spap style="white-space: nowrap"><input type="checkbox" name="checkedApproval" value="true" /> &nbsp; ${textContainer.text['helpFriendCheckboxPrefix']}${fn:escapeXml(colleagueIdentifiedUser.name)}${textContainer.text['helpFriendCheckboxSuffix']}</spap>
+                  <br /><input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" 
+                    class="tfBlueButton" style="margin-top: 0.3em"
                     onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
                     onclick="return confirm('${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirmPrefix']} ${twoFactor:escapeSingleQuotesAndXml(colleagueIdentifiedUser.name)} ${textContainer.textEscapeSingleDouble['helpFriendOptOutConfirmSuffix']}');" />
                   <input type="hidden" name="userIdOperatingOn" 
                     value="${fn:escapeXml(colleagueIdentifiedUser.uuid) }" />
                 </form>
-                <br />            
+                <br /><br />
                </c:if>
             </c:forEach>
             <br /><br />

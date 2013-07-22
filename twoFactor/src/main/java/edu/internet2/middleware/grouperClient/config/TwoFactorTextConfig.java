@@ -296,7 +296,6 @@ public class TwoFactorTextConfig extends ConfigPropertiesCascadeBase {
       }
       
       result.append(variableText);
-      
     }
     
     result.append(value.substring(index, value.length()));

@@ -7,6 +7,7 @@ package org.openTwoFactor.server.status;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.openTwoFactor.server.cache.TwoFactorCache;
+import org.openTwoFactor.server.util.TfSourceUtils;
 
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.SubjectCheckConfig;
@@ -78,7 +79,8 @@ public class DiagnosticSourceTest extends DiagnosticTask {
       if (findSubjectOnCheckConfig) {
         String subjectToFindOnCheckConfig = source.getInitParam(SubjectCheckConfig.SUBJECT_ID_TO_FIND_ON_CHECK_CONFIG);
         subjectToFindOnCheckConfig = SubjectUtils.defaultIfBlank(subjectToFindOnCheckConfig, SubjectCheckConfig.GROUPER_TEST_SUBJECT_BY_ID);
-        source.getSubject(subjectToFindOnCheckConfig, false);
+        TfSourceUtils.retrieveSubjectByIdOrIdentifier(source, subjectToFindOnCheckConfig, false, false, true);
+        TfSourceUtils.retrieveSubjectByIdOrIdentifier(source, subjectToFindOnCheckConfig, false, false, false);
         this.appendSuccessTextLine("Searched for subject by id: " + subjectToFindOnCheckConfig);
         sourceCache.put(this.sourceId, Boolean.TRUE);
       } else {

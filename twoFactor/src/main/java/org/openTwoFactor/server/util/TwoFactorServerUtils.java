@@ -11545,7 +11545,7 @@ public class TwoFactorServerUtils {
       } else if (isMysql(connectionUrl)) {
         driverClassName = "com.mysql.jdbc.Driver";
       } else if (isOracle(connectionUrl)) {
-        driverClassName = "oracle.jdbc.driver.OracleDriver";
+        driverClassName = "oracle.jdbc.OracleDriver";
       } else if (isPostgres(connectionUrl)) { 
         driverClassName = "org.postgresql.Driver";
       } else if (isSQLServer(connectionUrl)) {

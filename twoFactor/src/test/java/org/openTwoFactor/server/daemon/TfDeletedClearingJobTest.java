@@ -83,7 +83,7 @@ public class TfDeletedClearingJobTest extends TestCase {
       
       //optin that are 80 days old
       TwoFactorAudit twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 80));
       twoFactorAudit.setDeletedOn(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 3));
@@ -92,7 +92,7 @@ public class TfDeletedClearingJobTest extends TestCase {
       deleted3daysOld.add(twoFactorAudit);
       
       twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 80));
       twoFactorAudit.setDeletedOn(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 1));

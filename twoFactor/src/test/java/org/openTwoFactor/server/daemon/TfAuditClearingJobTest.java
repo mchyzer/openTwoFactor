@@ -109,7 +109,7 @@ public class TfAuditClearingJobTest extends TestCase {
       
       //optin that are 80 days old
       TwoFactorAudit twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.OPTIN_TWO_FACTOR, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 80));
       //System.out.println("optin 80 days: " + twoFactorAudit.getUuid() + ", " + twoFactorAudit.getAction()
@@ -119,7 +119,7 @@ public class TfAuditClearingJobTest extends TestCase {
       
       //invalidate passwords that are 80 days old
       twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.INVALIDATE_PASSWORDS, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.INVALIDATE_PASSWORDS, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 80));
       //System.out.println("invalidate 80 days: " + twoFactorAudit.getUuid() + ", " + twoFactorAudit.getAction()
@@ -129,7 +129,7 @@ public class TfAuditClearingJobTest extends TestCase {
 
       //invalidate passwords that are 20 days old
       twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.INVALIDATE_PASSWORDS, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.INVALIDATE_PASSWORDS, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 20));
       //System.out.println("invalidate 20 days: " + twoFactorAudit.getUuid() + ", " + twoFactorAudit.getAction()
@@ -139,7 +139,7 @@ public class TfAuditClearingJobTest extends TestCase {
 
       //authn that are 20 days old
       twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.AUTHN_TWO_FACTOR, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.AUTHN_TWO_FACTOR, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 20));
       //System.out.println("authn 20 days: " + twoFactorAudit.getUuid() + ", " + twoFactorAudit.getAction()
@@ -149,7 +149,7 @@ public class TfAuditClearingJobTest extends TestCase {
 
       //authn that are 10 days old
       twoFactorAudit = TwoFactorAudit.createAndStore(
-          twoFactorDaoFactory, TwoFactorAuditAction.AUTHN_TWO_FACTOR, "1.2.3.4", "something", null, null, null);
+          twoFactorDaoFactory, TwoFactorAuditAction.AUTHN_TWO_FACTOR, "1.2.3.4", "something", null, null, null, null);
       
       twoFactorAudit.setTheTimestamp(System.currentTimeMillis()-(1000L * 60 * 60 * 24 * 10));
       //System.out.println("authn 10 days: " + twoFactorAudit.getUuid() + ", " + twoFactorAudit.getAction()

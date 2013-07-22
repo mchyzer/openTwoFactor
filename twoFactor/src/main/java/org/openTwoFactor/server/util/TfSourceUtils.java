@@ -4,6 +4,8 @@
  */
 package org.openTwoFactor.server.util;
 
+import java.util.Set;
+
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -21,7 +23,35 @@ import edu.internet2.middleware.subject.provider.SourceManager;
 public class TfSourceUtils {
 
   /**
-   * cache the source, and subjectIdOrIdentifier, to the subject
+   * convert subject id to netid (or subject id if there is no netid)
+   * @param subjectId
+   * @return the netid or subject id
+   */
+  public static String convertSubjectIdToNetId(Source source, String subjectId) {
+    String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+    if (!StringUtils.isBlank(netIdAttribute)) {
+      Subject subject = retrieveSubjectByIdOrIdentifier(source, subjectId, true, false, true);
+      if (subject != null) {
+        String netId = subject.getAttributeValue(netIdAttribute);
+        if (!StringUtils.isBlank(netId)) {
+          return netId;
+        }
+      }
+    }
+    return subjectId;
+  }
+
+  
+  /**
+   * get the main live source
+   * @return the source
+   */
+  public static Source mainSource() {
+    return SourceManager.getInstance().getSource(SOURCE_NAME);
+  }
+  
+  /**
+   * cache the realm, source, and subjectIdOrIdentifier, to the subject
    */
   private static TwoFactorCache<MultiKey, Subject> subjectIdOrIdentifierToSubject = new TwoFactorCache<MultiKey, Subject>(
        TfSourceUtils.class.getName() + ".subjectIdOrIdentifierToSubject");
@@ -33,10 +63,29 @@ public class TfSourceUtils {
    */
   public static String retrieveEmail(Subject subject) {
     
-    return subject == null ? null : subject.getAttributeValueSingleValued("email");
+    return subject == null ? null : subject.getAttributeValueSingleValued(emailAttributeNameForSource(subject.getSource()));
     
   }
-    
+
+  /**
+   * search the subject source and page the results
+   * @param source
+   * @param searchString
+   * @param isAdmin true if this is an admin query
+   */
+  public static Set<Subject> searchPage(Source source, String searchString, boolean isAdmin) {
+    return TwoFactorServerUtils.nonNull(source.searchPage(searchString, subjectSourceRealm(isAdmin)).getResults());
+  }
+
+  /**
+   * search the subject source, generally this is only for testing, must page the results in real life
+   * @param source
+   * @param searchString
+   * @param isAdmin true if this is an admin query
+   */
+  public static Set<Subject> search(Source source, String searchString, boolean isAdmin) {
+    return TwoFactorServerUtils.nonNull(source.search(searchString, subjectSourceRealm(isAdmin)));
+  }
 
   /**
    * resolve a subject by id or identifier
@@ -46,7 +95,7 @@ public class TfSourceUtils {
    * @return the subject
    */
   public static Subject retrieveSubjectByIdOrIdentifier(Source source, String subjectIdOrIdentifier, 
-      boolean okToReadFromCache, boolean exceptionIfNotFound) {
+      boolean okToReadFromCache, boolean exceptionIfNotFound, boolean isAdmin) {
 
     if (source == null) {
       if (LOG.isWarnEnabled()) {
@@ -56,14 +105,14 @@ public class TfSourceUtils {
       return null;
     }
     
-    MultiKey multiKey = new MultiKey(source.getId(), subjectIdOrIdentifier);
+    MultiKey multiKey = new MultiKey(subjectSourceRealm(isAdmin), source.getId(), subjectIdOrIdentifier);
     
     Subject subject = okToReadFromCache ? subjectIdOrIdentifierToSubject.get(multiKey) : null;
 
     if (subject != null) {
       return subject;
     }
-    subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound);
+    subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound, subjectSourceRealm(isAdmin));
         
     if (subject == null) {
       return null;
@@ -78,9 +127,22 @@ public class TfSourceUtils {
   }
   
   /**
-   * cache the logins in a hash cache
+   * get the subject source 
+   * @param isAdmin
+   * @return the realm to use
    */
-  private static TwoFactorCache<String, String> principalToLoginId = new TwoFactorCache<String, String>(
+  public static String subjectSourceRealm(boolean isAdmin) {
+    //if isAdmin and using realms
+    if (isAdmin && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.useAdminRealm", false)) {
+      return "admin";
+    }
+    return null;
+  }
+  
+  /**
+   * cache the logins in a hash cache.  Key is the realm, and principal
+   */
+  private static TwoFactorCache<MultiKey, String> principalToLoginId = new TwoFactorCache<MultiKey, String>(
       TfSourceUtils.class.getName() + ".principalToLoginId");
 
   /**
@@ -88,13 +150,23 @@ public class TfSourceUtils {
    * @param idOrIdentifier the subject id or eppn
    * @return the resolved subject id
    */
-  public static String resolveSubjectId(String idOrIdentifier) {
+  public static String resolveSubjectId(Source subjectSource, String idOrIdentifier, boolean isAdmin) {
 
-    String subjectId = principalToLoginId.get(idOrIdentifier);
+    String realm = subjectSourceRealm(isAdmin);
+    
+    MultiKey key = new MultiKey(realm, idOrIdentifier);
+    
+    String subjectId = principalToLoginId.get(key);
     if (StringUtils.isBlank(subjectId)) {
       
-      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
-          .getSource(TfSourceUtils.SOURCE_NAME), idOrIdentifier, true, true);
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+          idOrIdentifier, true, false, isAdmin);
+      
+      //not caching null...
+      if (subject == null) {
+        LOG.info("Unresolveable ID: " + idOrIdentifier);
+        return idOrIdentifier;
+      }
       
       subjectId = subject.getId();
 
@@ -102,7 +174,7 @@ public class TfSourceUtils {
         throw new RuntimeException("subjectId is blank for id: '" + idOrIdentifier + "'");
       }
       
-      principalToLoginId.put(idOrIdentifier, subjectId);
+      principalToLoginId.put(key, subjectId);
       
     }
     return subjectId;
@@ -135,9 +207,9 @@ public class TfSourceUtils {
    * @param args
    */
   public static void main(String[] args) {
-    String emailAttributeName = TfSourceUtils.emailAttributeNameForSource();
+    String emailAttributeName = TfSourceUtils.emailAttributeNameForSource(TfSourceUtils.mainSource());
     
-    for (Subject subject : SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME).searchPage("harvey active=all").getResults()) {
+    for (Subject subject : TfSourceUtils.mainSource().searchPage("harvey active=all").getResults()) {
       System.out.println(subject.getName() + ", " + subject.getAttributeValue(emailAttributeName) 
           + ", " + subject.getId() + ", " + subject.getAttributeValue("pennname")
           + ", " + subject.getDescription() + ", active=" + subject.getAttributeValue("active"));
@@ -179,16 +251,45 @@ public class TfSourceUtils {
    * get the subject attribute name for two factor source
    * @return the attribute name
    */
-  public static String emailAttributeNameForSource() {
-    Source source = SourceManager.getInstance().getSource(SOURCE_NAME);
-    return source.getInitParam("emailAttributeName");
+  public static String emailAttributeNameForSource(Source subjectSource) {
+    return subjectSource.getInitParam("emailAttributeName");
   }
 
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(TfSourceUtils.class);
 
   /**
+   * convert from subject to name
+   * @param subject
+   * @return the description, or name, or id
+   */
+  public static String subjectName(Subject subject) {
+    String netIdAttributeName = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+    String netId = null;
+    if (!StringUtils.isBlank(netIdAttributeName)) {
+      netId = subject.getAttributeValue(netIdAttributeName);
+    }
+    netId = StringUtils.defaultIfEmpty(netId, subject.getId());
+    return subjectName(subject, netId);
+  }
+  
+  /**
    * convert from subject to description
+   * @param subject
+   * @return the description, or name, or id
+   */
+  public static String subjectDescription(Subject subject) {
+    String netIdAttributeName = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+    String netId = null;
+    if (!StringUtils.isBlank(netIdAttributeName)) {
+      netId = subject.getAttributeValue(netIdAttributeName);
+    }
+    netId = StringUtils.defaultIfEmpty(netId, subject.getId());
+    return subjectDescription(subject, netId);
+  }
+  
+  /**
+   * convert from subject to name
    * @param subject
    * @param subjectId is what was used to lookup if there is something, could be null if not applicable
    * @return the description, or name, or id

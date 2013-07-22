@@ -51,6 +51,8 @@ $Id: sources.example.xml,v 1.3 2013/06/07 15:24:53 mchyzer Exp $
       preferredTestQuery (e.g. select 1 from dual), idleConnectionTestPeriod (seconds)
   
    -->
+   
+   <!-- note, you can also have an admin realm if the search and display data is different... have a different description -->
   
     <!-- This is an alternate jdbc source which allows for more complex searches, assumes 
       all data is in one table or view, and that all attributes are single valued.  There are

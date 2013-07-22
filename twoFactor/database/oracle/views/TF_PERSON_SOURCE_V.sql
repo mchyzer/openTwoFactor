@@ -1,4 +1,4 @@
-
+/* Formatted on 7/19/2013 12:45:36 PM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 (
    PENN_ID,
@@ -14,7 +14,7 @@ AS
           kerberos_principal AS pennname,
           description,
           search_description,
-          directory_pref_cent_disp_name AS name,
+          nvl(PENNKEY_VIEW_PREF_NAME, kerberos_principal) AS name,
           ADMIN_VIEW_PREF_EMAIL_ADDRESS AS email,
           CASE
              WHEN CPV.IS_ACTIVE_FACULTY = 'Y' THEN 'T'

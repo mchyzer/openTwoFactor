@@ -35,7 +35,6 @@ import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 import edu.internet2.middleware.subject.Subject;
-import edu.internet2.middleware.subject.provider.SourceManager;
 
 
 
@@ -203,7 +202,7 @@ public class UiMainPublic extends UiServiceLogicBase {
             TwoFactorAuditAction.SEND_CODE_TO_PHONE, ipAddress, 
             userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
             TextContainer.retrieveFromRequest().getText().get("havingTroubleAuditPrefix") + " "
-            + secretCode.charAt(0) + "#####");
+            + secretCode.charAt(0) + "#####", null);
         
         return null;
       }
@@ -264,7 +263,7 @@ public class UiMainPublic extends UiServiceLogicBase {
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.INVITE_COLLEAGUES, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null);
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
         
         return null;
       }
@@ -450,8 +449,8 @@ public class UiMainPublic extends UiServiceLogicBase {
           String nameToEscape = null;
           
           try {
-            Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(SourceManager.getInstance()
-                .getSource(TfSourceUtils.SOURCE_NAME), colleagueLoginId, true, false);
+            Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), 
+                colleagueLoginId, true, false, false);
 
             if (subject != null) {
               nameToEscape = subject.getName();

@@ -80,7 +80,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "phone0",
       "phoneVoice0", "phoneText0", 
       "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
-      "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id",
+      "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
       
       //for status calls
       "status", "diagnosticType"

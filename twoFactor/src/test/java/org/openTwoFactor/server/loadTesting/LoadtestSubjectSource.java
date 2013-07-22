@@ -8,7 +8,6 @@ import java.util.Set;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.util.TfSourceUtils;
 
-import edu.internet2.middleware.subject.SearchPageResult;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 import edu.internet2.middleware.subject.provider.SourceManager;
@@ -52,9 +51,9 @@ public class LoadtestSubjectSource {
   public static void loadTestSubjectSource() {
     
     //get a bunch
-    Source source = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+    Source source = TfSourceUtils.mainSource();
     
-    Set<Subject> subjects = source.search("smith");
+    Set<Subject> subjects = TfSourceUtils.search(source, "smith", false); 
     
     List<Subject> subjectList = new ArrayList<Subject>(subjects);
     
@@ -71,7 +70,7 @@ public class LoadtestSubjectSource {
 
       String subjectIdOrIdentifier = i%2==0 ? subject.getId() : subject.getAttributeValue(netIdAttribute);
       
-      subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(source, subjectIdOrIdentifier, false, false );
+      subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(source, subjectIdOrIdentifier, false, false, false);
       
       if (subject == null) {
         System.out.println("subject is null: " + subjectIdOrIdentifier);
@@ -84,8 +83,8 @@ public class LoadtestSubjectSource {
       if ((i+1)%10==0 && subject.getDescription().length() > 3) {
 
         //do a search 
-        SearchPageResult searchPageResult = source.searchPage(subject.getDescription().substring(0,3));
-        System.out.println("Searched for: " + subject.getDescription().substring(0,3) + ", " + searchPageResult.getResults().size());
+        Set<Subject> subjectResults = TfSourceUtils.searchPage(source, subject.getDescription().substring(0,3), true);
+        System.out.println("Searched for: " + subject.getDescription().substring(0,3) + ", " + subjectResults.size());
       
       }
       

@@ -126,8 +126,8 @@ public class TfRestLogic {
       
       //see if we need to resolve the subject id
       if (!StringUtils.isBlank(username) 
-          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiBackdoorLogin", true)) {
-        username = TfSourceUtils.resolveSubjectId(username);
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnWsSubject", true)) {
+        username = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), username, false);
       }
       
       tfCheckPasswordRequest.assignUsername(username);
@@ -142,6 +142,9 @@ public class TfRestLogic {
     {
       tfCheckPasswordRequest.assignClientUsername(TwoFactorRestServlet.retrievePrincipalLoggedIn());
     }
+    
+    tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+    
     return checkPasswordLogic(twoFactorDaoFactory, tfCheckPasswordRequest);
   }
 
@@ -266,7 +269,7 @@ public class TfRestLogic {
       //############# if no username
       if (StringUtils.isBlank(username)) {
         
-        String responseMessage = "Invalid request, username required";
+        String responseMessage = "Invalid request, username required, not sent in or not resolvable as subject";
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
             null, responseMessage, serviceProviderId, serviceProviderName, null, null);
@@ -286,6 +289,9 @@ public class TfRestLogic {
         return tfCheckPasswordResponse;
       }
 
+      //see if there is a testing error or timeout
+      TwoFactorRestServlet.testingErrorOrTimeout(tfCheckPasswordRequest.getSubjectSource(), username);
+      
       TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, username);
   
       //############# if no serviceId but yes to serviceName

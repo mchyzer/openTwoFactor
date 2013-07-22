@@ -4,12 +4,41 @@
  */
 package org.openTwoFactor.server.ws.corebeans;
 
+import edu.internet2.middleware.subject.Source;
+
 
 
 /**
  * method chaining request for easy testing
  */
 public class TfCheckPasswordRequest {
+
+  /**
+   * subject source
+   */
+  private Source subjectSource;
+
+  
+  
+  /**
+   * subject source
+   * @return source
+   */
+  public Source getSubjectSource() {
+    return this.subjectSource;
+  }
+
+
+  
+  /**
+   * subject source
+   * @param subjectSource1
+   * @return this for chaining
+   */
+  public TfCheckPasswordRequest assignSubjectSource(Source subjectSource1) {
+    this.subjectSource = subjectSource1;
+    return this;
+  }
 
   /**
    * client to WS source IP address

@@ -34,8 +34,8 @@ import org.openTwoFactor.server.ws.rest.TfWsVersion;
 import org.openTwoFactor.server.ws.security.WsTfCustomAuthentication;
 import org.openTwoFactor.server.ws.security.WsTfDefaultAuthentication;
 
+import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
-import edu.internet2.middleware.subject.provider.SourceManager;
 
 
 
@@ -60,7 +60,7 @@ public class TwoFactorRestServlet extends HttpServlet {
    * 
    * @return the subject
    */
-  @SuppressWarnings({ "unchecked", "deprecation" })
+  @SuppressWarnings({ "unchecked" })
   public static String retrievePrincipalLoggedIn() {
     String authenticationClassName = TwoFactorServerConfig.retrieveConfig().propertyValueString(
         "ws.security.authentication.class");
@@ -89,7 +89,7 @@ public class TwoFactorRestServlet extends HttpServlet {
 
     //see if we need to resolve the subject id
     if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnWsLogin", true)) {
-      userIdLoggedIn = TfSourceUtils.resolveSubjectId(userIdLoggedIn);
+      userIdLoggedIn = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), userIdLoggedIn, true);
     }
     
     //puts it in the log4j ndc context so userid is logged
@@ -164,6 +164,53 @@ public class TwoFactorRestServlet extends HttpServlet {
     return TwoFactorRestServlet.startupTime;
   }
 
+  /**
+   * put an error or timeout to test the client
+   * @param source
+   * @param username
+   */
+  public static void testingErrorOrTimeout(Source source, String username) {
+
+    String netId = TfSourceUtils.convertSubjectIdToNetId(source, username);
+    
+    {
+      String sendTimeoutForUserIdsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.sendTimeoutForUserIds");
+      //# user ids that should have a timeout
+      //twoFactorServer.ws.sendTimeoutForUserIds =
+      if (!StringUtils.isBlank(sendTimeoutForUserIdsString)) {
+        Set<String> sendTimeoutForUserIds = TwoFactorServerUtils.splitTrimToSet(sendTimeoutForUserIdsString, ",");
+        if (sendTimeoutForUserIds.contains(username) || sendTimeoutForUserIds.contains(netId)) {
+          //# number of millis the WS should sleep for certain user ids
+          //twoFactorServer.ws.sendTimeoutForUserIdsMillis = 
+          int timeout = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.sendTimeoutForUserIdsMillis", 10000);
+          
+          LOG.info("Sleeping " + timeout + "ms for username: " + (sendTimeoutForUserIds.contains(username) ? username : netId));
+          
+          TwoFactorServerUtils.sleep(timeout);
+          
+        } 
+      }
+    }
+    
+    {
+      //# user ids that should send errors
+      //twoFactorServer.ws.sendErrorForUserIds =
+      
+      String sendErrorForUserIdsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.sendErrorForUserIds");
+      
+      if (!StringUtils.isBlank(sendErrorForUserIdsString)) {
+        Set<String> sendErrorForUserIds = TwoFactorServerUtils.splitTrimToSet(sendErrorForUserIdsString, ",");
+        if (sendErrorForUserIds.contains(username) || sendErrorForUserIds.contains(netId)) {
+          
+          LOG.info("Sending error for username: " + username);
+          
+          throw new RuntimeException("Configured to send error for username: " + (sendErrorForUserIds.contains(username) ? username : netId));          
+        }
+      }
+    }
+
+  }
+  
   /**
    * @see javax.servlet.http.HttpServlet#service(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
    */
@@ -449,7 +496,7 @@ public class TwoFactorRestServlet extends HttpServlet {
             
             try {
               Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(
-                  SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME), username, true, false);
+                  TfSourceUtils.mainSource(), username, true, false, true);
 
               if (subject != null) {
                 String attributeValue = subject.getAttributeValue(subjectAttributeName);

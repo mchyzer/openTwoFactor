@@ -19,9 +19,9 @@ public class SubjectExpressionLanguagePoc {
     
     String el = "${subject.getAttributeValue('pennname')}@test.upenn.edu";
     
-    Subject subject = SourceManager.getInstance()
-        .getSource(TfSourceUtils.SOURCE_NAME).getSubjectByIdOrIdentifier("mchyzer", false);
-
+    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), 
+        "mchyzer", false, true, true);
+        
     Map<String, Object> substituteMap = new HashMap<String, Object>();
     substituteMap.put("subject", subject);
 

@@ -53,7 +53,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
    * @param httpServletResponse
    */
   public void personPicker(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-    UiMain.personPickerHelper(httpServletRequest, httpServletResponse, true);
+    UiMain.personPickerHelper(httpServletRequest, httpServletResponse, true, TfSourceUtils.mainSource(), true);
   }
 
   /**
@@ -84,7 +84,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOn");
 
-    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+    Source subjectSource = TfSourceUtils.mainSource();
 
     AdminSubmitView adminSubmitView = optOutSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
@@ -144,7 +144,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         }
 
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-            userIdOperatingOn, true, false);
+            userIdOperatingOn, true, false, true);
 
         String theUserIdOperatingOn = userIdOperatingOn;
         
@@ -195,7 +195,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTOUT_TWO_FACTOR, ipAddress, 
             userAgent, twoFactorUserGettingOptedOut[0].getUuid(),
-            twoFactorUserUsingApp[0].getUuid(), null);
+            twoFactorUserUsingApp[0].getUuid(), null, null);
         
         success[0] = true;
         
@@ -217,9 +217,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
       if (success[0] && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
           && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptoutByAdmin", true)) {
         
-        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false);
+        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-            twoFactorUserGettingOptedOut[0].getLoginid(), true, false);
+            twoFactorUserGettingOptedOut[0].getLoginid(), true, false, true);
         
         String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
         String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
@@ -303,7 +303,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOnName");
 
-    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+    Source subjectSource = TfSourceUtils.mainSource();
     
     AdminSubmitView adminSubmitView = userIdSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
@@ -357,7 +357,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         }
 
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-            userIdOperatingOn, true, false);
+            userIdOperatingOn, true, false, true);
         
         twoFactorAdminContainer.setSubjectOperatingOn(subject);
         
@@ -412,7 +412,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOn");
 
-    Source subjectSource = SourceManager.getInstance().getSource(TfSourceUtils.SOURCE_NAME);
+    Source subjectSource = TfSourceUtils.mainSource();
 
     AdminSubmitView adminSubmitView = untrustBrowsersLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
@@ -465,7 +465,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         }
 
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-            userIdOperatingOn, true, false);
+            userIdOperatingOn, true, false, true);
         String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {
@@ -519,7 +519,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
           TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
               TwoFactorAuditAction.UNTRUST_BROWSERS, ipAddress, 
               userAgent, twoFactorUserOperatingOn.getUuid(), 
-              twoFactorUserLoggedIn.getUuid(), null);
+              twoFactorUserLoggedIn.getUuid(), null, null);
           
           
         }

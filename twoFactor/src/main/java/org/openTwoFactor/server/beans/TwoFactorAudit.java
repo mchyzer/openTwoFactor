@@ -39,23 +39,6 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    * @param userAgent 
    * @param userUuidOperatingOn
    * @param userUuidLoggedIn 
-   * @return the audit
-   */
-  public static TwoFactorAudit createAndStore(TwoFactorDaoFactory twoFactorDaoFactory, 
-      TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent, String userUuidOperatingOn, 
-      String userUuidLoggedIn, String uuidOfBrowserRecord) {
-    return createAndStore(twoFactorDaoFactory, twoFactorAuditAction, ipAddress, 
-        userAgent, userUuidOperatingOn, userUuidLoggedIn, null, uuidOfBrowserRecord);
-  }
-
-  /**
-   * create and store an audit
-   * @param twoFactorDaoFactory 
-   * @param twoFactorAuditAction 
-   * @param ipAddress 
-   * @param userAgent 
-   * @param userUuidOperatingOn
-   * @param userUuidLoggedIn 
    * @param description 
    * @return the audit
    * @param uuidOfBrowserRecord
@@ -494,7 +477,6 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     
     //max length if 1000, chop off some for invalid chars
     this.truncate();
-    
     twoFactorDaoFactory.getTwoFactorAudit().store(this);
     testInsertsAndUpdates++;
 
