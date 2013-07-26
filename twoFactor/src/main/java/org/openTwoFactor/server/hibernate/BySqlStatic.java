@@ -13,6 +13,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.hibernate.HibernateException;
 import org.hibernate.type.Type;
+import org.openTwoFactor.server.databasePerf.TfDatabasePerfLog;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -62,6 +63,7 @@ public class BySqlStatic {
   @SuppressWarnings("deprecation")
   public int executeSql(final String sql, final List<Object> params) {
   
+    final long start = System.nanoTime();
     int result = (Integer)HibernateSession.callbackHibernateSession(
         TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
 
@@ -73,6 +75,7 @@ public class BySqlStatic {
         hibernateSession.misc().flush();
         
         PreparedStatement preparedStatement = null;
+        int result1 = -1;
         try {
           
           //we dont close this connection or anything since could be pooled
@@ -81,7 +84,7 @@ public class BySqlStatic {
       
           attachParams(preparedStatement, params);
           
-          int result1 = preparedStatement.executeUpdate();
+          result1 = preparedStatement.executeUpdate();
           
           return result1;
 
@@ -89,6 +92,10 @@ public class BySqlStatic {
           throw new RuntimeException("Problem with query in bysqlstatic: " + sql, e);
         } finally {
           TwoFactorServerUtils.closeQuietly(preparedStatement);
+          if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+            TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + sql + ", params: " + TwoFactorServerUtils.toStringForLog(params) + ", result: " + result1);
+          }
+
         }
       }
       
@@ -128,6 +135,8 @@ public class BySqlStatic {
         HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
+        T result = null;
+        long start = System.nanoTime();
         try {
           
           //we dont close this connection or anything since could be pooled
@@ -144,7 +153,6 @@ public class BySqlStatic {
             throw new RuntimeException("Expected 1 row but received none");
           }
           
-          T result = null;
           boolean isInt = int.class.equals(returnClassType);
           boolean isPrimitive = isInt;
           if (isInt || Integer.class.equals(returnClassType)) {
@@ -173,6 +181,9 @@ public class BySqlStatic {
           throw new RuntimeException("Problem with query in select: " + sql, e);
         } finally {
           TwoFactorServerUtils.closeQuietly(preparedStatement);
+          if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+            TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + sql + ", params: " + TwoFactorServerUtils.toStringForLog(params) + ", result: " + result);
+          }
         }
       }
     });
@@ -200,6 +211,7 @@ public class BySqlStatic {
       public Object callback(HibernateHandlerBean hibernateHandlerBean)
           throws TfDaoException {
         
+        long start = System.nanoTime();
         HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -253,6 +265,9 @@ public class BySqlStatic {
           throw new RuntimeException("Problem with query in listSelect: " + sql, e);
         } finally {
           TwoFactorServerUtils.closeQuietly(preparedStatement);
+          if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+            TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + sql + ", params: " + TwoFactorServerUtils.toStringForLog(params) + ", rows: " + TwoFactorServerUtils.length(resultList));
+          }
         }
       }
     });

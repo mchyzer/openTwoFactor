@@ -14,6 +14,7 @@ import org.apache.commons.logging.Log;
 import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.openTwoFactor.server.databasePerf.TfDatabasePerfLog;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -233,6 +234,7 @@ public class ByHql extends HibernateDelegate implements HqlQuery {
     Session session  = hibernateSession.getSession();
     Query theQuery = ByHql.this.attachQueryInfo(session);
     T object = null;
+    long start = System.nanoTime();
     try {
       object = (T) theQuery.uniqueResult();
     } catch (ObjectNotFoundException onfe) {
@@ -246,6 +248,11 @@ public class ByHql extends HibernateDelegate implements HqlQuery {
           //set this back
           this.cacheable = true;
         }
+      }
+    } finally {
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + this.query + ", params: " 
+            + StringUtils.trimToEmpty(TwoFactorServerUtils.toStringForLog(this.bindVarNameParams)) + ", result: " + object);
       }
     }
     TfHibUtils.evict(hibernateSession, object, true);
@@ -261,10 +268,18 @@ public class ByHql extends HibernateDelegate implements HqlQuery {
    * @throws TfDaoException 
    */
   public void executeUpdate() throws TfDaoException {
-    HibernateSession hibernateSession = this.getHibernateSession();
-    Session session  = hibernateSession.getSession();
-    Query theQuery = ByHql.this.attachQueryInfo(session);
-    theQuery.executeUpdate();
+    long start = System.nanoTime();
+    int result = -1;
+    try {
+      HibernateSession hibernateSession = this.getHibernateSession();
+      Session session  = hibernateSession.getSession();
+      Query theQuery = ByHql.this.attachQueryInfo(session);
+      theQuery.executeUpdate();
+    } finally {
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms HQL: " + this.query + ", params: " + StringUtils.trimToEmpty(TwoFactorServerUtils.toStringForLog(this.bindVarNameParams)) + ", result: " + result);
+      }
+    }
   }
   
   /** query count exec queries, used for testing */
@@ -292,69 +307,79 @@ public class ByHql extends HibernateDelegate implements HqlQuery {
     HibernateSession hibernateSession = this.getHibernateSession();
     Session session  = hibernateSession.getSession();
     List<T> list = null;
+    long start = System.nanoTime();
     
-    //see if we are even retrieving the results
-    if (this.queryOptions == null || this.queryOptions.isRetrieveResults()) {
-      Query theQuery = ByHql.this.attachQueryInfo(session);
-      //not sure this can ever be null, but make sure not to make iterating results easier
-      list = theQuery.list();
-      TfHibUtils.evict(hibernateSession,  list, true);
-    }
-    //no nulls
-    list = TwoFactorServerUtils.nonNull(list);
-    TfQueryPaging queryPaging = this.queryOptions == null ? null : this.queryOptions.getQueryPaging();
-    
-    //now see if we should get the query count
-    boolean retrieveQueryCountNotForPaging = this.queryOptions != null && this.queryOptions.isRetrieveCount();
-    boolean findQueryCount = (queryPaging != null && queryPaging.isDoTotalCount()) 
-      || (retrieveQueryCountNotForPaging);
-    if (findQueryCount) {
+    try {
+      //see if we are even retrieving the results
+      if (this.queryOptions == null || this.queryOptions.isRetrieveResults()) {
+        Query theQuery = ByHql.this.attachQueryInfo(session);
+        //not sure this can ever be null, but make sure not to make iterating results easier
+        list = theQuery.list();
+        TfHibUtils.evict(hibernateSession,  list, true);
+      }
+      //no nulls
+      list = TwoFactorServerUtils.nonNull(list);
+      TfQueryPaging queryPaging = this.queryOptions == null ? null : this.queryOptions.getQueryPaging();
       
-      int resultSize = -1;
-      if (queryPaging != null) {
-        //see if we already know the total size (if less than page size and first page)
-        resultSize = TwoFactorServerUtils.length(list);
-        if (resultSize >= queryPaging.getPageSize()) {
-          resultSize = -1;
-        } else {
-          //we are on the last page, see how many records came before us, add those in
-          resultSize += (queryPaging.getPageSize() * (queryPaging.getPageNumber() - 1)); 
-        }
-      }
-      
-      boolean needsPagingQuery = false;
-      if (queryPaging != null && (queryPaging.getTotalRecordCount() <= 0 || !queryPaging.isCacheTotalCount())) {
-        needsPagingQuery = true;
-      }
-      if (retrieveQueryCountNotForPaging) {
-        needsPagingQuery = true;
-      }
-      //we already know the size
-      if (resultSize != -1) {
-        needsPagingQuery = false;
-      }
-
-      //do this if we dont have a total, or if we are not caching the total
-      if (needsPagingQuery) {
+      //now see if we should get the query count
+      boolean retrieveQueryCountNotForPaging = this.queryOptions != null && this.queryOptions.isRetrieveCount();
+      boolean findQueryCount = (queryPaging != null && queryPaging.isDoTotalCount()) 
+        || (retrieveQueryCountNotForPaging);
+      if (findQueryCount) {
         
-        queryCountQueries++;
-        String countQueryHql = TfHibUtils.convertHqlToCountHql(this.query);
-        Query countQuery = session.createQuery(countQueryHql);
-        attachBindValues(countQuery);
-        Long theCount = (Long)countQuery.iterate().next();
-        resultSize = theCount.intValue();
-      }
-      if (resultSize != -1) {
+        int resultSize = -1;
         if (queryPaging != null) {
-          queryPaging.setTotalRecordCount(resultSize);
-
-          //calculate the page stuff like how many pages etc
-          queryPaging.calculateIndexes();
+          //see if we already know the total size (if less than page size and first page)
+          resultSize = TwoFactorServerUtils.length(list);
+          if (resultSize >= queryPaging.getPageSize()) {
+            resultSize = -1;
+          } else {
+            //we are on the last page, see how many records came before us, add those in
+            resultSize += (queryPaging.getPageSize() * (queryPaging.getPageNumber() - 1)); 
+          }
+        }
+        
+        boolean needsPagingQuery = false;
+        if (queryPaging != null && (queryPaging.getTotalRecordCount() <= 0 || !queryPaging.isCacheTotalCount())) {
+          needsPagingQuery = true;
         }
         if (retrieveQueryCountNotForPaging) {
-          this.queryOptions.setCount((long)resultSize);
+          needsPagingQuery = true;
+        }
+        //we already know the size
+        if (resultSize != -1) {
+          needsPagingQuery = false;
+        }
+
+        //do this if we dont have a total, or if we are not caching the total
+        if (needsPagingQuery) {
+          
+          queryCountQueries++;
+          String countQueryHql = TfHibUtils.convertHqlToCountHql(this.query);
+          Query countQuery = session.createQuery(countQueryHql);
+          attachBindValues(countQuery);
+          Long theCount = (Long)countQuery.iterate().next();
+          resultSize = theCount.intValue();
+        }
+        if (resultSize != -1) {
+          if (queryPaging != null) {
+            queryPaging.setTotalRecordCount(resultSize);
+
+            //calculate the page stuff like how many pages etc
+            queryPaging.calculateIndexes();
+          }
+          if (retrieveQueryCountNotForPaging) {
+            this.queryOptions.setCount((long)resultSize);
+          }
         }
       }
+      
+    } finally {
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + this.query + ", params: " 
+            + StringUtils.trimToEmpty(TwoFactorServerUtils.toStringForLog(this.bindVarNameParams)) + ", rows: " + TwoFactorServerUtils.length(list));
+      }
+
     }
 
     return list;

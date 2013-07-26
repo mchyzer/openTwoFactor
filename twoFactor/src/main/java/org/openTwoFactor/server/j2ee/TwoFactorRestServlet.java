@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -180,14 +181,29 @@ public class TwoFactorRestServlet extends HttpServlet {
       if (!StringUtils.isBlank(sendTimeoutForUserIdsString)) {
         Set<String> sendTimeoutForUserIds = TwoFactorServerUtils.splitTrimToSet(sendTimeoutForUserIdsString, ",");
         if (sendTimeoutForUserIds.contains(username) || sendTimeoutForUserIds.contains(netId)) {
-          //# number of millis the WS should sleep for certain user ids
-          //twoFactorServer.ws.sendTimeoutForUserIdsMillis = 
-          int timeout = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.sendTimeoutForUserIdsMillis", 10000);
           
-          LOG.info("Sleeping " + timeout + "ms for username: " + (sendTimeoutForUserIds.contains(username) ? username : netId));
+          //# integer percent of time there is an timeout, e.g. 33 (defaults to 100)
+          //twoFactorServer.ws.sendTimeoutForUserIdsPercentOfTime =
+          Integer percent = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.sendTimeoutForUserIdsPercentOfTime");
           
-          TwoFactorServerUtils.sleep(timeout);
-          
+          if (percent != null) {
+            int randomInt = new Random().nextInt(100);
+            if (percent > randomInt) {
+              
+              //# number of millis the WS should sleep for certain user ids
+              //twoFactorServer.ws.sendTimeoutForUserIdsMillis = 
+              int timeout = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.sendTimeoutForUserIdsMillis", 10000);
+              
+              LOG.info("Sleeping " + timeout + "ms for username: " + (sendTimeoutForUserIds.contains(username) ? username : netId));
+              
+              TwoFactorServerUtils.sleep(timeout);
+              
+            } else {
+              LOG.info("Not sleeping since not percent of time for username: " + (sendTimeoutForUserIds.contains(username) ? username : netId));
+
+            }
+          }
+
         } 
       }
     }
@@ -202,10 +218,24 @@ public class TwoFactorRestServlet extends HttpServlet {
         Set<String> sendErrorForUserIds = TwoFactorServerUtils.splitTrimToSet(sendErrorForUserIdsString, ",");
         if (sendErrorForUserIds.contains(username) || sendErrorForUserIds.contains(netId)) {
           
-          LOG.info("Sending error for username: " + username);
+          //# integer percent of time there is an error, e.g. 33  (defaults to 100)
+          //twoFactorServer.ws.sendErrorForUserIdsPercentOfTime =
+          Integer percent = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.sendErrorForUserIdsPercentOfTime");
+
+          if (percent != null) {
+            int randomInt = new Random().nextInt(100);
+            if (percent > randomInt) {
+
+              LOG.info("Sending error for username: " + username);
           
-          throw new RuntimeException("Configured to send error for username: " + (sendErrorForUserIds.contains(username) ? username : netId));          
+              throw new RuntimeException("Configured to send error for username: " + (sendErrorForUserIds.contains(username) ? username : netId));          
+            } else {
+              
+              LOG.info("Not sending error since not percent of time for username: " + username);
+            }
+          }
         }
+          
       }
     }
 

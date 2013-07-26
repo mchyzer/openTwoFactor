@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.databasePerf.TfDatabasePerfLog;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -114,8 +115,9 @@ public class BySql extends HibernateDelegate {
   
     HibernateSession hibernateSession = this.getHibernateSession();
     hibernateSession.misc().flush();
-    
+    long start = System.nanoTime();
     PreparedStatement preparedStatement = null;
+    int result = -1;
     try {
       
       //we dont close this connection or anything since could be pooled
@@ -124,7 +126,7 @@ public class BySql extends HibernateDelegate {
   
       BySqlStatic.attachParams(preparedStatement, params);
       
-      int result = preparedStatement.executeUpdate();
+      result = preparedStatement.executeUpdate();
       
       return result;
 
@@ -132,6 +134,9 @@ public class BySql extends HibernateDelegate {
       throw new RuntimeException("Problem with query in bysqlstatic: " + sql, e);
     } finally {
       TwoFactorServerUtils.closeQuietly(preparedStatement);
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms SQL: " + sql + ", params: " + TwoFactorServerUtils.toStringForLog(params) + ", result: " + result);
+      }
     }
   
   }

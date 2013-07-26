@@ -397,8 +397,8 @@
       <then>
         <antcall target="packageEnvHelper">
           <param name="main.serverDirName" value="prodWs" />
-          <param name="main.arSuffix" value="ProdWs" />
-          <param name="main.buildToDelete" value="ProdWs.war" />
+          <param name="main.arSuffix" value="WsProd" />
+          <param name="main.buildToDelete" value="WsProd.war" />
           <param name="main.contextRoot" value="${prop.contextRootProdWs}" />
           <param name="main.buildEar" value="true" />
         </antcall>

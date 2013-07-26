@@ -922,6 +922,10 @@ public class TwoFactorServerUtils {
    */
   public static void sleep(long millis) {
     try {
+      //System.out.println("Sleeping for " + millis + "ms");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Sleeping for " + millis + "ms");
+      }
       Thread.sleep(millis);
     } catch (InterruptedException ie) {
       throw new RuntimeException(ie);

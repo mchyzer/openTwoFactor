@@ -16,6 +16,8 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
+import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.databasePerf.TfDatabasePerfLog;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -212,12 +214,14 @@ public class ByCriteriaStatic {
   public <T> T uniqueResult(Class<T> returnType, Criterion theCriterions) throws TfDaoException {
     this.persistentClass = returnType;
     this.criterions = theCriterions;
+    long start = System.nanoTime();
+    T result = null;
     try {
       TwoFactorTransactionType transactionTypeToUse = 
         (TwoFactorTransactionType)ObjectUtils.defaultIfNull(this.transactionType, 
             TwoFactorTransactionType.READONLY_OR_USE_EXISTING);
       
-      T result = (T)HibernateSession.callbackHibernateSession(
+      result = (T)HibernateSession.callbackHibernateSession(
           transactionTypeToUse, TfAuditControl.WILL_NOT_AUDIT,
           new HibernateHandler() {
   
@@ -246,6 +250,13 @@ public class ByCriteriaStatic {
       }
 
       throw e;
+    } finally {
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms criterion: " 
+            + TwoFactorServerUtils.toStringForLog(criterions) + ", resultType: " + returnType 
+            + ", result: " + TwoFactorServerUtils.toStringForLog(result));
+      }
+      
     }
     
   }
@@ -274,12 +285,14 @@ public class ByCriteriaStatic {
   public <T> List<T> list(Class<T> returnType, Criterion theCriterions) throws TfDaoException {
     this.persistentClass = returnType;
     this.criterions = theCriterions;
+    long start = System.nanoTime();
+    List<T> result = null;
     try {
       TwoFactorTransactionType transactionTypeToUse = 
         (TwoFactorTransactionType)ObjectUtils.defaultIfNull(this.transactionType, 
             TwoFactorTransactionType.READONLY_OR_USE_EXISTING);
       
-      List<T> result = (List<T>)HibernateSession.callbackHibernateSession(
+      result = (List<T>)HibernateSession.callbackHibernateSession(
           transactionTypeToUse, TfAuditControl.WILL_NOT_AUDIT,
           new HibernateHandler() {
   
@@ -369,6 +382,12 @@ public class ByCriteriaStatic {
     } catch (RuntimeException e) {
       TwoFactorServerUtils.injectInException(e, "Exception in list: (" + returnType + "), " + this);
       throw e;
+    } finally {
+      if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
+        TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms criterion: " 
+            + TwoFactorServerUtils.toStringForLog(criterions) + ", resultType: " + returnType + ", rows: " + TwoFactorServerUtils.length(result));
+      }
+      
     }
     
   }

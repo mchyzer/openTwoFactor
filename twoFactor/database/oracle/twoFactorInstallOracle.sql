@@ -528,8 +528,8 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
   
   
     
-/* Formatted on 3/20/2013 3:06:28 AM (QP5 v5.163.1008.3004) */
-CREATE OR REPLACE FORCE VIEW two_factor_user_v
+/* Formatted on 7/25/2013 9:45:49 PM (QP5 v5.163.1008.3004) */
+CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
 (
    LOGINID,
    UUID,
@@ -562,9 +562,9 @@ CREATE OR REPLACE FORCE VIEW two_factor_user_v
    EMAIL0,
    DATE_INVITED_COLLEAGUES,
    DATE_INVITED_COLLEAGUES_DATE,
-   phone_code_encrypted,   
-   date_phone_code_sent,
-   date_phone_code_sent_date
+   PHONE_CODE_ENCRYPTED,
+   DATE_PHONE_CODE_SENT,
+   DATE_PHONE_CODE_SENT_DATE
 )
 AS
    SELECT tfu.loginid,
@@ -584,22 +584,19 @@ AS
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'sequential_pass_given_to_user')
              AS sequential_pass_given_to_user,
-          (SELECT  CASE
-                   WHEN TFUA.ATTRIBUTE_VALUE_String is null
-                     THEN NULL
-                     ELSE concat(SUBSTRing(TFUA.ATTRIBUTE_VALUE_String, 1, 3), '...')
-                   END         
+          (SELECT DECODE (
+                     TFUA.ATTRIBUTE_VALUE_String,
+                     NULL, NULL,
+                     SUBSTR (TFUA.ATTRIBUTE_VALUE_String, 1, 3) || '...')
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'two_factor_secret')
              AS two_factor_secret_abbr,
-          (SELECT 
-                 CASE
-                   WHEN TFUA.ATTRIBUTE_VALUE_String is null
-                     THEN NULL
-                     ELSE concat(SUBSTRing(TFUA.ATTRIBUTE_VALUE_String, 1, 3), '...')
-                   END         
-             FROM two_factor_user_attr TFUA
+          (SELECT DECODE (
+                     TFUA.ATTRIBUTE_VALUE_String,
+                     NULL, NULL,
+                     SUBSTR (TFUA.ATTRIBUTE_VALUE_String, 1, 3) || '...')
+             FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'two_factor_secret_temp')
              AS two_factor_secret_temp_abbr,
@@ -816,17 +813,15 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.COLLEAGUE_USER_UUID4 IS 'userId 4 of the col
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.COLLEAGUE_LOGINID4 IS 'loginid 4 of the colleague who can unlock this user';
 
-COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'email address for notifications';
+COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'date value for when the phone code was sent';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DATE_INVITED_COLLEAGUES IS 'date the user invited colleagues to unlock account as int millis from 1970';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DATE_INVITED_COLLEAGUES_DATE IS 'date the user invited colleagues to unlock account';
 
-COMMENT ON COLUMN TWO_FACTOR_USER_V.phone_code_encrypted IS 'six digit phone code for unlocking account';
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_CODE_ENCRYPTED IS 'six digit phone code for unlocking account';
 
-COMMENT ON COLUMN TWO_FACTOR_USER_V.date_phone_code_sent IS 'millis since 1970 that the phone code was sent';
-
-COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'date value for when the phone code was sent';
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DATE_PHONE_CODE_SENT IS 'millis since 1970 that the phone code was sent';
 
 
 

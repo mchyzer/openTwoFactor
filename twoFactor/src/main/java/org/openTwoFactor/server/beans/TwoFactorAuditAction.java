@@ -23,6 +23,22 @@ public enum TwoFactorAuditAction {
     
   },
 
+  /**
+   * assign the profile email address from subject
+   */
+  SET_PROFILE_EMAIL_FROM_SUBJECT {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAssignProfileEmailFromSubject";
+    }
+    
+  },
+
   
   /**
    * error authenticating

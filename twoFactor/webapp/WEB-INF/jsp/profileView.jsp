@@ -33,7 +33,9 @@
       <div class="formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
       <div class="formValue">
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 
-        (<a href="https://medley.isc-seo.upenn.edu/directory/jsp/fast.do?fastStart=profile">edit email address</a>)
+        (<a href="https://medley.isc-seo.upenn.edu/directory/jsp/fast.do?fastStart=profile"
+          onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
+          >edit email address</a>)
       </div>
       <div class="formFooter">&nbsp;</div>
     </div>

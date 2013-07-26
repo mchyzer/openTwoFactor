@@ -46,7 +46,7 @@
               <div class="formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
               <div class="formValue">
                 ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 
-                ${textContainer.text['profileEditEmailPrefix']}<a 
+                ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
                 href="${textContainer.textEscapeDouble['profileEditEmailLinkUrl']}" 
                 target="_blank">${textContainer.textEscapeXml['profileEditEmailLinkText']}</a>${textContainer.text['profileEditEmailSuffix']}
               </div>

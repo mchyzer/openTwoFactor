@@ -1480,15 +1480,39 @@ public class UiMain extends UiServiceLogicBase {
 
     twoFactorProfileContainer.setEmail0(twoFactorUser.getEmail0());
 
-    if (StringUtils.isBlank(twoFactorUser.getEmail0()) && subjectSource != null) {
+    String dbEmail = twoFactorUser.getEmail0();
+    String subjectEmail = null;
+    
+    if (subjectSource != null) {
       
       //resolve subject
       Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-          loggedInUser, true, false, true);
+          loggedInUser, false, false, true);
       if (subject != null) {
-        twoFactorProfileContainer.setEmail0(subject.getAttributeValueSingleValued("email"));
+        subjectEmail = subject.getAttributeValueSingleValued("email");
         
       }
+    }
+
+    if (!StringUtils.equals(dbEmail, subjectEmail) && !StringUtils.isBlank(subjectEmail)) {
+      
+      twoFactorProfileContainer.setEmail0(subjectEmail);
+      //assign the db email
+      twoFactorUser.setEmail0(subjectEmail);
+      twoFactorUser.store(twoFactorDaoFactory);
+      //assign an audit
+
+//      auditsAssignProfileEmailFromSubjectBlank = none
+//      auditsAssignProfileEmailFromSubjectPrefix1 = From: 
+//      auditsAssignProfileEmailFromSubjectPrefix2 = , to:
+      StringBuilder descriptionBuilder = new StringBuilder();
+      descriptionBuilder.append(TextContainer.retrieveFromRequest().getText().get("auditsAssignProfileEmailFromSubjectPrefix1")).append(" ");
+      descriptionBuilder.append(StringUtils.defaultIfEmpty(dbEmail, TextContainer.retrieveFromRequest().getText().get("auditsAssignProfileEmailFromSubjectBlank")));
+      descriptionBuilder.append(TextContainer.retrieveFromRequest().getText().get("auditsAssignProfileEmailFromSubjectPrefix2"));
+      descriptionBuilder.append(" ").append(StringUtils.defaultIfEmpty(subjectEmail, TextContainer.retrieveFromRequest().getText().get("auditsAssignProfileEmailFromSubjectBlank")));
+      
+      TwoFactorAudit.createAndStore(twoFactorDaoFactory, TwoFactorAuditAction.SET_PROFILE_EMAIL_FROM_SUBJECT, 
+          ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), descriptionBuilder.toString(), null);
     }
     
     twoFactorProfileContainer.setPhone0(twoFactorUser.getPhone0());

@@ -245,7 +245,7 @@ public class TwoFactorEmail {
       
       final String SMTP_PASS = StringUtils.isBlank(smtpPass) ? null : Morph.decryptIfFile(smtpPass);
       
-      Properties properties = new Properties();
+      Properties properties = System.getProperties();
       
       properties.put("mail.host", smtpServer);
       properties.put("mail.transport.protocol", "smtp");

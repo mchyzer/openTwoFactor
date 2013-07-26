@@ -1,4 +1,4 @@
-/* Formatted on 7/19/2013 12:45:36 PM (QP5 v5.163.1008.3004) */
+/* Formatted on 7/26/2013 1:03:36 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 (
    PENN_ID,
@@ -14,7 +14,7 @@ AS
           kerberos_principal AS pennname,
           description,
           search_description,
-          nvl(PENNKEY_VIEW_PREF_NAME, kerberos_principal) AS name,
+          NVL (PENNKEY_VIEW_PREF_NAME, kerberos_principal) AS name,
           ADMIN_VIEW_PREF_EMAIL_ADDRESS AS email,
           CASE
              WHEN CPV.IS_ACTIVE_FACULTY = 'Y' THEN 'T'
@@ -26,7 +26,7 @@ AS
      /* (select 'T' from authzadm.PROJECT_TF_ACTIVE_USERS_V ptauv where ptauv.penn_id = cpv.penn_id) as active */
      FROM pcdadmin.computed_person_v cpv
     WHERE kerberos_principal IS NOT NULL;
-COMMENT ON TABLE TF_PERSON_SOURCE_V IS 'person source to lookup and search for subjects in the two factor project';
+COMMENT ON TABLE TF_PERSON_SOURCE_V IS 'person source to lookup and search for subjects in the two factor project for non admin users';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.PENN_ID IS 'numeric penn_id';
 
