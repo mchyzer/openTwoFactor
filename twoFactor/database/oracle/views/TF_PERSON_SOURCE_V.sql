@@ -12,8 +12,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 AS
    SELECT char_penn_id AS penn_id,
           kerberos_principal AS pennname,
-          description,
-          search_description,
+          description_penn as description,
+          search_description_penn as search_description,
           NVL (PENNKEY_VIEW_PREF_NAME, kerberos_principal) AS name,
           ADMIN_VIEW_PREF_EMAIL_ADDRESS AS email,
           CASE

@@ -122,16 +122,19 @@ public class UiMain extends UiServiceLogicBase {
     Set<Subject> subjects = new LinkedHashSet<Subject>();
     boolean enterMoreChars = false;
     
-    if (isLookup) {
-
-      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), query, true, false, isAdmin);
-                  
-      if (subject != null) {
-        
-        subjects.add(subject);
+    {
+      String subjectId = query.endsWith("*") ? query.substring(0, query.length()-1) : query;
+      if (!StringUtils.isBlank(subjectId)) {
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), subjectId, true, false, isAdmin);
+                    
+        if (subject != null) {
+          
+          subjects.add(subject);
+        }
       }
-
-    } else {
+    }
+    
+    if (!isLookup) {
     
       //take out the asterisk
       query = StringUtils.replace(query, "*", "");
