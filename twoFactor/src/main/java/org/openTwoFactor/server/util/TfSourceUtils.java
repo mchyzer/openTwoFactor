@@ -41,6 +41,46 @@ public class TfSourceUtils {
     return subjectId;
   }
 
+  /**
+   * does the set of subject ids or net ids contain one
+   * @param subjectIdOrNetIdOfSubject
+   * @return true if in the set
+   */
+  public static boolean subjectIdOrNetIdInSet(Source source, String subjectIdOrNetIdOfSubject, Set<String> subjectIdsOrNetIds) {
+
+    if (StringUtils.isBlank(subjectIdOrNetIdOfSubject)) {
+      return false;
+    }
+    
+    if (TwoFactorServerUtils.length(subjectIdsOrNetIds) == 0) { 
+      return false;
+    }
+    
+    if (subjectIdsOrNetIds.contains(subjectIdOrNetIdOfSubject)) {
+      return true;
+    }
+    
+    String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+    if (!StringUtils.isBlank(netIdAttribute)) {
+      
+      Subject subject = retrieveSubjectByIdOrIdentifier(source, subjectIdOrNetIdOfSubject, true, false, true);
+      if (subject != null) {
+        
+        if (subjectIdsOrNetIds.contains(subject.getId())) {
+          return true;
+        }
+        
+        String netId = subject.getAttributeValue(netIdAttribute);
+        if (!StringUtils.isBlank(netId)) {
+          if (subjectIdsOrNetIds.contains(netId)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   
   /**
    * get the main live source

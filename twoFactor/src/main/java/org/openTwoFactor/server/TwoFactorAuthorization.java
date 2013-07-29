@@ -34,4 +34,23 @@ public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
       
   }
 
+  /**
+   * @see TwoFactorAuthorizationInterface#adminUserIdsWhoCanBackdoorAsOtherUsers()
+   */
+  @Override
+  public Set<String> adminUserIdsWhoCanBackdoorAsOtherUsers() {
+
+    
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String adminsAllowedToActAsOtherUsers = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.adminsAllowedToActAsOtherUsers");
+    
+    if (TwoFactorServerUtils.isBlank(adminsAllowedToActAsOtherUsers)) {
+      return new HashSet<String>();
+    }
+
+    return TwoFactorServerUtils.splitTrimToSet(adminsAllowedToActAsOtherUsers, ",");
+
+  }
+
 }

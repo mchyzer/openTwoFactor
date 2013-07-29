@@ -322,10 +322,18 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
     TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
     Set<String> userIds = twoFactorAuthorizationInterface.adminUserIds();
-    boolean isAdmin = userIds.contains(this.loginid);
+    
+    Source theSource = this.subjectSource;
+    if (theSource == null) {
+      theSource = TfSourceUtils.mainSource();
+    }
+    
+    boolean isAdmin = TfSourceUtils.subjectIdOrNetIdInSet(theSource, this.loginid, userIds);
+    
     if (!isAdmin) {
+      //see if there is a different loginId
       String userId = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs(false);
-      isAdmin = !StringUtils.isBlank(userId) && userIds.contains(userId);
+      isAdmin = !StringUtils.isBlank(userId) && TfSourceUtils.subjectIdOrNetIdInSet(theSource, userId, userIds);
     }
     
     if (TwoFactorUser.useAdminCache) {

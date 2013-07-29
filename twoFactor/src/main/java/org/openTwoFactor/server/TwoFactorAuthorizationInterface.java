@@ -18,4 +18,10 @@ public interface TwoFactorAuthorizationInterface {
    */
   public Set<String> adminUserIds();
   
+  /**
+   * you probably do not want to set this in production, and if so, do so temporarily
+   * @return the userIds who can backdoor as other users
+   */
+  public Set<String> adminUserIdsWhoCanBackdoorAsOtherUsers();
+  
 }

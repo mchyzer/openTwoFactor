@@ -220,7 +220,7 @@ public class UiMain extends UiServiceLogicBase {
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
     
     if (userOk) {
-      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+      userOk = !hasTooManyUsersLockoutLogic(TfSourceUtils.mainSource(), TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
     }
     
     showJsp("twoFactorIndex.jsp");
@@ -271,41 +271,61 @@ public class UiMain extends UiServiceLogicBase {
    * @param loggedInUser
    * @return if too many users
    */
-  public boolean hasTooManyUsersLockoutLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+  public boolean hasTooManyUsersLockoutLogic(Source subjectSource, final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser) {
     
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
     
     int maxRegistrations = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.max.registrations", -1);
-    if (maxRegistrations >= 0) {
-
-      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-      
-      if (!twoFactorUser.isOptedIn()) {
-        
-        //lets see how many opted in users there are
-        int usersOptedIn = twoFactorDaoFactory.getTwoFactorUser().retrieveCountOfOptedInUsers(); 
-        
-        if (usersOptedIn >= maxRegistrations) {
-          
-          
-          //lets see if this user has ever opted in
-          int countOfOptinsOptouts = twoFactorUser == null ? 0 
-              : twoFactorDaoFactory.getTwoFactorAudit().retrieveCountOptinOptouts(twoFactorUser.getUuid());
-          
-          //if the user has never opted in...
-          if (countOfOptinsOptouts == 0) {
-
-            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("cantOptInSinceTooManyUsers"));
-            return true;
-          }
-          
-        }
-        
-      }
-      
+    if (maxRegistrations < 0) {
+      return false;
     }
-    return false;
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (twoFactorUser.isOptedIn()) {
+      return false;
+    }
+      
+    //lets see how many opted in users there are
+    int usersOptedIn = twoFactorDaoFactory.getTwoFactorUser().retrieveCountOfOptedInUsers(); 
+    
+    if (usersOptedIn < maxRegistrations) {
+      return false;
+    }
+      
+    //lets see if this user has ever opted in
+    int countOfOptinsOptouts = twoFactorUser == null ? 0 
+        : twoFactorDaoFactory.getTwoFactorAudit().retrieveCountOptinOptouts(twoFactorUser.getUuid());
+    
+    //if the user has never opted in...
+    if (countOfOptinsOptouts > 0) {
+      return false;
+    }
+
+    //lets see if the user is an admin... if the user is an admin, let them in
+    TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    if (twoFactorUserLoggedIn.isAdmin()) {
+      return false;
+    }
+    
+    //see if they are in a whitelist...
+    //  # if there should be a list of people who can opt in even if the max registrations have been met
+    //  # can be a subjectId or a netId, comma separated
+    //  twoFactorServer.alwaysAllowed.registrationUserIds =
+    
+    String registrationUserIdsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.alwaysAllowed.registrationUserIds");
+    
+    if (!StringUtils.isBlank(registrationUserIdsString)) {
+      Set<String> registrationUserIds = TwoFactorServerUtils.splitTrimToSet(registrationUserIdsString, ",");
+      if (TfSourceUtils.subjectIdOrNetIdInSet(subjectSource, twoFactorUserLoggedIn.getLoginid(), registrationUserIds)
+          || TfSourceUtils.subjectIdOrNetIdInSet(subjectSource, loggedInUser, registrationUserIds) ) {
+        return false;
+      }
+    }
+    
+    //set an error
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("cantOptInSinceTooManyUsers"));
+    return true;
     
   }
   
@@ -1086,7 +1106,7 @@ public class UiMain extends UiServiceLogicBase {
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
     
     if (userOk) {
-      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
     }
 
     if (!userOk) {
@@ -2296,7 +2316,7 @@ public class UiMain extends UiServiceLogicBase {
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
     
     if (userOk) {
-      userOk = !hasTooManyUsersLockoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
     }
 
     if (!userOk) {

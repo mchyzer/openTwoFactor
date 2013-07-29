@@ -24,6 +24,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
 import org.openTwoFactor.server.util.TfSourceUtils;
@@ -64,24 +65,23 @@ public class TwoFactorFilterJ2ee implements Filter {
     
     //see if there is an act as user in the session
     if (!StringUtils.isBlank(originalLoginid)) {
-      String adminsAllowedToActAsOtherUsers = TwoFactorServerConfig.retrieveConfig().propertyValueString(
-          "twoFactorServer.adminsAllowedToActAsOtherUsers");
+      
+      TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+      
+      Set<String> adminsAllowedToActAsOtherUsersSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanBackdoorAsOtherUsers();
       
       //if there are admins configured (e.g. non prod)
-      if (!StringUtils.isBlank(adminsAllowedToActAsOtherUsers)) {
+      if (TwoFactorServerUtils.length(adminsAllowedToActAsOtherUsersSet) > 0) {
         
-        Set<String> adminsAllowedToActAsOtherUsersSet = TwoFactorServerUtils.splitTrimToSet(
-            adminsAllowedToActAsOtherUsers, ",");
-
         //if the admins contains the current user
-        if (adminsAllowedToActAsOtherUsersSet.contains(originalLoginid)) {
+        if (TfSourceUtils.subjectIdOrNetIdInSet(TfSourceUtils.mainSource(), originalLoginid, adminsAllowedToActAsOtherUsersSet)) {
           return true;
         }
         
-        //see if loginid is there
+        //see if loginid is there, might change something...
         originalLoginid = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs(false);
         
-        if (adminsAllowedToActAsOtherUsersSet.contains(originalLoginid)) {
+        if (TfSourceUtils.subjectIdOrNetIdInSet(TfSourceUtils.mainSource(), originalLoginid, adminsAllowedToActAsOtherUsersSet)) {
           return true;
         }
 

@@ -124,10 +124,14 @@ public class TwoFactorRestServlet extends HttpServlet {
     if (!userToNetworks.containsKey(principal)) {
       StringBuilder error = new StringBuilder("User '" + principal + "' is not allowed to use the web service: "
           + userToNetworks.size() + " users are allowed: ");
+      
+      String errorForClient = error.toString();
+      
       for (String userName: userToNetworks.keySet()) {
         error.append(", ").append(userName);
       }
-      throw new TfRestInvalidRequest(error.toString());
+      LOG.error(error);
+      throw new TfRestInvalidRequest(errorForClient.toString());
     }
     
     String networks = userToNetworks.get(principal);
