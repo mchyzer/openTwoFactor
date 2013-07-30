@@ -682,7 +682,7 @@ public class UiMain extends UiServiceLogicBase {
 
     }
     
-    accountName = "ameliaBedelia@upenn.edu";
+    //accountName = "ameliaBedelia@upenn.edu";
     
     //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
     String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
