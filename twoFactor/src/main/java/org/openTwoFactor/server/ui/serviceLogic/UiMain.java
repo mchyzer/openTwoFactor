@@ -681,6 +681,9 @@ public class UiMain extends UiServiceLogicBase {
       accountName = TwoFactorServerUtils.substituteExpressionLanguage(accountEl, substituteMap, true, true, true);
 
     }
+    
+    accountName = "ameliaBedelia@upenn.edu";
+    
     //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
     String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
     TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateQrFile(uri, qrImageFile, qrImageWidth);

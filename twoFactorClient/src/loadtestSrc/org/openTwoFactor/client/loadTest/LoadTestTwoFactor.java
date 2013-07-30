@@ -28,14 +28,14 @@ public class LoadTestTwoFactor {
    */
   public static void main(String[] args) {
 
-    final int sleepMillis = 0;
-    final int threadRecords = 1000;
+    final int sleepMillis = 1000;
+    final int threadRecords = 50;
 
     final List<Long> times = Collections.synchronizedList(new ArrayList<Long>());
     
-    Thread[] threads = new Thread[5];
+    Thread[] threads = new Thread[10];
     
-    for (int i = 0; i<5; i++) {
+    for (int i = 0; i<threads.length; i++) {
       
       final int I = i;
       threads[i] = new Thread(new Runnable() {
@@ -64,6 +64,7 @@ public class LoadTestTwoFactor {
                 times.add(tookMs);
               }
               
+              System.out.println("Thread: " + I + " index: " + j + " took " + tookMs + " ms");
               if (tookMs > 500) {
                 System.out.println("Thread: " + I + " index: " + j + " took " + tookMs + " ms");
               }
@@ -88,7 +89,7 @@ public class LoadTestTwoFactor {
       
     }
 
-    for (int i=0;i<5;i++) {
+    for (int i=0;i<threads.length;i++) {
       try {
         threads[i].join();
       } catch (Exception e) {
