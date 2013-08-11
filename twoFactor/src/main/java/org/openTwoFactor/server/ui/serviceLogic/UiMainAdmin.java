@@ -289,7 +289,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             sendEmailToUsers ? TwoFactorAuditAction.SEND_EMAIL_TO_ALL_USERS
                 : TwoFactorAuditAction.TEST_SEND_EMAIL_TO_ALL_USERS, ipAddress, 
-            userAgent, null,
+            userAgent, twoFactorUserLoggedIn.getUuid(),
             twoFactorUserLoggedIn.getUuid(),  
             TextContainer.retrieveFromRequest().getText().get("auditsSendEmailToAllUsersDescription"), null);
 
