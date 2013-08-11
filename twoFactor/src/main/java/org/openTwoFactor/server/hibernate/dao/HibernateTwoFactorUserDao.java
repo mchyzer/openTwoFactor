@@ -10,6 +10,7 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.dao.TwoFactorUserDao;
 import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
+import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -19,6 +20,15 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  */
 public class HibernateTwoFactorUserDao implements TwoFactorUserDao {
 
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    System.out.println(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedInUsers());
+    System.out.println(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedOutUsers());
+  }
+  
   /**
    * @see org.openTwoFactor.server.dao.TwoFactorUserDao#delete(org.openTwoFactor.server.beans.TwoFactorUser)
    */
@@ -119,6 +129,24 @@ public class HibernateTwoFactorUserDao implements TwoFactorUserDao {
             " and tfua.attributeName = 'opted_in'  ) ")
         .setCacheable(true)
         .setCacheRegion(HibernateTwoFactorUserDao.class.getName() + ".retrieveCountOfOptedInUsers")
+        .uniqueResult(long.class).intValue();
+    return count;
+  }
+
+  /**
+   * @see TwoFactorUserDao#retrieveCountOfOptedOutUsers()
+   */
+  @Override
+  public int retrieveCountOfOptedOutUsers() {
+    int count = HibernateSession.byHqlStatic().createQuery(
+        "select count(tfu.uuid) from TwoFactorUser as tfu where (not exists  " +
+          " (select tfua from TwoFactorUserAttr as tfua where tfua.userUuid = tfu.uuid " +
+            " and tfua.attributeValueString = 'T' " +
+            " and tfua.attributeName = 'opted_in'  ) ) and " +
+            " exists ( select tfa from TwoFactorAudit tfa where tfa.userUuid = tfu.uuid" +
+            " and tfa.action = 'OPTIN_TWO_FACTOR' ) ")
+        .setCacheable(true)
+        .setCacheRegion(HibernateTwoFactorUserDao.class.getName() + ".retrieveCountOfOptedOutUsers")
         .uniqueResult(long.class).intValue();
     return count;
   }

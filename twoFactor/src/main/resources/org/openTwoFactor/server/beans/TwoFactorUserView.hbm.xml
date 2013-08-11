@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping
+    PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+
+<!-- $Id: TwoFactorUserView.hbm.xml,v 1.1 2013/06/20 06:02:51 mchyzer Exp $ -->
+
+<hibernate-mapping package="org.openTwoFactor.server.beans" default-lazy="false">
+
+  <!-- note: optimistic-lock defaults to version, but will be dynamically replaced
+    based on the twoFactor.properties, so dont remove that attribute  -->
+  <class name="TwoFactorUserView" table="two_factor_user_v" optimistic-lock="version">
+
+    <meta attribute="implement-equals">true</meta>
+    <meta attribute="session-method">TwoFactorDao.getSession();</meta>
+
+    <cache usage="read-write"/>
+
+    <!-- id -->
+    <id name="uuid" column="uuid" type="string" >
+      <generator class="assigned" />
+    </id>
+    <!-- id -->
+    
+    <property name="colleagueLoginid0" column="colleague_loginid0" />
+    <property name="colleagueLoginid1" column="colleague_loginid1" />
+    <property name="colleagueLoginid2" column="colleague_loginid2" />
+    <property name="colleagueLoginid3" column="colleague_loginid3" />
+    <property name="colleagueLoginid4" column="colleague_loginid4" />
+    <property name="colleagueUserUuid0" column="colleague_user_uuid0" />
+    <property name="colleagueUserUuid1" column="colleague_user_uuid1" />
+    <property name="colleagueUserUuid2" column="colleague_user_uuid2" />
+    <property name="colleagueUserUuid3" column="colleague_user_uuid3" />
+    <property name="colleagueUserUuid4" column="colleague_user_uuid4" />
+    <property name="dateInvitedColleagues" column="date_invited_colleagues" />
+    <property name="datePhoneCodeSent" column="date_phone_code_sent" />
+    <property name="email0" column="email0" />
+    <property name="lastTotp60TimestampUsed" column="last_totp60_timestamp_used" />
+    <property name="lastTotpTimestampUsed" column="last_totp_timestamp_used" />
+    <property name="loginid" column="loginid" />
+    <property name="optedIn" column="opted_in" type="true_false" />
+    <property name="phone0" column="phone0" />
+    <property name="phone1" column="phone1" />
+    <property name="phone2" column="phone2" />
+    <property name="phoneCodeEncrypted" column="phone_code_encrypted" />
+    <property name="phoneIsText0" column="phone_is_text0" type="true_false" />
+    <property name="phoneIsText1" column="phone_is_text1" type="true_false" />
+    <property name="phoneIsText2" column="phone_is_text2" type="true_false" />
+    <property name="phoneIsVoice0" column="phone_is_voice0" type="true_false" />
+    <property name="phoneIsVoice1" column="phone_is_voice1" type="true_false" />
+    <property name="phoneIsVoice2" column="phone_is_voice2" type="true_false" />
+    <property name="sequentialPassGivenToUser" column="sequential_pass_given_to_user" />
+    <property name="sequentialPassIndex" column="sequential_pass_index" />
+    <property name="twoFactorSecretAbbr" column="two_factor_secret_abbr" />
+    <property name="twoFactorSecretTempAbbr" column="two_factor_secret_temp_abbr" />
+    
+  </class>
+</hibernate-mapping>

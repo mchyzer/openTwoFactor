@@ -11,6 +11,7 @@ import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
 import org.openTwoFactor.server.dao.TwoFactorUserDao;
+import org.openTwoFactor.server.dao.TwoFactorUserViewDao;
 import org.openTwoFactor.server.hibernate.dao.HibernateDaoFactory;
 import org.openTwoFactor.server.hibernate.dao.TransactionDAO;
 
@@ -126,6 +127,11 @@ public abstract class TwoFactorDaoFactory {
    * @return user attr dao
    */
   public abstract TwoFactorUserAttrDao getTwoFactorUserAttr();
+
+  /**
+   * @return user view dao
+   */
+  public abstract TwoFactorUserViewDao getTwoFactorUserView();
   
 } 
 

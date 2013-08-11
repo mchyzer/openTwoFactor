@@ -4,7 +4,11 @@
  */
 package org.openTwoFactor.server.ui.serviceLogic;
 
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +19,7 @@ import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.exceptions.TfDaoException;
@@ -35,7 +40,6 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
-import edu.internet2.middleware.subject.provider.SourceManager;
 
 
 /**
@@ -68,9 +72,236 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
     
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin()) {
+      throw new RuntimeException("Not an admin! " + loggedInUser);
+    }
+
+    
     showJsp("admin.jsp");
   }
 
+  /**
+   * admin email all page
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void adminEmailAllPage(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin()) {
+      throw new RuntimeException("Not an admin! " + loggedInUser);
+    }
+
+    showJsp("adminEmailAll.jsp");
+  }
+
+  /**
+   * submit an email to all users
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void emailAllUsersSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin()) {
+      throw new RuntimeException("Not an admin! " + loggedInUser);
+    }
+
+    String checkedAdminAllReallySendString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("checkedAdminAllReallySend");
+
+    boolean checkedAdminAllReallySend = TwoFactorServerUtils.booleanValue(checkedAdminAllReallySendString, false);
+
+    String emailSubject = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("emailSubject");
+    String emailBody = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("emailBody");
+
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    AdminEmailSubmitView adminEmailSubmitView = emailAllUsersSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource, emailSubject, emailBody, checkedAdminAllReallySend);
+    
+    showJsp(adminEmailSubmitView.getJsp());
+  }
+
+  /**
+   * send email to send to all users
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param userIdOperatingOn 
+   * @param subjectSource 
+   * @return page to go to
+   */
+  public AdminEmailSubmitView emailAllUsersSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String emailSubject, final String emailBody, final boolean sendEmailToUsers) {
+
+    return (AdminEmailSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserLoggedIn.isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return AdminEmailSubmitView.index;
+        }
+
+        //lets get the user's email address (current one)
+        Subject loggedInSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            loggedInUser, false, true, true);
+        
+        String loggedInEmail = TfSourceUtils.retrieveEmail(loggedInSubject);
+        
+        if (StringUtils.isBlank(loggedInEmail)) {
+          loggedInEmail = twoFactorUserLoggedIn.getEmail0();
+        }
+        
+        if (StringUtils.isBlank(loggedInEmail)) {
+
+          //this shouldnt really happen
+          throw new RuntimeException("Cant find email address of logged in user: " + loggedInUser);
+
+        }
+        
+        if (StringUtils.isBlank(emailSubject)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminEmailAllErrorNoSubject"));
+          return AdminEmailSubmitView.adminEmailAll;
+        }
+        
+        if (StringUtils.isBlank(emailBody)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminEmailAllErrorNoBody"));
+          return AdminEmailSubmitView.adminEmailAll;
+          
+        }
+        
+        //lets get all logged in users
+        List<TwoFactorUserView> allLoggedInUsers = twoFactorDaoFactory.getTwoFactorUserView().retrieveAllOptedInUsers();
+        if (TwoFactorServerUtils.length(allLoggedInUsers) == 0) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminEmailAllErrorNoLoggedInUsers"));
+          return AdminEmailSubmitView.admin;
+        }
+        
+        //lets batch this into batches of e.g. 20
+        int batchSize = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.emailAllUsersBatchSize", 20);
+        int numberOfBatches = TwoFactorServerUtils.batchNumberOfBatches(allLoggedInUsers, batchSize);
+        
+        //process the people batch by batch
+        for (int i=0;i<numberOfBatches;i++) {
+          
+          //get a batch
+          List<TwoFactorUserView> twoFactorUserViews = TwoFactorServerUtils.batchList(allLoggedInUsers, batchSize, i);
+          
+          Set<String> subjectIds = new HashSet<String>();
+          
+          //get all the emails, from the system, and from the subject source
+          Set<String> emailAddresses = new LinkedHashSet<String>();
+          for (TwoFactorUserView twoFactorUserView : twoFactorUserViews) {
+            String email = twoFactorUserView.getEmail0();
+            if (!StringUtils.isBlank(email)) {
+              emailAddresses.add(email);
+            }
+            String loginid = twoFactorUserView.getLoginid();
+            if (!StringUtils.isBlank(loginid)) {
+              subjectIds.add(loginid);
+            }
+          }
+          
+          //map by our subject id to the subject
+          Map<String, Subject> subjectMap = TfSourceUtils.retrieveSubjectsByIdsOrIdentifiers(subjectSource, subjectIds, true);
+          
+          for (Subject subject : TwoFactorServerUtils.nonNull(subjectMap).values()) {
+            String email = TfSourceUtils.retrieveEmail(subject);
+            if (!StringUtils.isBlank(email)) {
+              emailAddresses.add(email);
+            }
+          }
+          
+          String emailAddressListString = TwoFactorServerUtils.toStringForLog(emailAddresses);
+          
+          //batch #1
+          //real email
+            
+          {
+            TwoFactorEmail twoFactorEmail = new TwoFactorEmail();
+            twoFactorEmail.assignFrom(loggedInEmail);
+            twoFactorEmail.addTo(loggedInEmail);
+  
+            if (sendEmailToUsers) {
+  
+              for (String emailAddress : emailAddresses) {
+                twoFactorEmail.addBcc(emailAddress);
+              }
+            }
+              
+            twoFactorEmail.assignSubject(emailSubject);
+            
+            if (sendEmailToUsers) {
+              twoFactorEmail.assignBody(emailBody);
+            } else {
+              twoFactorEmail.assignBody(TextContainer.retrieveFromRequest().getText().get("adminEmailAllEmailNotSentPrefix") + emailAddressListString + "\n\n" + emailBody);
+            }
+            twoFactorEmail.send();
+          }
+
+          //send another to the sender with the list of emails sent
+          if (sendEmailToUsers) {
+            
+            //send another so the user knows who was sent to
+            TwoFactorEmail twoFactorEmail = new TwoFactorEmail();
+            twoFactorEmail.assignFrom(loggedInEmail);
+            twoFactorEmail.addTo(loggedInEmail);
+  
+            twoFactorEmail.assignSubject(emailSubject);
+            
+            twoFactorEmail.assignBody(TextContainer.retrieveFromRequest().getText().get("adminEmailAllEmailSentPrefix") + emailAddressListString + "\n\n" + emailBody);
+            twoFactorEmail.send();
+            
+          }
+          
+        }
+        
+        twoFactorAdminContainer.setAdminEmailNumberOfUsers(TwoFactorServerUtils.length(allLoggedInUsers));
+
+        //make an audit message
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            sendEmailToUsers ? TwoFactorAuditAction.SEND_EMAIL_TO_ALL_USERS
+                : TwoFactorAuditAction.TEST_SEND_EMAIL_TO_ALL_USERS, ipAddress, 
+            userAgent, null,
+            twoFactorUserLoggedIn.getUuid(),  
+            TextContainer.retrieveFromRequest().getText().get("auditsSendEmailToAllUsersDescription"), null);
+
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(sendEmailToUsers ? "auditsSendEmailToAllUsersSuccess" 
+            : "auditsSendEmailToAllUsersNotSentSuccess"));
+        
+        return AdminEmailSubmitView.admin;
+      }
+    });
+  }
+
+  
   /**
    * opt out a user from the admin console
    * @param httpServletRequest
@@ -559,6 +790,45 @@ public class UiMainAdmin extends UiServiceLogicBase {
      * @param theJsp
      */
     private AdminSubmitView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum AdminEmailSubmitView {
+    
+    /**
+     */
+    admin("admin.jsp"),
+    
+    /**
+     */
+    index("index.jsp"),
+    
+    /**
+     */
+    adminEmailAll("adminEmailAll.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private AdminEmailSubmitView(String theJsp) {
       this.jsp = theJsp;
     }
     

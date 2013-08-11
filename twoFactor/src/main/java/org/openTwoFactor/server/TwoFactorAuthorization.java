@@ -53,4 +53,21 @@ public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
 
   }
 
+  /**
+   * @see TwoFactorAuthorizationInterface#adminUserIdsWhoCanEmailAllUsers()
+   */
+  @Override
+  public Set<String> adminUserIdsWhoCanEmailAllUsers() {
+
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String adminsAllowedToActAsOtherUsers = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.adminsAllowedToEmailAllUsers");
+    
+    if (TwoFactorServerUtils.isBlank(adminsAllowedToActAsOtherUsers)) {
+      return new HashSet<String>();
+    }
+
+    return TwoFactorServerUtils.splitTrimToSet(adminsAllowedToActAsOtherUsers, ",");
+  }
+
 }

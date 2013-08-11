@@ -7,7 +7,11 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import oracle.net.aso.e;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
@@ -160,6 +164,8 @@ public class TfRestLogic {
     
     long start = System.nanoTime();
     
+    TfCheckPasswordResponse tfCheckPasswordResponse = new TfCheckPasswordResponse();
+    
     try {
       
       String username = tfCheckPasswordRequest.getUsername();
@@ -168,8 +174,6 @@ public class TfRestLogic {
       
       String twoFactorPassUnencrypted = tfCheckPasswordRequest.getTwoFactorPass();
 
-      TfCheckPasswordResponse tfCheckPasswordResponse = new TfCheckPasswordResponse();
-      
       //if set for everyone, or set for this request
       boolean debug = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.debugAllRequests", false) 
         || (tfCheckPasswordRequest.getDebug() != null && tfCheckPasswordRequest.getDebug());
@@ -783,6 +787,22 @@ public class TfRestLogic {
       trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_NOT_OPTED_IN.name());
 
       return tfCheckPasswordResponse;
+    } catch (RuntimeException re) {
+      
+      tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.ERROR.name());
+      tfCheckPasswordResponse.setSuccess(false);
+      tfCheckPasswordResponse.setTwoFactorUserAllowed(null);
+      tfCheckPasswordResponse.setErrorMessage(ExceptionUtils.getFullStackTrace(re));
+      
+      trafficLogMap.put("userAllowed", "null");
+      trafficLogMap.put("success", false);
+      trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.ERROR.name());
+      trafficLogMap.put("auditAction", TwoFactorAuditAction.ERROR.name());
+
+      LOG.error("error", re);
+      
+      return tfCheckPasswordResponse;
+
     } finally {
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getClientSourceIpAddress())) {
         trafficLogMap.put("wsClientIp", tfCheckPasswordRequest.getClientSourceIpAddress());
@@ -794,4 +814,7 @@ public class TfRestLogic {
       TfRestLogicTrafficLog.wsRestTrafficLog(trafficLogMap);
     }
   }
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(TfRestLogic.class);
 }

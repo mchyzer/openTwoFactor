@@ -27,10 +27,10 @@
   <%@ include file="../assetsJsp/commonError.jsp"%>
 
   <form action="UiMainAdmin.userIdSubmit" method="post">
-    <div class="formBox">
+    <div class="formBox" style="width: 30em">
       <div class="formRow">
         <div class="formLabel" style="white-space: nowrap; text-align: right"><b><label for="userIdOperatingOn">${textContainer.text['adminPersonToManage']}</label></b></div>
-        <div class="formValue">
+        <div class="formValue"  style="width: 14.5em">
         
            <twoFactor:combobox filterOperation="UiMainAdmin.personPicker" 
               idBase="userIdOperatingOn" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }"
@@ -41,7 +41,7 @@
       </div>
       <div class="formRow">
         <div class="formLabel" style="white-space: nowrap; text-align: right"></div>
-        <div class="formValue"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
+        <div class="formValue" style="width: 14.5em"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
       onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
@@ -52,10 +52,10 @@
   <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canLoggedInUserBackdoor}">
     <br />
     <form action="UiMainAdmin.adminIndex" method="get">
-      <div class="formBox">
+      <div class="formBox" style="width: 30em">
         <div class="formRow">
           <div class="formLabel" style="white-space: nowrap; text-align: right"><b><label for="tfBackdoorLoginId">${textContainer.text['adminPersonToBackdoorAs']}</label></b></div>
-          <div class="formValue">
+          <div class="formValue" style="width: 14.5em">
             <twoFactor:combobox filterOperation="UiMainAdmin.personPicker" 
               idBase="tfBackdoorLogin" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.actingAsLoginid) }"
             />
@@ -64,7 +64,7 @@
         </div>
         <div class="formRow">
           <div class="formLabel" style="white-space: nowrap; text-align: right"></div>
-          <div class="formValue"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
+          <div class="formValue" style="width: 14.5em"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
         onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" /></div>
           <div class="formFooter">&nbsp;</div>
         </div>
@@ -120,7 +120,12 @@
       </c:otherwise>  
     </c:choose>
   </c:if>
-
+  <br />
+  <br />
+  ${textContainer.text['adminOptedInUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedInUsers}
+  <br />
+  ${textContainer.text['adminOptedOutUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedOutUsers}
+  
   <br />
   <br /> 
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
@@ -140,8 +145,17 @@
     <input value="${textContainer.textEscapeDouble['buttonAdminHome']}" class="tfLinkButton"
     type="submit" />
   </form>
-  
-  
+
+  <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canLoggedInUserEmailAll}">
+    
+    &nbsp; &nbsp;
+    
+    <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminEmailAllPage" method="get" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonAdminEmailAll']}" class="tfLinkButton"
+      type="submit" />
+    </form>
+    
+  </c:if>  
   <br /><br />
   
   <%@ include file="../assetsJsp/commonAbout.jsp"%>

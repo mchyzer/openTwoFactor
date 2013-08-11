@@ -239,16 +239,31 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
    * @return the user agent
    */
   public static TwoFactorUserAgent retrieveByUserAgentOrCreate(final TwoFactorDaoFactory twoFactorDaoFactory, final String userAgent) {
-    try {
-      return retrieveByUserAgentOrCreateHelper(twoFactorDaoFactory, userAgent);
-    } catch (Exception e) {
-      LOG.debug("Non-fatal error getting user agent: " + userAgent, e);
-      //hmm, error
+
+    final int LOOP_COUNT = 5;
+    
+    //if two threads create it at the same time, then retrieve again
+    for (int i=0;i<LOOP_COUNT;i++) {
+
+      try {
+        return retrieveByUserAgentOrCreateHelper(twoFactorDaoFactory, userAgent);
+      } catch (RuntimeException e) {
+        
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Error in user-agent: " + userAgent, e);
+        }
+        
+        if (i==LOOP_COUNT-1) {
+          throw e;
+        }
+        
+      }
+      //wait some time, maybe someone else created it
+      TwoFactorServerUtils.sleep(1000);
+      
     }
-    //wait some time, maybe someone else created it
-    TwoFactorServerUtils.sleep(250 + new SecureRandom().nextInt(250));
-    //try again, throw exception if happens
-    return retrieveByUserAgentOrCreateHelper(twoFactorDaoFactory, userAgent);
+    throw new RuntimeException("Why are we here?");
+
   }
 
   /**

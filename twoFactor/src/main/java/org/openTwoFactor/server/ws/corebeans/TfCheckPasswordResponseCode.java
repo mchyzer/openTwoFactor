@@ -11,6 +11,11 @@ package org.openTwoFactor.server.ws.corebeans;
 public enum TfCheckPasswordResponseCode {
 
   /**
+   * if there was an error processing the request
+   */
+  ERROR,
+
+  /**
    * if the browser is trusted and no pass was sent in
    */
   TRUSTED_BROWSER,

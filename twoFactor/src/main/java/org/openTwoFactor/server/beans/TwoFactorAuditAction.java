@@ -10,6 +10,38 @@ public enum TwoFactorAuditAction {
   /**
    * send a code to a phone
    */
+  SEND_EMAIL_TO_ALL_USERS {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsSendEmailToAllUsers";
+    }
+    
+  },
+
+  /**
+   * send a code to a phone
+   */
+  TEST_SEND_EMAIL_TO_ALL_USERS {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsSendTestEmailToAllUsers";
+    }
+    
+  },
+
+  /**
+   * send a code to a phone
+   */
   SEND_CODE_TO_PHONE {
 
     /**
@@ -19,6 +51,22 @@ public enum TwoFactorAuditAction {
     @Override
     public String toStringForUi() {
       return "auditsSendCodeToPhone";
+    }
+    
+  },
+
+  /**
+   * error
+   */
+  ERROR {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsError";
     }
     
   },

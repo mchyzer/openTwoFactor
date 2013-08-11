@@ -132,7 +132,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     //printPasswordsForUser(userName);
     
    // printPasswordsForSecret("RPAR TWTW 4EPP CT7T ", null, null);
-    printPasswordsForSecret("NCUY GYNE 3QDG 44CQ", null, null);
+    printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
 //    String secret = new TwoFactorLogic().generateBase32secret(10);
 //    System.out.println(secret);
 //    secret = "KJARPPQYTM3E7QYR";

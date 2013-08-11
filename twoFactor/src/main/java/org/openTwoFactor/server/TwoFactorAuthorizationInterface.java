@@ -24,4 +24,10 @@ public interface TwoFactorAuthorizationInterface {
    */
   public Set<String> adminUserIdsWhoCanBackdoorAsOtherUsers();
   
+  /**
+   * admin user ids who can send email to other users
+   * @return the set of user ids
+   */
+  public Set<String> adminUserIdsWhoCanEmailAllUsers();
+  
 }

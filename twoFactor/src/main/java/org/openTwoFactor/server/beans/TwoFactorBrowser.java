@@ -360,7 +360,7 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
       }
     });
     
-    if (!allowDeleted && result.isDeleted()) {
+    if (!allowDeleted && (result == null || result.isDeleted())) {
       return null;
     }
     

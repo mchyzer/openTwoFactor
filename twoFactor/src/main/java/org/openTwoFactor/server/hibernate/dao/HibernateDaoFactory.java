@@ -14,6 +14,7 @@ import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
 import org.openTwoFactor.server.dao.TwoFactorUserDao;
+import org.openTwoFactor.server.dao.TwoFactorUserViewDao;
 import org.openTwoFactor.server.hibernate.TwoFactorDao;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 
@@ -110,6 +111,14 @@ public class HibernateDaoFactory extends TwoFactorDaoFactory {
   @Override
   public TwoFactorDaemonLogDao getTwoFactorDaemonLog() {
     return new HibernateTwoFactorDaemonLogDao();
+  }
+
+  /**
+   * @see TwoFactorDaoFactory#getTwoFactorUserView()
+   */
+  @Override
+  public TwoFactorUserViewDao getTwoFactorUserView() {
+    return new HibernateTwoFactorUserViewDao();
   }
 
 }

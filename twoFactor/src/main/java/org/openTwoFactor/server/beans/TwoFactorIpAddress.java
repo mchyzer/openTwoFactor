@@ -6,7 +6,6 @@ package org.openTwoFactor.server.beans;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,6 +32,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 /**
  * row for each source ip address used in two factor
  */
+@SuppressWarnings("serial")
 public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
 
   /**
@@ -174,16 +174,31 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
    * @return the ip address
    */
   public static TwoFactorIpAddress retrieveByIpAddressOrCreate(final TwoFactorDaoFactory twoFactorDaoFactory, final String ipAddress) {
-    try {
-      return retrieveByIpAddressOrCreateHelper(twoFactorDaoFactory, ipAddress);
-    } catch (Exception e) {
-      LOG.debug("Non-fatal error getting IP address: " + ipAddress, e);
-      //hmm, error
+
+    final int LOOP_COUNT = 5;
+    
+    //if two threads create it at the same time, then retrieve again
+    for (int i=0;i<LOOP_COUNT;i++) {
+
+      try {
+        return retrieveByIpAddressOrCreateHelper(twoFactorDaoFactory, ipAddress);
+      } catch (RuntimeException e) {
+        
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Error in IP address: " + ipAddress, e);
+        }
+        
+        if (i==LOOP_COUNT-1) {
+          throw e;
+        }
+        
+      }
+      //wait some time, maybe someone else created it
+      TwoFactorServerUtils.sleep(1000);
+      
     }
-    //wait some time, maybe someone else created it
-    TwoFactorServerUtils.sleep(250 + new SecureRandom().nextInt(250));
-    //try again, throw exception if happens
-    return retrieveByIpAddressOrCreateHelper(twoFactorDaoFactory, ipAddress);
+    throw new RuntimeException("Why are we here?");
+
   }
 
   /**
@@ -214,7 +229,6 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
         return localTwoFactorIpAddress;
       }
     });
-    
   }
 
 

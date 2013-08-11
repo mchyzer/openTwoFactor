@@ -4,10 +4,20 @@
  */
 package org.openTwoFactor.server.ui.beans;
 
-import org.apache.commons.lang.StringUtils;
-import org.openTwoFactor.server.beans.TwoFactorUser;
-import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
+import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
+import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.cache.TwoFactorCache;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
+import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import org.openTwoFactor.server.status.DiagnosticDbTest;
+import org.openTwoFactor.server.util.TfSourceUtils;
+
+import edu.internet2.middleware.grouperClient.util.ExpirableCache;
+import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 
 
@@ -17,6 +27,105 @@ import edu.internet2.middleware.subject.Subject;
  */
 public class TwoFactorAdminContainer {
 
+  /**
+   * number of users emailed
+   */
+  private int adminEmailNumberOfUsers;
+
+  
+  
+  /**
+   * number of users emailed
+   * @return number of users
+   */
+  public int getAdminEmailNumberOfUsers() {
+    return this.adminEmailNumberOfUsers;
+  }
+
+
+  /**
+   * number of users emailed
+   * @param adminEmailNumberOfUsers1
+   */
+  public void setAdminEmailNumberOfUsers(int adminEmailNumberOfUsers1) {
+    this.adminEmailNumberOfUsers = adminEmailNumberOfUsers1;
+  }
+
+  /**
+   * report bean
+   *
+   */
+  public static class TwoFactorAdminReportBean {
+    
+    /** opted in users */
+    private int optedInUsers;
+
+    /** opted out users */
+    private int optedOutUsers;
+
+    /**
+     * opted in users
+     * @return opted in users
+     */
+    public int getOptedInUsers() {
+      return this.optedInUsers;
+    }
+
+    /**
+     * opted in users
+     * @param optedInUsers1
+     */
+    public void setOptedInUsers(int optedInUsers1) {
+      this.optedInUsers = optedInUsers1;
+    }
+
+    /**
+     * opted out users
+     * @return opted out users
+     */
+    public int getOptedOutUsers() {
+      return this.optedOutUsers;
+    }
+
+    /**
+     * opted out users
+     * @param optedOutUsers1
+     */
+    public void setOptedOutUsers(int optedOutUsers1) {
+      this.optedOutUsers = optedOutUsers1;
+    }
+    
+    
+  }
+  
+  /**
+   * cache the logins in a hash cache.  Key is the realm, and principal
+   */
+  private static TwoFactorCache<Boolean, TwoFactorAdminReportBean> twoFactorAdminReportBeanCache = new TwoFactorCache<Boolean, TwoFactorAdminReportBean>(
+      TwoFactorAdminContainer.class.getName() + ".report");
+
+  /**
+   * get the report bean
+   * @return bean
+   */
+  public TwoFactorAdminReportBean getTwoFactorAdminReportBean() {
+    TwoFactorAdminReportBean twoFactorAdminReportBean = twoFactorAdminReportBeanCache.get(Boolean.TRUE);
+    if (twoFactorAdminReportBean == null) {
+      synchronized (TwoFactorAdminContainer.class) {
+        twoFactorAdminReportBean = twoFactorAdminReportBeanCache.get(Boolean.TRUE);
+        if (twoFactorAdminReportBean == null) {
+          twoFactorAdminReportBean = new TwoFactorAdminReportBean();
+          twoFactorAdminReportBean.setOptedInUsers(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedInUsers());
+          twoFactorAdminReportBean.setOptedOutUsers(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedOutUsers());
+          twoFactorAdminReportBeanCache.put(Boolean.TRUE, twoFactorAdminReportBean);
+          
+        }
+      }
+    }
+    return twoFactorAdminReportBean;
+  }
+  
+  
   /**
    * 
    * @return loginid this user is acting as (if different than self)
@@ -36,6 +145,38 @@ public class TwoFactorAdminContainer {
    */
   public boolean isCanLoggedInUserBackdoor() {
     return TwoFactorFilterJ2ee.allowedToActAsOtherUsers();
+  }
+
+  private static TwoFactorCache<String, Boolean> adminEmailCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminEmailCache", 100, false, 120, 120, false);
+
+  
+  /**
+   * if the logged in user can send email to all users
+   * @return if the logged in user can send email to ll users
+   */
+  public boolean isCanLoggedInUserEmailAll() {
+
+    String originalLoginid = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs();
+    
+    //see if it is in cache
+    Boolean isAdminEmail = adminEmailCache.get(originalLoginid);
+    if (isAdminEmail != null) {
+      return isAdminEmail;
+    }
+
+    TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+
+    Set<String> adminUserIdsWhoCanEmailAllUsersSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanEmailAllUsers();
+
+    Source theSource = TfSourceUtils.mainSource();
+
+    isAdminEmail = TfSourceUtils.subjectIdOrNetIdInSet(theSource, originalLoginid, adminUserIdsWhoCanEmailAllUsersSet);
+  
+  
+    adminEmailCache.put(originalLoginid, isAdminEmail);
+    
+    return isAdminEmail;
+
   }
   
   /**

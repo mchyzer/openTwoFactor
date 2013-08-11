@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.dao.TwoFactorUserDao;
 
@@ -123,6 +124,26 @@ public class TfMemoryUserDao implements TwoFactorUserDao {
     int count = 0;
     for (TwoFactorUser current : users) {
       if (current.isOptedIn()) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * @see TwoFactorUserDao#retrieveCountOfOptedOutUsers()
+   */
+  @Override
+  public int retrieveCountOfOptedOutUsers() {
+    int count = 0;
+    for (TwoFactorUser current : users) {
+      if (!current.isOptedIn()) {
+        //was opted in
+        for (TwoFactorAudit twoFactorAudit : TfMemoryAuditDao.audits) {
+          if (StringUtils.equals(twoFactorAudit.getUserUuid(), current.getUuid())) {
+            
+          }
+        }
         count++;
       }
     }

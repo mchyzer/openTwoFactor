@@ -99,12 +99,39 @@
     overflowToDisk="false"
     statistics="false"
   />
+  
+  <cache name="org.openTwoFactor.server.ui.beans.TwoFactorAdminContainer.report"
+    maxElementsInMemory="100"
+    eternal="false"
+    timeToIdleSeconds="300"
+    timeToLiveSeconds="300"
+    overflowToDisk="false"
+    statistics="false"
+  />
+
+  <cache name="org.openTwoFactor.server.hibernate.dao.HibernateTwoFactorUserDao.retrieveCountOfOptedOutUsers"
+    maxElementsInMemory="100"
+    eternal="false"
+    timeToIdleSeconds="300"
+    timeToLiveSeconds="300"
+    overflowToDisk="false"
+    statistics="false"
+  />
 
   <cache name="org.openTwoFactor.server.hibernate.dao.HibernateTwoFactorAuditDao.retrieveCountOptinOptouts"
     maxElementsInMemory="100"
     eternal="false"
     timeToIdleSeconds="120"
     timeToLiveSeconds="120"
+    overflowToDisk="false"
+    statistics="false"
+  />
+
+  <cache name="org.openTwoFactor.server.ui.beans.TwoFactorAdminContainer.adminEmailCache"
+    maxElementsInMemory="100"
+    eternal="false"
+    timeToIdleSeconds="600"
+    timeToLiveSeconds="600"
     overflowToDisk="false"
     statistics="false"
   />

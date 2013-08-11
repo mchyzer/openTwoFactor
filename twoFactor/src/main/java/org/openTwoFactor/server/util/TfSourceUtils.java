@@ -4,6 +4,8 @@
  */
 package org.openTwoFactor.server.util;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.keyvalue.MultiKey;
@@ -135,7 +137,7 @@ public class TfSourceUtils {
    * @return the subject
    */
   public static Subject retrieveSubjectByIdOrIdentifier(Source source, String subjectIdOrIdentifier, 
-      boolean okToReadFromCache, boolean exceptionIfNotFound, boolean isAdmin) {
+      boolean okToReadFromCache, boolean exceptionIfNotFound, boolean isAdminView) {
 
     if (source == null) {
       if (LOG.isWarnEnabled()) {
@@ -145,14 +147,14 @@ public class TfSourceUtils {
       return null;
     }
     
-    MultiKey multiKey = new MultiKey(subjectSourceRealm(isAdmin), source.getId(), subjectIdOrIdentifier);
+    MultiKey multiKey = new MultiKey(subjectSourceRealm(isAdminView), source.getId(), subjectIdOrIdentifier);
     
     Subject subject = okToReadFromCache ? subjectIdOrIdentifierToSubject.get(multiKey) : null;
 
     if (subject != null) {
       return subject;
     }
-    subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound, subjectSourceRealm(isAdmin));
+    subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound, subjectSourceRealm(isAdminView));
         
     if (subject == null) {
       return null;
@@ -165,7 +167,58 @@ public class TfSourceUtils {
     return subject;
     
   }
-  
+
+  /**
+   * resolve a subject by id or identifier
+   * @param source
+   * @param subjectIdOrIdentifier
+   * @param isAdminView
+   * @return the subject
+   */
+  public static Subject retrieveSubjectByIdOrIdentifierFromCache(Source source, String subjectIdOrIdentifier, 
+      boolean isAdminView) {
+
+    if (source == null) {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("source is null when looking up: '" + subjectIdOrIdentifier + "', stack: " 
+            + TwoFactorServerUtils.getFullStackTrace(new RuntimeException()));
+      }
+      return null;
+    }
+    
+    MultiKey multiKey = new MultiKey(subjectSourceRealm(isAdminView), source.getId(), subjectIdOrIdentifier);
+    
+    Subject subject = subjectIdOrIdentifierToSubject.get(multiKey);
+
+    return subject;
+    
+  }
+
+
+  /**
+   * resolve subjects by ids or identifiers
+   * @param source
+   * @param subjectIdOrIdentifiers
+   * @param isAdminView
+   * @return the subject
+   */
+  public static Map<String, Subject> retrieveSubjectsByIdsOrIdentifiers(Source source, Collection<String> subjectIdsOrIdentifiers, 
+      boolean isAdminView) {
+
+    if (source == null) {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("source is null when looking up: '" + TwoFactorServerUtils.toStringForLog(subjectIdsOrIdentifiers, 1000) + "', stack: " 
+            + TwoFactorServerUtils.getFullStackTrace(new RuntimeException()));
+      }
+      return null;
+    }
+    
+    Map<String, Subject> subjectMap = source.getSubjectsByIdsOrIdentifiers(subjectIdsOrIdentifiers, subjectSourceRealm(isAdminView));
+
+    return subjectMap;
+    
+  }
+
   /**
    * get the subject source 
    * @param isAdmin

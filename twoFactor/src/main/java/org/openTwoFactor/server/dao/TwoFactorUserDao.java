@@ -51,6 +51,12 @@ public interface TwoFactorUserDao {
   public int retrieveCountOfOptedInUsers();
   
   /**
+   * retrieve count of opted out users
+   * @return the count
+   */
+  public int retrieveCountOfOptedOutUsers();
+  
+  /**
    * insert or update to the DB, include attributes
    * @param twoFactorUser
    */
@@ -61,4 +67,5 @@ public interface TwoFactorUserDao {
    * @param twoFactorUser
    */
   public void delete(TwoFactorUser twoFactorUser);
+
 }

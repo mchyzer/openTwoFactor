@@ -18,6 +18,7 @@ import org.openTwoFactor.server.beans.TwoFactorServiceProvider;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserAgent;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr;
+import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorHibernateConfig;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -97,6 +98,7 @@ public abstract class TwoFactorDao {
         addClass(CFG, TwoFactorUser.class);
         addClass(CFG, TwoFactorUserAgent.class);
         addClass(CFG, TwoFactorUserAttr.class);
+        addClass(CFG, TwoFactorUserView.class);
         CFG.setInterceptor(new TfSessionInterceptor());
      
         // And finally create our session factory
