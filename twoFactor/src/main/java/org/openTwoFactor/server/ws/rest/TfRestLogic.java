@@ -7,8 +7,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import oracle.net.aso.e;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -127,6 +125,11 @@ public class TfRestLogic {
     {
       //username: pennname of the authenticated user
       String username = params.get("username");
+
+      //before resolving
+      String originalUserName = username;
+      
+      tfCheckPasswordRequest.assignOriginalUsername(originalUserName);
       
       //see if we need to resolve the subject id
       if (!StringUtils.isBlank(username) 
@@ -170,6 +173,7 @@ public class TfRestLogic {
       
       String username = tfCheckPasswordRequest.getUsername();
       
+      trafficLogMap.put("originalUsername", tfCheckPasswordRequest.getOriginalUsername());
       trafficLogMap.put("username", username);
       
       String twoFactorPassUnencrypted = tfCheckPasswordRequest.getTwoFactorPass();

@@ -110,15 +110,17 @@
           
         </c:choose>
         
-        <br /><br />
-        
-        <%@ include file="../assetsJsp/auditsInclude.jsp"%>
-        
       </c:when>
       <c:otherwise>
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminNotEnrolled']}
       </c:otherwise>  
     </c:choose>
+    
+    <br /><br />
+        
+    <%@ include file="../assetsJsp/auditsInclude.jsp"%>
+        
+    
   </c:if>
   <br />
   <br />

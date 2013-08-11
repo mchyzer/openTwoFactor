@@ -315,6 +315,32 @@ public class TfCheckPasswordRequest {
   }
 
 
+
+  /**
+   * original username that the user logged in with
+   */
+  private String originalUsername;
+  
+  /**
+   * original username that the user logged in with
+   * @return the original username
+   */
+  public String getOriginalUsername() {
+    return this.originalUsername;
+  }
+
+  
+  /**
+   * original username that the user logged in with
+   * @param username1 the username to set
+   * @return the request for chaining
+   */
+  public TfCheckPasswordRequest assignOriginalUsername(String username1) {
+    this.originalUsername = username1;
+    return this;
+  }
+
+
   /**
    * true|false depending on what the user selected
    */
