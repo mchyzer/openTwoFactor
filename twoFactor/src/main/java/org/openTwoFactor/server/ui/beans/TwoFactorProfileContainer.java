@@ -4,8 +4,17 @@
  */
 package org.openTwoFactor.server.ui.beans;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import org.openTwoFactor.server.util.TfSourceUtils;
+import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.internet2.middleware.subject.Subject;
 
 
 
@@ -13,6 +22,63 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
  * profile data
  */
 public class TwoFactorProfileContainer {
+
+
+  /** account name in QR code, e.g. jsmith@institution.edu */
+  private String accountName = null;
+  
+  /**
+   * account name in QR code, e.g. jsmith@institution.edu
+   * @return account name
+   */
+  public String getAccountName() {
+    
+    if (this.accountName == null) {
+      TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+      
+      TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+      String accountSuffix = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.accountSuffix");
+      //# you need an account suffix for qr codes.  e.g. institution.edu
+      //twoFactorServer.accountEl = ${subject.getAttributeValue('pennname')}@test.upenn.edu
+      String accountEl = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.accountEl");
+      if (StringUtils.isBlank(accountSuffix) && StringUtils.isBlank(accountEl)) {
+        throw new RuntimeException("You need to set twoFactorServer.accountSuffix or twoFactorServer.accountEl");
+      }
+      if (!StringUtils.isBlank(accountSuffix) && !StringUtils.isBlank(accountEl)) {
+        throw new RuntimeException("You cant set both twoFactorServer.accountSuffix and twoFactorServer.accountEl");
+      }
+      if (StringUtils.isBlank(twoFactorUserLoggedIn.getLoginid())) {
+        throw new RuntimeException("Why is login blank??? " + twoFactorUserLoggedIn.getUuid());
+      }
+      String theAccountName = null;
+      
+      //this will either be subjectId@accountSuffix, or a custom EL if you want to get your netId in there...
+      
+      if (!StringUtils.isBlank(accountSuffix)) {
+        if (accountSuffix.startsWith("@")) {
+          accountSuffix = TwoFactorServerUtils.prefixOrSuffix(accountSuffix, "@", false);
+        }
+        theAccountName = twoFactorUserLoggedIn.getLoginid() + "@" + accountSuffix;
+      } else {
+        //else we are doing el
+        Subject subject =  TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), 
+            twoFactorUserLoggedIn.getLoginid(), true, false, true);
+  
+        Map<String, Object> substituteMap = new HashMap<String, Object>();
+        substituteMap.put("subject", subject);
+        substituteMap.put("twoFactorRequestContainer", TwoFactorRequestContainer.retrieveFromRequest());
+        substituteMap.put("request", TwoFactorFilterJ2ee.retrieveHttpServletRequest());
+        
+        theAccountName = TwoFactorServerUtils.substituteExpressionLanguage(accountEl, substituteMap, true, true, true);
+  
+      }
+      this.accountName = theAccountName;
+    }
+    
+    //accountName = "ameliaBedelia@upenn.edu";
+    return this.accountName;
+  }
 
   /**
    * friend object for sending email

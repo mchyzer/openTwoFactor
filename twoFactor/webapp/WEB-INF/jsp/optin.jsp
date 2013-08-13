@@ -36,7 +36,7 @@
     <div class="substep">
       <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedFormatted}</b> 
       &nbsp; &nbsp;  ${textContainer.text['optinStep2advancedPrefix']}
-      <span id="otherOptionsLink"><a href="#" onclick="document.getElementById('otherOptions').style.display = 'block'; document.getElementById('otherOptionsLink').style.display = 'none';">${textContainer.text['optinStep2advancedLink']}</a>${textContainer.text['optinStep2advancedSuffix']}</span>
+      <span id="otherOptionsLink"><a href="#" onclick="document.getElementById('otherOptions').style.display = 'block'; document.getElementById('otherOptionsLink').style.display = 'none';">${textContainer.text['optinStep2advancedLink']}</a></span>${textContainer.text['optinStep2advancedSuffix']}
       <br /><br />
       <div id="otherOptions" style="display: none;">
         <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedHexFormatted}</b>

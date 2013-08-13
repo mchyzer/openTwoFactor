@@ -3,14 +3,19 @@
  */
 package org.openTwoFactor.server.ui.beans;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.internet2.middleware.subject.Subject;
 
 
 /**
@@ -18,7 +23,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  *
  */
 public class TwoFactorRequestContainer {
-
+  
   /**
    * is has logout url
    * @return if has logout url
