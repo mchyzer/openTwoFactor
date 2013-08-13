@@ -4,6 +4,7 @@
  */
 package org.openTwoFactor.server.config;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -83,7 +84,7 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
         
         if (this.tfServerAuthz == null) {
           
-          this.tfServerAuthz = new HashMap<String, String>();
+          Map<String, String> map = new HashMap<String, String>();
           
           Pattern pattern = Pattern.compile("^ws\\.authz\\.tfServer\\.(.*)\\.principal$");
           
@@ -97,10 +98,11 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
               String principal = this.propertyValueString(key);
               String networks = this.propertyValueString("ws.authz.tfServer." + tfServerName + ".networks");
               
-              this.tfServerAuthz.put(principal, networks);
+              map.put(principal, networks);
               
             }
           }
+          this.tfServerAuthz = Collections.unmodifiableMap(map);
         }
       }
     }
@@ -316,9 +318,9 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
                 + propertyValueStringRequired("twoFactorServer.text.defaultBundleIndex") + ".fileNamePrefix");
           }
           
-          this.textBundleFromCountry = tempBundleFromCountry;
-          this.textBundleFromLanguage = tempBundleFromLanguage;
-          this.textBundleFromLanguageAndCountry = tempBundleFromLanguageAndCountry;
+          this.textBundleFromCountry = Collections.unmodifiableMap(tempBundleFromCountry);
+          this.textBundleFromLanguage = Collections.unmodifiableMap(tempBundleFromLanguage);
+          this.textBundleFromLanguageAndCountry = Collections.unmodifiableMap(tempBundleFromLanguageAndCountry);
           
         }
       }
@@ -375,7 +377,7 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
               
             }
           }
-          this.tfAuditLevels = tempAuditLevels;
+          this.tfAuditLevels = Collections.unmodifiableMap(tempAuditLevels);
 
         }
       }

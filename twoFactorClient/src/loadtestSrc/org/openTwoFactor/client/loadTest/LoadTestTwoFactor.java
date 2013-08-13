@@ -28,12 +28,15 @@ public class LoadTestTwoFactor {
    */
   public static void main(String[] args) {
 
-    final int sleepMillis = 1000;
-    final int threadRecords = 50;
+    final int sleepMillis = 20;
+    final int threadRecords = 2000;
+    final int threadCount = 10;
+    final int printMod = Math.min(threadRecords / 10, 10);
+    final int printMoreThanMillis = 1000;
 
     final List<Long> times = Collections.synchronizedList(new ArrayList<Long>());
     
-    Thread[] threads = new Thread[10];
+    Thread[] threads = new Thread[threadCount];
     
     for (int i = 0; i<threads.length; i++) {
       
@@ -64,8 +67,7 @@ public class LoadTestTwoFactor {
                 times.add(tookMs);
               }
               
-              System.out.println("Thread: " + I + " index: " + j + " took " + tookMs + " ms");
-              if (tookMs > 500) {
+              if (tookMs > printMoreThanMillis || (threadRecords % printMod) + 1 == 0) {
                 System.out.println("Thread: " + I + " index: " + j + " took " + tookMs + " ms");
               }
               

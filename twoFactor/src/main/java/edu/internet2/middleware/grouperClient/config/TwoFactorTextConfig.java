@@ -318,7 +318,9 @@ public class TwoFactorTextConfig extends ConfigPropertiesCascadeBase {
     
     if (configObject == null) {
       
-      logDebug("Config file has not be created yet, will create now: " + this.getMainConfigClasspath());
+      if (LOG != null && LOG.isDebugEnabled()) {
+        LOG.debug("Config file has not be created yet, will create now: " + this.getMainConfigClasspath());
+      }
       
       configObject = retrieveFromConfigFiles();
       configFileCache.put(this.languageCountry, configObject);
