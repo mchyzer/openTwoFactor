@@ -245,7 +245,7 @@ public class TfRestLogic {
         if (debug) {
           tfCheckPasswordResponse.appendDebug("userIpAddress: '" + tfCheckPasswordRequest.getUserIpAddress() + "'");
         }
-        trafficLogMap.put("trustedBrowser", tfCheckPasswordRequest.getUserIpAddress());
+        trafficLogMap.put("userIpAddress", tfCheckPasswordRequest.getUserIpAddress());
       }
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getUsername())) {
         if (debug) {

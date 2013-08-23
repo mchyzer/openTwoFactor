@@ -181,7 +181,11 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
     for (int i=0;i<LOOP_COUNT;i++) {
 
       try {
-        return retrieveByIpAddressOrCreateHelper(twoFactorDaoFactory, ipAddress);
+        //exception on error if last one
+        TwoFactorIpAddress twoFactorIpAddress = retrieveByIpAddressOrCreateHelper(twoFactorDaoFactory, ipAddress, i == LOOP_COUNT-1 ? true : false);
+        if (twoFactorIpAddress != null) {
+          return twoFactorIpAddress;
+        }
       } catch (RuntimeException e) {
         
         if (LOG.isDebugEnabled()) {
@@ -194,7 +198,7 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
         
       }
       //wait some time, maybe someone else created it
-      TwoFactorServerUtils.sleep(1000);
+      TwoFactorServerUtils.sleep((i+1) * 3000);
       
     }
     throw new RuntimeException("Why are we here?");
@@ -205,9 +209,10 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
    * retrieve an ip address record by ip address
    * @param twoFactorDaoFactory
    * @param ipAddress
+   * @param exceptionOnError
    * @return the ip address or null if not found
    */
-  private static TwoFactorIpAddress retrieveByIpAddressOrCreateHelper(final TwoFactorDaoFactory twoFactorDaoFactory, final String ipAddress) {
+  private static TwoFactorIpAddress retrieveByIpAddressOrCreateHelper(final TwoFactorDaoFactory twoFactorDaoFactory, final String ipAddress, final boolean exceptionOnError) {
 
     TwoFactorIpAddress twoFactorIpAddress = retrieveByIpAddress(twoFactorDaoFactory, ipAddress);
     
@@ -215,20 +220,19 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
       return twoFactorIpAddress;
     }
     
-    return (TwoFactorIpAddress)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
-      
-      @Override
-      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-        
-        TwoFactorIpAddress localTwoFactorIpAddress = new TwoFactorIpAddress();
-        localTwoFactorIpAddress.setIpAddress(ipAddress);
-        localTwoFactorIpAddress.setUuid(TwoFactorServerUtils.uuid());
-        localTwoFactorIpAddress.calculateDomainName();
-        localTwoFactorIpAddress.store(twoFactorDaoFactory);
-        
-        return localTwoFactorIpAddress;
-      }
-    });
+    TwoFactorIpAddress localTwoFactorIpAddress = new TwoFactorIpAddress();
+    localTwoFactorIpAddress.setIpAddress(ipAddress);
+    localTwoFactorIpAddress.setUuid(TwoFactorServerUtils.uuid());
+    localTwoFactorIpAddress.calculateDomainName();
+    Boolean changed = localTwoFactorIpAddress.store(twoFactorDaoFactory, exceptionOnError);
+    
+    //if not successful, null
+    if (changed == null) {
+      return null;
+    }
+    
+    
+    return localTwoFactorIpAddress;
   }
 
 
@@ -327,10 +331,11 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
 
   /**
    * store this object and audit
-   * @param twoFactorDaoFactory 
-   * @return if changed
+   * @param twoFactorDaoFactory
+   * @param exceptionOnError
+   * @return if changed, or null on error
    */
-  public boolean store(final TwoFactorDaoFactory twoFactorDaoFactory) {
+  public Boolean store(final TwoFactorDaoFactory twoFactorDaoFactory, final boolean exceptionOnError) {
     
     if (StringUtils.isBlank(this.ipAddress)) {
       throw new RuntimeException("ipAddress is null");
@@ -343,25 +348,19 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
     //note, this is size 200, but with utf8 chars, maybe it is bigger in the db?
     this.domainName = StringUtils.abbreviate(this.domainName, 175);
     
-    return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
-      
-      @Override
-      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-        HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
-        TwoFactorIpAddress dbVersion = (TwoFactorIpAddress)TwoFactorIpAddress.this.dbVersion();
+    TwoFactorIpAddress dbVersion = (TwoFactorIpAddress)this.dbVersion();
 
-        if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorIpAddress.this)) {
-          twoFactorDaoFactory.getTwoFactorIpAddress().store(TwoFactorIpAddress.this);
-        
-          testInsertsAndUpdates++;
-          hibernateSession.misc().flush();
-          TwoFactorIpAddress.this.dbVersionReset();
-          return true;
-        }
-
-        return false;
+    if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, this)) {
+      boolean success = twoFactorDaoFactory.getTwoFactorIpAddress().store(this, exceptionOnError);
+      if (!success) {
+        return null;
       }
-    });
+      testInsertsAndUpdates++;
+      this.dbVersionReset();
+      return true;
+    }
+
+    return false;
 
   }
 

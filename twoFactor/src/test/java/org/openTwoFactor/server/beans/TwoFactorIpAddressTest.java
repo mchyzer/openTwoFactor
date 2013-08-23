@@ -55,7 +55,7 @@ public class TwoFactorIpAddressTest extends TestCase {
     twoFactorIpAddress.setIpAddress("1.2.3.4");
     twoFactorIpAddress.setLookedUpDomainName(true);
     
-    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory());
+    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory(), true);
     
     int ipAddressInsertsAndUpdates = TwoFactorIpAddress.testInsertsAndUpdates;
     int ipAddressDeletes = TwoFactorIpAddress.testDeletes;
@@ -63,13 +63,13 @@ public class TwoFactorIpAddressTest extends TestCase {
     twoFactorIpAddress = TwoFactorIpAddress.retrieveByIpAddress(TwoFactorDaoFactory.getFactory(), "1.2.3.4");
     
     //store it again, nothing should change
-    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory());
+    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory(), true);
     
     assertEquals(ipAddressInsertsAndUpdates, TwoFactorIpAddress.testInsertsAndUpdates);
     
     //update an attr
     twoFactorIpAddress.setIpAddress("1.2.3.5");
-    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory());
+    twoFactorIpAddress.store(TwoFactorDaoFactory.getFactory(), true);
     
     assertEquals(ipAddressInsertsAndUpdates+1, TwoFactorIpAddress.testInsertsAndUpdates);
   

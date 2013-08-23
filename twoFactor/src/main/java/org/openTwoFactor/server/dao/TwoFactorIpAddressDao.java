@@ -39,8 +39,10 @@ public interface TwoFactorIpAddressDao {
   /**
    * insert or update to the DB
    * @param twoFactorIpAddress
+   * @param exceptionOnError
+   * @return if successful of not (if not exception on error)
    */
-  public void store(TwoFactorIpAddress twoFactorIpAddress);
+  public boolean store(TwoFactorIpAddress twoFactorIpAddress, boolean exceptionOnError);
 
   /**
    * delete ip address from table

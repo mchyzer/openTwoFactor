@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 
-<title>Two Factor Phone Code</title>
+<title>${textContainer.text['phoneCodeTitle']}</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 

@@ -63,7 +63,7 @@ public class TwoFactorUserAgentTest extends TestCase {
     twoFactorUserAgent.setUserAgent(userAgent1);
     twoFactorUserAgent.calculateBrowserFields();
 
-    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory());
+    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory(), true);
     
     int userAgentInsertsAndUpdates = TwoFactorUserAgent.testInsertsAndUpdates;
     int userAgentDeletes = TwoFactorUserAgent.testDeletes;
@@ -71,13 +71,13 @@ public class TwoFactorUserAgentTest extends TestCase {
     twoFactorUserAgent = TwoFactorUserAgent.retrieveByUserAgent(TwoFactorDaoFactory.getFactory(), userAgent1);
     
     //store it again, nothing should change
-    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory());
+    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory(), true);
     
     assertEquals(userAgentInsertsAndUpdates, TwoFactorUserAgent.testInsertsAndUpdates);
     
     //update an attr
     twoFactorUserAgent.setUserAgent(userAgent2);
-    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory());
+    twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory(), true);
     
     assertEquals(userAgentInsertsAndUpdates+1, TwoFactorUserAgent.testInsertsAndUpdates);
   

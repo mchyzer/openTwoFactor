@@ -56,7 +56,7 @@ public class TfMemoryUserAgentDao implements TwoFactorUserAgentDao {
    * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#store(org.openTwoFactor.server.beans.TwoFactorUserAgent)
    */
   @Override
-  public void store(TwoFactorUserAgent twoFactorUserAgent) {
+  public boolean store(TwoFactorUserAgent twoFactorUserAgent, boolean exceptionOnError) {
     if (StringUtils.isBlank(twoFactorUserAgent.getUuid())) {
       throw new RuntimeException("uuid is blank");
     }
@@ -64,6 +64,7 @@ public class TfMemoryUserAgentDao implements TwoFactorUserAgentDao {
     delete(twoFactorUserAgent);
 
     userAgents.add(twoFactorUserAgent);
+    return true;
   }
 
   /**

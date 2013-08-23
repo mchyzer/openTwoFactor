@@ -4,7 +4,6 @@
  */
 package org.openTwoFactor.server.beans;
 
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Set;
 
@@ -241,12 +240,16 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
   public static TwoFactorUserAgent retrieveByUserAgentOrCreate(final TwoFactorDaoFactory twoFactorDaoFactory, final String userAgent) {
 
     final int LOOP_COUNT = 5;
-    
+
     //if two threads create it at the same time, then retrieve again
     for (int i=0;i<LOOP_COUNT;i++) {
 
       try {
-        return retrieveByUserAgentOrCreateHelper(twoFactorDaoFactory, userAgent);
+        //exception on error if last one
+        TwoFactorUserAgent twoFactorUserAgent = retrieveByUserAgentOrCreateHelper(twoFactorDaoFactory, userAgent, i == LOOP_COUNT-1 ? true : false);
+        if (twoFactorUserAgent != null) {
+          return twoFactorUserAgent;
+        }
       } catch (RuntimeException e) {
         
         if (LOG.isDebugEnabled()) {
@@ -256,11 +259,11 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
         if (i==LOOP_COUNT-1) {
           throw e;
         }
-        
+
       }
       //wait some time, maybe someone else created it
-      TwoFactorServerUtils.sleep(1000);
-      
+      TwoFactorServerUtils.sleep((i+1) * 3000);
+
     }
     throw new RuntimeException("Why are we here?");
 
@@ -270,9 +273,10 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
    * retrieve a user agent record by user agent
    * @param twoFactorDaoFactory
    * @param userAgent
+   * @param exceptionOnError
    * @return the user agent or null if not found
    */
-  private static TwoFactorUserAgent retrieveByUserAgentOrCreateHelper(final TwoFactorDaoFactory twoFactorDaoFactory, final String userAgent) {
+  private static TwoFactorUserAgent retrieveByUserAgentOrCreateHelper(final TwoFactorDaoFactory twoFactorDaoFactory, final String userAgent, final boolean exceptionOnError) {
 
     TwoFactorUserAgent twoFactorUserAgent = retrieveByUserAgent(twoFactorDaoFactory, userAgent);
     
@@ -280,20 +284,18 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
       return twoFactorUserAgent;
     }
     
-    return (TwoFactorUserAgent)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
-      
-      @Override
-      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-        
-        TwoFactorUserAgent localTwoFactorUserAgent = new TwoFactorUserAgent();
-        localTwoFactorUserAgent.setUserAgent(userAgent);
-        localTwoFactorUserAgent.setUuid(TwoFactorServerUtils.uuid());
-        localTwoFactorUserAgent.calculateBrowserFields();
-        localTwoFactorUserAgent.store(twoFactorDaoFactory);
-        
-        return localTwoFactorUserAgent;
-      }
-    });
+    TwoFactorUserAgent localTwoFactorUserAgent = new TwoFactorUserAgent();
+    localTwoFactorUserAgent.setUserAgent(userAgent);
+    localTwoFactorUserAgent.setUuid(TwoFactorServerUtils.uuid());
+    localTwoFactorUserAgent.calculateBrowserFields();
+    Boolean changed = localTwoFactorUserAgent.store(twoFactorDaoFactory, exceptionOnError);
+    
+    //if not successful, null
+    if (changed == null) {
+      return null;
+    }
+
+    return localTwoFactorUserAgent;
     
   }
 
@@ -396,10 +398,11 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
 
   /**
    * store this object and audit
-   * @param twoFactorDaoFactory 
-   * @return if changed
+   * @param twoFactorDaoFactory
+   * @param exceptionOnError
+   * @return if changed, or null if problem
    */
-  public boolean store(final TwoFactorDaoFactory twoFactorDaoFactory) {
+  public Boolean store(final TwoFactorDaoFactory twoFactorDaoFactory, final boolean exceptionOnError) {
     
     if (StringUtils.isBlank(this.userAgent)) {
       throw new RuntimeException("userAgent is null");
@@ -408,25 +411,21 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
     //note, this is size 200, but with utf8 chars, maybe it is bigger in the db?
     this.userAgent = TwoFactorServerUtils.truncateAscii(this.userAgent, 200);
     
-    return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
-      
-      @Override
-      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-        HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
-        TwoFactorUserAgent dbVersion = (TwoFactorUserAgent)TwoFactorUserAgent.this.dbVersion();
+    TwoFactorUserAgent dbVersion = (TwoFactorUserAgent)this.dbVersion();
 
-        if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorUserAgent.this)) {
-          twoFactorDaoFactory.getTwoFactorUserAgent().store(TwoFactorUserAgent.this);
-        
-          testInsertsAndUpdates++;
-          hibernateSession.misc().flush();
-          TwoFactorUserAgent.this.dbVersionReset();
-          return true;
-        }
+    if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, this)) {
 
-        return false;
+      boolean success = twoFactorDaoFactory.getTwoFactorUserAgent().store(this, exceptionOnError);
+      if (!success) {
+        return null;
       }
-    });
+
+      testInsertsAndUpdates++;
+      this.dbVersionReset();
+      return true;
+    }
+
+    return false;
 
   }
 

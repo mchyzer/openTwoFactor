@@ -614,6 +614,11 @@ public class TwoFactorServerUtils {
     if (throwable == null) {
       return;
     }
+    
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.logNextSqlException", false)) {
+      return;
+    }
+    
     if (timeToLive < 0) {
       throw new RuntimeException("TimeToLive less than 0", throwable);
     }

@@ -56,7 +56,7 @@ public class TfMemoryIpAddressDao implements TwoFactorIpAddressDao {
    * @see org.openTwoFactor.server.dao.TwoFactorIpAddressDao#store(org.openTwoFactor.server.beans.TwoFactorIpAddress)
    */
   @Override
-  public void store(TwoFactorIpAddress twoFactorIpAddress) {
+  public boolean store(TwoFactorIpAddress twoFactorIpAddress, boolean exceptionOnError) {
     if (StringUtils.isBlank(twoFactorIpAddress.getUuid())) {
       throw new RuntimeException("uuid is blank");
     }
@@ -64,6 +64,7 @@ public class TfMemoryIpAddressDao implements TwoFactorIpAddressDao {
     delete(twoFactorIpAddress);
 
     ipAddresses.add(twoFactorIpAddress);
+    return true;
   }
 
   /**

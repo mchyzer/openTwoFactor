@@ -6,10 +6,16 @@ package org.openTwoFactor.server.hibernate.dao;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorUserAgent;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
+import org.openTwoFactor.server.exceptions.TfDaoException;
+import org.openTwoFactor.server.hibernate.HibernateHandler;
+import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
+import org.openTwoFactor.server.hibernate.TfAuditControl;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
+import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -18,6 +24,9 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  * hibernate implementation of dao
  */
 public class HibernateTwoFactorUserAgentDao implements TwoFactorUserAgentDao {
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(HibernateTwoFactorUserAgentDao.class);
 
   /**
    * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#delete(org.openTwoFactor.server.beans.TwoFactorUserAgent)
@@ -48,14 +57,36 @@ public class HibernateTwoFactorUserAgentDao implements TwoFactorUserAgentDao {
   }
 
   /**
-   * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#store(org.openTwoFactor.server.beans.TwoFactorUserAgent)
+   * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#store(org.openTwoFactor.server.beans.TwoFactorUserAgent, boolean)
    */
   @Override
-  public void store(TwoFactorUserAgent twoFactorUserAgent) {
+  public boolean store(final TwoFactorUserAgent twoFactorUserAgent, final boolean exceptionOnError) {
+    
     if (twoFactorUserAgent == null) {
       throw new NullPointerException("twoFactorUserAgent is null");
     }
-    HibernateSession.byObjectStatic().saveOrUpdate(twoFactorUserAgent);
+
+    //do this in a new transaction
+    boolean success = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        try {
+          hibernateHandlerBean.getHibernateSession().byObject().saveOrUpdate(twoFactorUserAgent);
+        } catch (RuntimeException re) {
+          if (exceptionOnError) {
+            throw re;
+          }
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("error with user agent: " + twoFactorUserAgent.getUserAgent(), re);
+          }
+          return false;
+        }
+        return true;
+      }
+    });
+    
+    return success;
   }
 
   /**

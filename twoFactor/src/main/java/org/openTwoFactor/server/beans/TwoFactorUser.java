@@ -795,6 +795,15 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
    * @return if changed
    */
   public boolean store(final TwoFactorDaoFactory twoFactorDaoFactory) {
+    return this.storeHelper(twoFactorDaoFactory);
+  }
+  
+  /**
+   * store this object and audit
+   * @param twoFactorDaoFactory 
+   * @return if changed
+   */
+  private boolean storeHelper(final TwoFactorDaoFactory twoFactorDaoFactory) {
     
     if (StringUtils.isBlank(this.loginid)) {
       throw new RuntimeException("loginid is null");

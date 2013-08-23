@@ -39,8 +39,10 @@ public interface TwoFactorUserAgentDao {
   /**
    * insert or update to the DB
    * @param twoFactorUserAgent
+   * @param exceptionOnError
+   * @return true if ok, false if error
    */
-  public void store(TwoFactorUserAgent twoFactorUserAgent);
+  public boolean store(TwoFactorUserAgent twoFactorUserAgent, boolean exceptionOnError);
 
   /**
    * delete user agent from table
