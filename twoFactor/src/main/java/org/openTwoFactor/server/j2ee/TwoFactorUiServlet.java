@@ -54,6 +54,7 @@ public class TwoFactorUiServlet extends HttpServlet {
       UiMainUnprotected.class.getSimpleName() + ".logout",
       UiMain.class.getSimpleName() + ".qrCode",
       UiMain.class.getSimpleName() + ".optout",
+      UiMain.class.getSimpleName() + ".changeDevice",
       UiMain.class.getSimpleName() + ".optin",
       UiMain.class.getSimpleName() + ".userAudits",
       UiMain.class.getSimpleName() + ".untrustBrowsers",

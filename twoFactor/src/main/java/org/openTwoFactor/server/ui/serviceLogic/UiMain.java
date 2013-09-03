@@ -6,12 +6,10 @@ package org.openTwoFactor.server.ui.serviceLogic;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -609,6 +607,36 @@ public class UiMain extends UiServiceLogicBase {
     showJsp("twoFactorIndex.jsp");
   }
 
+  /**
+   * optout of the service, then start the optin process
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void changeDevice(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    optoutLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    //no matter the result of that, start the optin process
+    
+    OptinView optinView = optinLogic(TwoFactorDaoFactory.getFactory(), 
+        twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+    
+    showJsp(optinView.getJsp());
+  }
+
+  
+  
   /**
    * optin to two factor
    * @param twoFactorDaoFactory

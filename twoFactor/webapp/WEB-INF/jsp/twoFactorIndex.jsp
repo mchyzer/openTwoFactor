@@ -68,6 +68,13 @@
       </form>
       &nbsp;
     
+      <form action="../../twoFactorUi/app/UiMain.changeDevice" method="get" style="display: inline">
+        <input value="${textContainer.textEscapeDouble['buttonChangeDevice']}" class="tfBlueButton"
+        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+        onclick="return confirm('${textContainer.textEscapeSingleDouble['buttonChangeDeviceConfirm']}');" />
+      </form>
+      &nbsp;
+    
     </c:if>
     <c:if test="${!twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
       <form action="../../twoFactorUi/app/UiMain.optin" method="get" style="display: inline">
