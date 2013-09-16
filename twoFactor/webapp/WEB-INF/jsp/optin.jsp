@@ -74,7 +74,7 @@
         </div>  
       </div>
       <br /><br />
-    </div><br />
+    </div>
 
     ${textContainer.text['optinStep3description']}
     <br /><br />
