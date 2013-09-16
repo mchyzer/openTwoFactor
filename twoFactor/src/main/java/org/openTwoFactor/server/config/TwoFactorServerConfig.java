@@ -233,7 +233,7 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
       theTextBundleFromLanguage = this.textBundleFromLanguage;
     }
     if (theTextBundleFromLanguage == null) {
-      throw new RuntimeException("Why is textBunldeFromLanguage map null????");
+      throw new RuntimeException("Why is textBundleFromLanguage map null????");
     }
     return theTextBundleFromLanguage;
   }

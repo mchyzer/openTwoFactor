@@ -31,32 +31,51 @@
     <div class="substep">
       ${textContainer.text['optinStep1substep']}
     </div><br />
+    
     ${textContainer.text['optinStep2description']}
+    
     <br /><br />
     <div class="substep">
-      <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedFormatted}</b> 
-      &nbsp; &nbsp;  ${textContainer.text['optinStep2advancedPrefix']}
-      <span id="otherOptionsLink"><a href="#" onclick="document.getElementById('otherOptions').style.display = 'block'; document.getElementById('otherOptionsLink').style.display = 'none';">${textContainer.text['optinStep2advancedLink']}</a></span>${textContainer.text['optinStep2advancedSuffix']}
-      <br /><br />
-      <div id="otherOptions" style="display: none;">
-        <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedHexFormatted}</b>
-        &nbsp; &nbsp; ${textContainer.text['optinHexLabel']}
-        <br /><br />
-        <div style="border: 1px solid #95956F; padding: 3px">
-          ${textContainer.text['optinStep2customSecretLabel']} &nbsp;
-            <form action="../../twoFactorUi/app/UiMain.optinCustom" method="post" style="display: inline; white-space: nowrap;">
-              <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="30" autocomplete="off" class="textfield" /> &nbsp;
-              <input value="${textContainer.textEscapeDouble['optinStep2submitCustomSecretButton']}" class="tfBlueButton" 
-              style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
-              type="submit" />
-            </form>
-          <br /> 
-          ${textContainer.text['optinStep2advancedCustomSecretDescription']}
-        </div>
-        <br /><br />
+      <div id="activateTokenLinkDiv">
+        <a href="#" onclick="document.getElementById('activateTokenContentDiv').style.display = 'block'; document.getElementById('activateTokenLinkDiv').style.display = 'none';">${textContainer.text['optinStep2activateToken']}</a>
       </div>
-      ${textContainer.text['optinStep2bottom']}
+      <div id="activateTokenContentDiv" style="display: none">
+        
+        <div id="otherOptions">
+          <div style="border: 1px solid #95956F; padding: 3px">
+            <b>${textContainer.text['optinStep2activateToken']}</b>
+            <br /><br />
+            ${textContainer.text['optinStep2customSecretLabel']} <br /><br />
+              <form action="../../twoFactorUi/app/UiMain.optinCustom" method="post" style="display: inline; white-space: nowrap;">
+                <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="30" autocomplete="off" class="textfield" /> &nbsp;
+                <input value="${textContainer.textEscapeDouble['optinStep2submitCustomSecretButton']}" class="tfBlueButton" 
+                style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
+                type="submit" />
+              </form>
+            <br /><br />
+            ${textContainer.text['optinStep2advancedCustomSecretDescription']}
+            <br /><br />
+            <b>${twoFactorRequestContainer.twoFactorUserLoggedIn.twoFactorSecretTempUnencryptedHexFormatted}</b><br />
+            ${textContainer.text['optinHexLabel']}
+            <br />
+          </div>
+        </div>
+      </div>
+      <br />
+
+      <div id="activateAppLinkDiv">
+        <a href="#" onclick="document.getElementById('activateAppContentDiv').style.display = 'block'; document.getElementById('activateAppLinkDiv').style.display = 'none';">${textContainer.text['optinStep2activateApp']}</a>
+      </div>
+      <div id="activateAppContentDiv" style="display: none">
+        <div style="border: 1px solid #95956F; padding: 3px">
+          <b>${textContainer.text['optinStep2activateApp']}</b>
+          <br /><br />
+          ${textContainer.text['optinStep2activateContent']}
+        </div>  
+      </div>
+      <br /><br />
     </div><br />
+
     ${textContainer.text['optinStep3description']}
     <br /><br />
     <form action="UiMain.optinTestSubmit" method="post">
