@@ -25,6 +25,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 /**
  * list of service providers (applications that are requiring the authentication)
  */
+@SuppressWarnings("serial")
 public class TwoFactorServiceProvider extends TwoFactorHibernateBeanBase {
   
   /**

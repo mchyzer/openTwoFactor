@@ -675,3 +675,63 @@ insert into two_factor_sample_source (subject_id, net_id, name, description, sea
 
 commit;
 
+
+
+CREATE TABLE TWO_FACTOR_REPORT
+(
+  UUID                     VARCHAR(40)    NOT NULL comment 'uuid primary key of this row',
+  LAST_UPDATED             BIGINT(20)               NOT NULL comment 'when this row was last updated',
+  LAST_SENT                BIGINT(20) comment 'timestamp of when this report was last sent',
+  REPORT_TYPE              VARCHAR(32)    NOT NULL comment 'must be of the TwoFactorReportType enum, e.g. group or rollup',
+  SEND_TOS                 VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to',
+  SEND_CCS                 VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to as cc',
+  SEND_BCCS                VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to as a bcc',
+  REPORT_NAME_FRIENDLY     VARCHAR(200)   NOT NULL comment 'friendly name is included in the report email',
+  SEND_FIRST_ON_TIMESTAMP  BIGINT(20) comment 'timestamp of the when the first should be sent... e.g. if you want it sent monday morning at 8am, enter a timestamp of monday morning 8am in the past',
+  DAYS_BETWEEN_SEND        BIGINT(20) comment 'if you want a weekly report, enter 7.  If you want every 4 weeks, enter 28',
+  REPORT_NAME_SYSTEM       VARCHAR(4000)  NOT NULL comment 'some system key on the report which can be used for queries to populate data and should not change'
+);
+
+
+CREATE INDEX TF_REPORT_NAME_SYSTEM_IDX ON TWO_FACTOR_REPORT (REPORT_NAME_SYSTEM(200));
+
+CREATE INDEX TF_REPORT_TYPE_IDX ON TWO_FACTOR_REPORT (REPORT_TYPE);
+
+CREATE UNIQUE INDEX TWO_FACTOR_REPORT_PK ON TWO_FACTOR_REPORT (UUID);
+
+alter table TWO_FACTOR_REPORT add primary key (UUID);
+
+
+CREATE TABLE TWO_FACTOR_REPORT_ROLLUP
+(
+  UUID                VARCHAR(40)         NOT NULL comment 'uuid of this report',
+  LAST_UPDATED        BIGINT(20)          NOT NULL comment 'when this record was last updated',
+  PARENT_REPORT_UUID  VARCHAR(40)         NOT NULL comment 'the report which is being run',
+  CHILD_REPORT_UUID   VARCHAR(40)         NOT NULL comment 'the child reports there are in this report'
+);
+
+
+CREATE UNIQUE INDEX TWO_FACTOR_REPORT_ROLLUP_PK ON TWO_FACTOR_REPORT_ROLLUP
+(UUID);
+
+CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX1 ON TWO_FACTOR_REPORT_ROLLUP
+(PARENT_REPORT_UUID);
+
+
+CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX2 ON TWO_FACTOR_REPORT_ROLLUP
+(CHILD_REPORT_UUID);
+
+alter table TWO_FACTOR_REPORT_ROLLUP add primary key (UUID);
+
+ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
+  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R01 
+  FOREIGN KEY (PARENT_REPORT_UUID) 
+  REFERENCES TWO_FACTOR_REPORT (UUID));
+
+ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
+  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R02 
+  FOREIGN KEY (CHILD_REPORT_UUID) 
+  REFERENCES TWO_FACTOR_REPORT (UUID));
+
+
+

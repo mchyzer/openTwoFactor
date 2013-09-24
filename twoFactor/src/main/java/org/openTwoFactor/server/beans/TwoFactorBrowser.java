@@ -7,7 +7,6 @@ package org.openTwoFactor.server.beans;
 
 import java.security.SecureRandom;
 import java.util.Collections;
-import java.util.Currency;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -57,9 +56,9 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
   @Override
   public boolean dbNeedsUpdate() {
     
-    TwoFactorBrowser dbTwoFactorUser = (TwoFactorBrowser)this.dbVersion();
+    TwoFactorBrowser dbTwoFactorBrowser = (TwoFactorBrowser)this.dbVersion();
     
-    return TwoFactorServerUtils.dbVersionDifferent(dbTwoFactorUser, this, DB_VERSION_FIELDS);
+    return TwoFactorServerUtils.dbVersionDifferent(dbTwoFactorBrowser, this, DB_VERSION_FIELDS);
     
   }
 

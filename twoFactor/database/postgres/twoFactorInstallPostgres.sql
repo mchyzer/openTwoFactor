@@ -979,3 +979,94 @@ insert into two_factor_sample_source (subject_id, net_id, name, description, sea
 
 commit;
 
+
+CREATE TABLE TWO_FACTOR_REPORT
+(
+  UUID                     VARCHAR(40)    NOT NULL,
+  LAST_UPDATED             INTEGER               NOT NULL,
+  LAST_SENT                INTEGER,
+  REPORT_TYPE              VARCHAR(32)    NOT NULL,
+  SEND_TOS                 VARCHAR(4000),
+  SEND_CCS                 VARCHAR(4000),
+  SEND_BCCS                VARCHAR(4000),
+  REPORT_NAME_FRIENDLY     VARCHAR(200)   NOT NULL,
+  SEND_FIRST_ON_TIMESTAMP  INTEGER,
+  DAYS_BETWEEN_SEND        INTEGER,
+  REPORT_NAME_SYSTEM       VARCHAR(4000)  NOT NULL,
+  primary key (uuid)
+);
+
+COMMENT ON TABLE TWO_FACTOR_REPORT IS 'each report has a row here. a report is emailed out to users';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.UUID IS 'uuid primary key of this row';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.LAST_UPDATED IS 'when this row was last updated';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.LAST_SENT IS 'timestamp of when this report was last sent';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.REPORT_TYPE IS 'must be of the TwoFactorReportType enum, e.g. group or rollup';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.SEND_TOS IS 'list of subject ids or identifiers that the report should be sent to';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.SEND_CCS IS 'list of subject ids or identifiers that the report should be sent to as cc';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.SEND_BCCS IS 'list of subject ids or identifiers that the report should be sent to as a bcc';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.REPORT_NAME_FRIENDLY IS 'friendly name is included in the report email';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.SEND_FIRST_ON_TIMESTAMP IS 'timestamp of the when the first should be sent... e.g. if you want it sent monday morning at 8am, enter a timestamp of monday morning 8am in the past';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.DAYS_BETWEEN_SEND IS 'if you want a weekly report, enter 7.  If you want every 4 weeks, enter 28';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT.REPORT_NAME_SYSTEM IS 'some system key on the report which can be used for queries to populate data and should not change';
+
+
+
+CREATE INDEX TF_REPORT_NAME_SYSTEM_IDX ON TWO_FACTOR_REPORT
+(REPORT_NAME_SYSTEM);
+
+
+CREATE INDEX TF_REPORT_TYPE_IDX ON TWO_FACTOR_REPORT
+(REPORT_TYPE);
+
+
+CREATE TABLE TWO_FACTOR_REPORT_ROLLUP
+(
+  UUID                VARCHAR(40)         NOT NULL,
+  LAST_UPDATED        INTEGER                    NOT NULL,
+  PARENT_REPORT_UUID  VARCHAR(40)         NOT NULL,
+  CHILD_REPORT_UUID   VARCHAR(40)         NOT NULL,
+  primary key (uuid)
+);
+
+COMMENT ON TABLE TWO_FACTOR_REPORT_ROLLUP IS 'rollups will give a summary of individual organizations';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT_ROLLUP.UUID IS 'uuid of this report';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT_ROLLUP.LAST_UPDATED IS 'when this record was last updated';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT_ROLLUP.PARENT_REPORT_UUID IS 'the report which is being run';
+
+COMMENT ON COLUMN TWO_FACTOR_REPORT_ROLLUP.CHILD_REPORT_UUID IS 'the child reports there are in this report';
+
+CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX1 ON TWO_FACTOR_REPORT_ROLLUP
+(PARENT_REPORT_UUID);
+
+
+CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX2 ON TWO_FACTOR_REPORT_ROLLUP
+(CHILD_REPORT_UUID);
+
+
+ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD
+  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R01 
+  FOREIGN KEY (PARENT_REPORT_UUID) 
+  REFERENCES TWO_FACTOR_REPORT (UUID);
+
+ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD 
+  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R02 
+  FOREIGN KEY (CHILD_REPORT_UUID) 
+  REFERENCES TWO_FACTOR_REPORT (UUID);
+
+
+
+
