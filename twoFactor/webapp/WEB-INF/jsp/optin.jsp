@@ -37,7 +37,7 @@
     <br /><br />
     <div class="substep">
       <div id="activateTokenLinkDiv">
-        <a href="#" onclick="document.getElementById('activateTokenContentDiv').style.display = 'block'; document.getElementById('activateTokenLinkDiv').style.display = 'none';">${textContainer.text['optinStep2activateToken']}</a>
+        <a href="#" onclick="document.getElementById('activateTokenContentDiv').style.display = 'block'; document.getElementById('activateTokenLinkDiv').style.display = 'none'; return false;">${textContainer.text['optinStep2activateToken']}</a>
       </div>
       <div id="activateTokenContentDiv" style="display: none">
         
@@ -64,7 +64,7 @@
       <br />
 
       <div id="activateAppLinkDiv">
-        <a href="#" onclick="document.getElementById('activateAppContentDiv').style.display = 'block'; document.getElementById('activateAppLinkDiv').style.display = 'none';">${textContainer.text['optinStep2activateApp']}</a>
+        <a href="#" onclick="document.getElementById('activateAppContentDiv').style.display = 'block'; document.getElementById('activateAppLinkDiv').style.display = 'none'; return false;">${textContainer.text['optinStep2activateApp']}</a>
       </div>
       <div id="activateAppContentDiv" style="display: none">
         <div style="border: 1px solid #95956F; padding: 3px">

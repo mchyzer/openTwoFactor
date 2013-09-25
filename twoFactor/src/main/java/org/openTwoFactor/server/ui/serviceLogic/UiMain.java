@@ -1137,6 +1137,8 @@ public class UiMain extends UiServiceLogicBase {
         
         //validate
         if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          //TODO remove this log message
+          LOG.error("Error validating code not number: '" + twoFactorSecret + "', '" + twoFactorPass + "', user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
         }
@@ -1145,6 +1147,8 @@ public class UiMain extends UiServiceLogicBase {
         TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
             twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
         if (!twoFactorPassResult.isPasswordCorrect()) {
+          //TODO remove this log message
+          LOG.error("Error validating code: '" + twoFactorSecret + "', '" + twoFactorPass + "', user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
         }
@@ -2218,7 +2222,7 @@ public class UiMain extends UiServiceLogicBase {
     //validation
     if (StringUtils.isBlank(twoFactorCustomCode)) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretRequired"));
-      return OptinView.optin;
+      return OptinView.index;
     }
 
     //strip whitespace and validate chars
@@ -2246,7 +2250,7 @@ public class UiMain extends UiServiceLogicBase {
         }
         //bad char
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid"));
-        return OptinView.optin;
+        return OptinView.index;
         
       }
       twoFactorCustomCode = newString.toString();
@@ -2254,16 +2258,19 @@ public class UiMain extends UiServiceLogicBase {
     
     if (twoFactorCustomCode.length() < 6) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretNotLongEnough"));
-      return OptinView.optin;
+      return OptinView.index;
     }
-    
+
     if (!isBase32) {
       //convert to base 32:
       byte[] plainText = null;
       try {
         plainText = Hex.decodeHex(twoFactorCustomCode.toCharArray());
       } catch (DecoderException de) {
-        throw new RuntimeException("Bad hex in custom secret");
+        //TODO dont log the custom code, just do this for debugging temporarily
+        LOG.error("Bad hex in custom secret '" + twoFactorCustomCode + "'");
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid"));
+        return OptinView.index;
       }
 
       Base32 codec = new Base32();
