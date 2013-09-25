@@ -30,14 +30,30 @@ public class TfSourceUtils {
    * @return the netid or subject id
    */
   public static String convertSubjectIdToNetId(Source source, String subjectId) {
-    String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
-    if (!StringUtils.isBlank(netIdAttribute)) {
-      Subject subject = retrieveSubjectByIdOrIdentifier(source, subjectId, true, false, true);
-      if (subject != null) {
-        String netId = subject.getAttributeValue(netIdAttribute);
-        if (!StringUtils.isBlank(netId)) {
-          return netId;
+    return convertSubjectIdToNetId(source, subjectId, true);
+  }
+  
+  /**
+   * convert subject id to netid (or subject id if there is no netid)
+   * @param subjectId
+   * @return the netid or subject id
+   */
+  public static String convertSubjectIdToNetId(Source source, String subjectId, boolean exceptionOnProblem) {
+    try {
+      String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+      if (!StringUtils.isBlank(netIdAttribute)) {
+        Subject subject = retrieveSubjectByIdOrIdentifier(source, subjectId, true, false, true);
+        if (subject != null) {
+          String netId = subject.getAttributeValue(netIdAttribute);
+          if (!StringUtils.isBlank(netId)) {
+            return netId;
+          }
         }
+      }
+      return subjectId;
+    } catch (RuntimeException re) {
+      if (exceptionOnProblem) {
+        throw re;
       }
     }
     return subjectId;
