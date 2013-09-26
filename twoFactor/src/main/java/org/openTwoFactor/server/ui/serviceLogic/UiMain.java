@@ -662,15 +662,27 @@ public class UiMain extends UiServiceLogicBase {
    */
   public void qrCode(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
 
+    File qrImageFile = TwoFactorServerUtils.tempFile(".gif", "qrCodes");
+
+    qrCodeFile(qrImageFile);
+
+    TwoFactorServerUtils.sendFileToBrowser(qrImageFile.getAbsolutePath(), false, true, true, null, null, true);
+
+  }
+
+
+  /**
+   * generate qr code file
+   * @return the file
+   */
+  private void qrCodeFile(File qrImageFile) {
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
     
     int qrImageWidth = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.qrImageWidth", 400);
-    
-    File qrImageFile = TwoFactorServerUtils.tempFile(".gif", "qrCodes");
-    
+        
     TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
     String twoFactorSecret = twoFactorUserLoggedIn.getTwoFactorSecretTempUnencrypted();
 
@@ -680,9 +692,6 @@ public class UiMain extends UiServiceLogicBase {
     //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
     String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
     TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateQrFile(uri, qrImageFile, qrImageWidth);
-
-    TwoFactorServerUtils.sendFileToBrowser(qrImageFile.getAbsolutePath(), false, true, true, null, null, true);
-
   }
 
   /**
@@ -1140,7 +1149,10 @@ public class UiMain extends UiServiceLogicBase {
           
           //TODO remove this log message
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
-          LOG.error("Error for " + loginId + " validating code not number: '" + twoFactorSecret + "', '" + twoFactorPass + "', user-agent: " + userAgent);
+          LOG.error("Error for " + loginId + " validating code not number: '" + twoFactorSecret + "', '" 
+              + twoFactorPass + "', now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
         }
@@ -1149,9 +1161,19 @@ public class UiMain extends UiServiceLogicBase {
         TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
             twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
         if (!twoFactorPassResult.isPasswordCorrect()) {
+          String qrCodePath = null;
+          try {
+            File tempFile = new File((TwoFactorServerUtils.isWindows() ? "c:/temp" : "/tmp") + "/twoFactorQr_" + TwoFactorServerUtils.uniqueId() + ".gif");
+            qrCodeFile(tempFile);
+            qrCodePath = tempFile.getAbsolutePath();
+          } catch (RuntimeException re) {
+            LOG.error("error generating code: ", re);
+          }
           //TODO remove this log message
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
-          LOG.error("Error for " + loginId + " validating code: '" + twoFactorSecret + "', '" + twoFactorPass + "', user-agent: " + userAgent);
+          LOG.error("Error for " + loginId + " validating code: '" + twoFactorSecret + "', '" + twoFactorPass + "', now: " 
+              + System.currentTimeMillis() + ", qrCode: " + TwoFactorServerUtils.hostname() + ": " + qrCodePath
+              + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
         }
