@@ -84,7 +84,9 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "checkedAdminAllReallySend", "emailBody", "emailSubject",
       
       //for status calls
-      "status", "diagnosticType"
+      "status", "diagnosticType",
+      
+      "OWASP_CSRFTOKEN"
       );
 
   /**
