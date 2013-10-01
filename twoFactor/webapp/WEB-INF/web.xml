@@ -79,6 +79,61 @@
     <url-pattern>/twoFactorWs/*</url-pattern>
   </servlet-mapping>
 
+
+<context-param>
+  <param-name>Owasp.CsrfGuard.Config</param-name>
+  <param-value>Owasp.CsrfGuard.properties</param-value>
+</context-param>
+ 
+<context-param>
+  <param-name>Owasp.CsrfGuard.Config.Print</param-name>
+  <param-value>true</param-value>
+</context-param>
+ 
+<listener>
+  <listener-class>org.owasp.csrfguard.CsrfGuardServletContextListener</listener-class>
+</listener>
+<listener>
+  <listener-class>org.owasp.csrfguard.CsrfGuardHttpSessionListener</listener-class>
+</listener>
+ 
+<servlet>
+   <servlet-name>OwaspJavaScriptServlet</servlet-name>
+   <servlet-class>org.owasp.csrfguard.servlet.JavaScriptServlet</servlet-class>
+   <init-param>
+       <param-name>source-file</param-name>
+       <param-value>WEB-INF/Owasp.CsrfGuard.js</param-value>
+   </init-param>
+   <init-param>
+       <param-name>inject-into-forms</param-name>
+       <param-value>true</param-value>
+   </init-param>
+   <init-param>
+       <param-name>inject-into-attributes</param-name>
+       <param-value>true</param-value>
+   </init-param>
+  <init-param>
+       <param-name>domain-strict</param-name>
+       <param-value>false</param-value>
+  </init-param>
+ 
+  <init-param>
+      <param-name>referer-pattern</param-name>
+      <param-value>https://[^/]+\.upenn.edu/.*</param-value>
+  </init-param>
+ 
+  <init-param>
+      <param-name>x-requested-with</param-name>
+      <param-value>OWASP CSRFGuard Project</param-value>
+  </init-param>
+</servlet>
+ 
+<servlet-mapping>
+   <servlet-name>OwaspJavaScriptServlet</servlet-name>
+   <url-pattern>/OwaspJavaScriptServlet</url-pattern>
+</servlet-mapping>
+ 
+
 <!-- 
   <security-role>
     <description>

@@ -33,21 +33,28 @@
     </div><br />
     
     ${textContainer.text['optinStep2description']}
-    
+
     <br /><br />
     <div class="substep">
       <div id="activateTokenLinkDiv">
-        <a href="#" onclick="document.getElementById('activateTokenContentDiv').style.display = 'block'; document.getElementById('activateTokenLinkDiv').style.display = 'none'; return false;">${textContainer.text['optinStep2activateToken']}</a>
+        <a href="#" onclick="$('#activateTokenContentDiv').show(); $('#activateTokenLinkDiv').hide(); return false;">${textContainer.text['optinStep2activateToken']}</a>
       </div>
       <div id="activateTokenContentDiv" style="display: none">
         
         <div id="otherOptions">
           <div style="border: 1px solid #95956F; padding: 3px">
-            <b>${textContainer.text['optinStep2activateToken']}</b>
-            <br /><br />
+          
+            <div class="alignleft"><b>${textContainer.text['optinStep2activateToken']}</b></div>
+            <div class="alignright">
+              
+                <a href="#" onclick="$('#activateTokenContentDiv').hide(); $('#activateTokenLinkDiv').show(); return false;">${textContainer.text['optinStepClose']}</a>
+                  
+            </div> 
+            <div class="clearboth"></div> 
+            <br />
             ${textContainer.text['optinStep2customSecretLabel']} <br /><br />
               <form action="../../twoFactorUi/app/UiMain.optinCustom" method="post" style="display: inline; white-space: nowrap;">
-                <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="30" autocomplete="off" class="textfield" /> &nbsp;
+                <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="45" autocomplete="off" class="textfield" /> &nbsp;
                 <input value="${textContainer.textEscapeDouble['optinStep2submitCustomSecretButton']}" class="tfBlueButton" 
                 style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
                 type="submit" />
@@ -64,18 +71,25 @@
       <br />
 
       <div id="activateAppLinkDiv">
-        <a href="#" onclick="document.getElementById('activateAppContentDiv').style.display = 'block'; document.getElementById('activateAppLinkDiv').style.display = 'none'; return false;">${textContainer.text['optinStep2activateApp']}</a>
+        <a href="#" onclick="$('#activateAppContentDiv').show(); $('#activateAppLinkDiv').hide(); return false;">${textContainer.text['optinStep2activateApp']}</a>
       </div>
       <div id="activateAppContentDiv" style="display: none">
         <div style="border: 1px solid #95956F; padding: 3px">
-          <b>${textContainer.text['optinStep2activateApp']}</b>
-          <br /><br />
+          <div class="alignleft"><b>${textContainer.text['optinStep2activateApp']}</b></div>
+          <div class="alignright">
+            
+              <a href="#" onclick="$('#activateAppContentDiv').hide(); $('#activateAppLinkDiv').show(); return false;">${textContainer.text['optinStepClose']}</a>
+                
+          </div> 
+          <div class="clearboth"></div> 
+          
+          <br />
           ${textContainer.text['optinStep2activateContent']}
         </div>  
       </div>
       <br /><br />
     </div>
-
+    <a id="step3"></a>
     ${textContainer.text['optinStep3description']}
     <br /><br />
     <form action="UiMain.optinTestSubmit" method="post">

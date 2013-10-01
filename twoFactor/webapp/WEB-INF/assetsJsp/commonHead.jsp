@@ -7,6 +7,7 @@
 <link href="../../assets/dojo/dojo/resources/dojo.css" rel="stylesheet" type="text/css" />
 
 <script type="text/javascript" src="../../assets/jquery.js"></script>
+<script type="text/javascript" src="../../OwaspJavaScriptServlet?v=1.0.13"></script>
 <script type="text/javascript" src="../../assets/dojo/dojo/dojo.js.uncompressed.js" djConfig="parseOnLoad: true" ></script>
 
 <script type="text/javascript" >
@@ -20,4 +21,3 @@
 
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactor.css?v=1.0.13" />
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactorPrint.css?v=1.0.13" media="print" />
-    

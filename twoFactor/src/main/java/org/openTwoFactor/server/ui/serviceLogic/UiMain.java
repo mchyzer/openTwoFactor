@@ -2313,16 +2313,18 @@ public class UiMain extends UiServiceLogicBase {
             continue;
           }
           newString.append(theChar);
-          
+
         }
         twoFactorCustomCode = newString.toString();
       }
 
     }
-    
+
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitSecretValueSuccess"));
+
     return optinSetup(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress,
         userAgent, twoFactorCustomCode, subjectSource);
-    
+
   }
 
   /**
