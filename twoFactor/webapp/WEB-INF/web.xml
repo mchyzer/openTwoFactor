@@ -127,12 +127,12 @@
       <param-value>OWASP CSRFGuard Project</param-value>
   </init-param>
 </servlet>
- 
+
 <servlet-mapping>
    <servlet-name>OwaspJavaScriptServlet</servlet-name>
    <url-pattern>/OwaspJavaScriptServlet</url-pattern>
 </servlet-mapping>
- 
+
 <filter>
   <filter-name>CSRFGuard</filter-name>
   <filter-class>org.owasp.csrfguard.CsrfGuardFilter</filter-class>

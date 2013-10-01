@@ -159,6 +159,10 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
           paramsToIgnore.addAll(TwoFactorServerUtils.splitTrimToList(paramsToIgnoreString, ","));
         }
       }
+
+      String httpParamsOkMultipleString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.httpParamsOkMultiple");
+      Set<String> httpParamsOkMultipleSet = TwoFactorServerUtils.nonNull(TwoFactorServerUtils.splitTrimToSet(httpParamsOkMultipleString, ","));
+      
       if (enumeration != null) {
         while(enumeration.hasMoreElements()) {
           String paramName = (String)enumeration.nextElement();
@@ -175,7 +179,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
           if (values != null && values.length > 0) {
             
             //there is probably something wrong if multiple values detected
-            if (values.length > 1) {
+            if (values.length > 1 && !httpParamsOkMultipleSet.contains(paramName)) {
               valuesProblem = true;
               valuesProblemName.add(paramName);
             }
