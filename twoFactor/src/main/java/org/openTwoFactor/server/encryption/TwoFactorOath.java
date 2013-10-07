@@ -73,9 +73,13 @@ public class TwoFactorOath {
   /**
    * invalid pass chars, look confusing, like other chars
    */
-  private static final char[] twoFactorInvalidPassChars = new char[]{
-    '0', 'O', '1', 'I', '5', 'S', 'B', '8', 'Z', '2', '6'
-  };
+  private static final char[] twoFactorInvalidPassChars = new char[]{};
+      
+//      new char[]{
+//    '0', 'O', '1', 'I', '5', 'S', 'B', '8', 'Z', '2', '6'
+//  };
+
+  
   
   /**
    * generate a two factor secret
