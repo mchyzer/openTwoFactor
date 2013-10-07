@@ -4,6 +4,8 @@
  */
 package org.openTwoFactor.server.encryption;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,9 +14,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
-import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
-import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -28,24 +28,38 @@ public class TwoFactorOath {
   /**
    * @param args
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
 
-    String loginid = "mchyzer";
-    String pass = "801195";
+    File result = new File("c:/temp/secrets.txt");
+    FileWriter fileWriter = new FileWriter(result);
     
-    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), loginid);
-    String secret = twoFactorUser.getTwoFactorSecretUnencrypted();
-    TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
-        secret, pass, twoFactorUser.getSequentialPassIndex(), 
-        twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), twoFactorUser.getTokenIndex(), 
-        twoFactorUser.getPhoneCodeUnencryptedIfNotExpired());
     
-    System.out.println("Pass correct: " + twoFactorPassResult.isPasswordCorrect());
-    System.out.println("30 time period: " + twoFactorPassResult.getLastTotp30TimestampUsed());
-    System.out.println("60 time period: " + twoFactorPassResult.getLastTotp60TimestampUsed());
-    System.out.println("HOTP index: " + twoFactorPassResult.getNextHotpIndex());
-    System.out.println("token index: " + twoFactorPassResult.getNextTokenIndex());
-    System.out.println("Phone pass: " + twoFactorPassResult.isPhonePass());
+    
+    for (int i=0; i < 10000000; i++) {
+      fileWriter.write(TwoFactorOath.twoFactorGenerateTwoFactorPass() + "\n");
+      if ((i+1)%1000 == 0) {
+        System.out.println(i);
+      }
+    }
+    
+    fileWriter.close();
+    
+    //String loginid = "mchyzer";
+    //String pass = "801195";
+    //
+    //TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), loginid);
+    //String secret = twoFactorUser.getTwoFactorSecretUnencrypted();
+    //TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
+    //    secret, pass, twoFactorUser.getSequentialPassIndex(), 
+    //    twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), twoFactorUser.getTokenIndex(), 
+    //    twoFactorUser.getPhoneCodeUnencryptedIfNotExpired());
+    //
+    //System.out.println("Pass correct: " + twoFactorPassResult.isPasswordCorrect());
+    //System.out.println("30 time period: " + twoFactorPassResult.getLastTotp30TimestampUsed());
+    //System.out.println("60 time period: " + twoFactorPassResult.getLastTotp60TimestampUsed());
+    //System.out.println("HOTP index: " + twoFactorPassResult.getNextHotpIndex());
+    //System.out.println("token index: " + twoFactorPassResult.getNextTokenIndex());
+    //System.out.println("Phone pass: " + twoFactorPassResult.isPhonePass());
   }
 
   /**
@@ -53,14 +67,14 @@ public class TwoFactorOath {
    */
   private static final char[] twoFactorValidChars = new char[]{
     'A', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 
-    'N', 'P', 'Q', 'R', 'T', 'U', 'V', 'W', 'X', 'Y', '3'
+    'N', 'P', 'Q', 'R', 'T', 'U', 'V', 'W', 'X', 'Y', '3', '4', '7'
   };
   
   /**
    * invalid pass chars, look confusing, like other chars
    */
   private static final char[] twoFactorInvalidPassChars = new char[]{
-    'O', 'I', '5', 'S', 'B', '8', 'Z', '2', '6'
+    '0', 'O', '1', 'I', '5', 'S', 'B', '8', 'Z', '2', '6'
   };
   
   /**

@@ -315,6 +315,8 @@ public class TwoFactorFilterJ2ee implements Filter {
         request = new ProxyServletRequestWrapper((HttpServletRequest)request);
       }
 
+      //create a session for csrfguard
+      ((HttpServletRequest)request).getSession();
       
       //wrap this for single valued params or whatever
       request = new TfHttpServletRequest((HttpServletRequest)request);
