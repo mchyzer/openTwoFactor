@@ -339,8 +339,10 @@
         }
         /** inject into attribute **/
       } else if(%INJECT_ATTRIBUTES% == true) {
-        injectTokenAttribute(element, "src", tokenName, tokenValue, pageTokens);
-        injectTokenAttribute(element, "href", tokenName, tokenValue, pageTokens);
+        if(element.tagName.toLowerCase() != "script" && element.tagName.toLowerCase() != "link" && element.tagName.toLowerCase() != "img") {
+          injectTokenAttribute(element, "src", tokenName, tokenValue, pageTokens);
+          injectTokenAttribute(element, "href", tokenName, tokenValue, pageTokens);
+        }
       }
     }
   }

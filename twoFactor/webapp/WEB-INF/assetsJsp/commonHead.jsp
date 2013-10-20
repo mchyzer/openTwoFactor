@@ -2,12 +2,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link href="../../assets/dojo/dijit/themes/soria/soria.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../../OwaspJavaScriptServlet?v=1.0.13"></script>
+
 <link href="../../assets/dojo/dijit/themes/claro/claro.css" rel="stylesheet" type="text/css" />
 <link href="../../assets/dojo/dojo/resources/dojo.css" rel="stylesheet" type="text/css" />
 
 <script type="text/javascript" src="../../assets/jquery.js"></script>
-<script type="text/javascript" src="../../OwaspJavaScriptServlet?v=1.0.13"></script>
 <script type="text/javascript" src="../../assets/dojo/dojo/dojo.js.uncompressed.js" djConfig="parseOnLoad: true" ></script>
 
 <script type="text/javascript" >
