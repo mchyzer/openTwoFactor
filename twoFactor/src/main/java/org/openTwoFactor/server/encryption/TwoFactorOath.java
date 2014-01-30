@@ -6,7 +6,6 @@ package org.openTwoFactor.server.encryption;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,24 +61,6 @@ public class TwoFactorOath {
     //System.out.println("Phone pass: " + twoFactorPassResult.isPhonePass());
   }
 
-  /**
-   * valid pass chars
-   */
-  private static final char[] twoFactorValidChars = new char[]{
-    'A', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 
-    'N', 'P', 'Q', 'R', 'T', 'U', 'V', 'W', 'X', 'Y', '3', '4', '7'
-  };
-  
-  /**
-   * invalid pass chars, look confusing, like other chars
-   */
-  private static final char[] twoFactorInvalidPassChars = new char[]{};
-      
-//      new char[]{
-//    '0', 'O', '1', 'I', '5', 'S', 'B', '8', 'Z', '2', '6'
-//  };
-
-  
   
   /**
    * generate a two factor secret
@@ -90,11 +71,6 @@ public class TwoFactorOath {
     
     String pass = TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateBase32secret(bytesInSecret);
     
-    for (char theChar : twoFactorInvalidPassChars) {
-      //Dont do i's or o's since they are confusing 
-      pass = pass.replace(theChar, twoFactorValidChars[
-        new Random().nextInt(twoFactorValidChars.length)]);
-    }
     return pass;
   }
 

@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -503,7 +504,7 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
         }
       }
       //sleep a random amount of time from 250ms to 500ms
-      TwoFactorServerUtils.sleep(250 + new SecureRandom().nextInt(250));
+      TwoFactorServerUtils.sleep(250 + new Random().nextInt(250));
     }
     throw new RuntimeException("Should never get here: " + this.getUuid());
   }

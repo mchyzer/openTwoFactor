@@ -34,7 +34,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    * @param tokenIndex 
    * 
    */
-  public static void printPasswordsForSecret(String secret, Long sequentialPassIndex, Long tokenIndex) {
+  public static void printPasswordsForSecret(String secret, Long sequentialPassIndex, Long tokenIndex, Long currentTimeMillis) {
     
     Base32 codec = new Base32();
     byte[] plainText = codec.decode(secret);
@@ -79,6 +79,8 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 
     System.out.println("\nTOTP 60");
     
+    currentTimeMillis = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
+
     for (int i=-10;i<10;i++) {
       String label = "now";
       if (i < 0) {
@@ -87,7 +89,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       if (i > 0) {
         label = "+" + i;
       }
-      System.out.println(label + ": " + new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/60000) + i));
+      System.out.println(label + ": " + new TwoFactorLogic().totpPassword(plainText, (currentTimeMillis/60000) + i));
     }
     
     System.out.println("\nTOTP 30");
@@ -100,7 +102,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       if (i > 0) {
         label = "+" + i;
       }
-      System.out.println(label + ": " + new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/30000) + i));
+      System.out.println(label + ": " + new TwoFactorLogic().totpPassword(plainText, (currentTimeMillis/30000) + i));
     }
     
   }
@@ -113,7 +115,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), username);
     printPasswordsForSecret(twoFactorUser.getTwoFactorSecretUnencrypted(), 
-        twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex());
+        twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), null);
   }
   
   /**
@@ -132,7 +134,10 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     //printPasswordsForUser(userName);
     
    // printPasswordsForSecret("RPAR TWTW 4EPP CT7T ", null, null);
-    printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
+   // printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
+    
+    printPasswordsForSecret("DUUE TNCV DGNK DXUL", null, null, 1391019502150L);
+    
 //    String secret = new TwoFactorLogic().generateBase32secret(10);
 //    System.out.println(secret);
 //    secret = "KJARPPQYTM3E7QYR";

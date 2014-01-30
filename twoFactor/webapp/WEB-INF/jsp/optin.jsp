@@ -111,7 +111,7 @@
   <br />
   <a name="qrCode"></a>
      <%-- --%>
-    <img src="UiMain.qrCode.gif?<csrf:token-name/>=<csrf:token-value uri="${pageContext.request.contextPath}/twoFactorUi/app/UiMain.qrCode.gif"/>" height="300" width="300" />
+    <img src="UiMain.qrCode.gif?key=${twoFactorRequestContainer.twoFactorUserLoggedIn.lastUpdated}&<csrf:token-name/>=<csrf:token-value uri="${pageContext.request.contextPath}/twoFactorUi/app/UiMain.qrCode.gif"/>" height="300" width="300" />
   <br />
   <br /> 
   <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp;
