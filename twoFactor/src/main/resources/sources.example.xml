@@ -522,6 +522,12 @@ where
       <param-name>Description_AttributeType</param-name>
       <param-value>description</param-value>
     </init-param>
+
+    <!- - If using emails and need email addresses in sources, set which attribute has the email address in this source - ->
+    <init-param>
+      <param-name>emailAttributeName</param-name>
+      <param-value>email</param-value>
+    </init-param>
     
     /// Scope Values can be: OBJECT_SCOPE, ONELEVEL_SCOPE, SUBTREE_SCOPE 
     /// For filter use 

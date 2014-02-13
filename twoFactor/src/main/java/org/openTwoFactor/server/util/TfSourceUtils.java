@@ -121,7 +121,11 @@ public class TfSourceUtils {
    */
   public static String retrieveEmail(Subject subject) {
     
-    return subject == null ? null : subject.getAttributeValueSingleValued(emailAttributeNameForSource(subject.getSource()));
+    String emailAttributeName = emailAttributeNameForSource(subject.getSource());
+    if (StringUtils.isBlank(emailAttributeName)) {
+      return null;
+    }
+    return subject == null ? null : subject.getAttributeValueSingleValued(emailAttributeName);
     
   }
 

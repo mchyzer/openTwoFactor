@@ -1536,10 +1536,7 @@ public class UiMain extends UiServiceLogicBase {
       //resolve subject
       Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
           loggedInUser, false, false, true);
-      if (subject != null) {
-        subjectEmail = subject.getAttributeValueSingleValued("email");
-        
-      }
+      subjectEmail = TfSourceUtils.retrieveEmail(subject);
     }
 
     if (!StringUtils.equals(dbEmail, subjectEmail) && !StringUtils.isBlank(subjectEmail)) {
@@ -1809,7 +1806,7 @@ public class UiMain extends UiServiceLogicBase {
 
           if (loggedInSubject != null) {
             
-            twoFactorProfileContainer.setEmail0(loggedInSubject.getAttributeValueSingleValued("email"));
+            twoFactorProfileContainer.setEmail0(TfSourceUtils.retrieveEmail(loggedInSubject));
             localEmail0 = twoFactorProfileContainer.getEmail0();
           }
         }
@@ -2381,7 +2378,7 @@ public class UiMain extends UiServiceLogicBase {
           Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
               loggedInUser, true, false, true);
           if (subject != null) {
-            hasEmail = !StringUtils.isBlank(subject.getAttributeValueSingleValued("email"));
+            hasEmail = !StringUtils.isBlank(TfSourceUtils.retrieveEmail(subject));
           }
         }
         //lets validate the profile
