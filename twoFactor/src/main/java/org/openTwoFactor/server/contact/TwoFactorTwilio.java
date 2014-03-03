@@ -19,7 +19,7 @@ import com.twilio.sdk.resource.instance.Account;
 
 
 /**
- * two factor contact interface for twilio
+ * two factor contact interface for twilio, this is generally the primary method
  */
 public class TwoFactorTwilio implements TwoFactorContactInterface {
 

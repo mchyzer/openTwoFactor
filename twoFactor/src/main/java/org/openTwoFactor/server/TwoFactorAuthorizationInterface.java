@@ -8,7 +8,7 @@ import java.util.Set;
 
 
 /**
- * authorization interface
+ * authorization interface for administrative actions.
  */
 public interface TwoFactorAuthorizationInterface {
 

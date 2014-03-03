@@ -3,7 +3,7 @@ package org.openTwoFactor.server;
 import java.io.File;
 
 /**
- * logic for two factor
+ * logic for two factor for qr, hotp, hotp
  * @author mchyzer
  *
  */

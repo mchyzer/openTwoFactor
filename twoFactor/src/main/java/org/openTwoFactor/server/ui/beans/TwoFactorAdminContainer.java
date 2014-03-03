@@ -13,10 +13,8 @@ import org.openTwoFactor.server.cache.TwoFactorCache;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
-import org.openTwoFactor.server.status.DiagnosticDbTest;
 import org.openTwoFactor.server.util.TfSourceUtils;
 
-import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 

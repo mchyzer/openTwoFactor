@@ -23,7 +23,8 @@ import org.openTwoFactor.server.util.UserAgentUtils;
 
 
 /**
- * list of user agents from browsers
+ * list of user agents from browsers.  Note the java project died, and is not a reliable 
+ * user agent -> browser converter
  */
 @SuppressWarnings("serial")
 public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {

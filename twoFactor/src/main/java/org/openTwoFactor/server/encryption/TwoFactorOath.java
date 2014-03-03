@@ -20,7 +20,8 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
 /**
- *
+ * go through the config file, see how many secrets are allowed etc, generate those secrets and see if
+ * a user's code is valid
  */
 public class TwoFactorOath {
 

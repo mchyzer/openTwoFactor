@@ -10,7 +10,8 @@ import org.apache.commons.codec.binary.Base64;
 
 
 /**
- * generate keys for encryption, 1000 keys into a properties file
+ * generate keys for encryption, 5000 keys into a properties file.
+ * Note, there are actually more keys used than this... 5000*5000 keys
  */
 public class GenerateKeys {
 

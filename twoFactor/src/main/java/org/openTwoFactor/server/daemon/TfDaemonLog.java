@@ -12,7 +12,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
 /**
- * logger to log the traffic of 
+ * logger to log the daemon messages into one file
  */
 public class TfDaemonLog {
 

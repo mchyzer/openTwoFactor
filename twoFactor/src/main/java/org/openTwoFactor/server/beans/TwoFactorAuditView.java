@@ -21,7 +21,7 @@ import edu.internet2.middleware.subject.Subject;
 
 
 /**
- * view on audit records to make them more human readable
+ * view on audit records to make them more human readable.  this is a readonly object
  */
 @SuppressWarnings("serial")
 public class TwoFactorAuditView extends TwoFactorHibernateBeanBase {

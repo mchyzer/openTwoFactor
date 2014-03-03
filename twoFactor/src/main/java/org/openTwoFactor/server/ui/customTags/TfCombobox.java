@@ -14,7 +14,7 @@ import org.apache.commons.lang.StringUtils;
 
 
 /**
- *
+ * custom tag for the dojo combobox.  Shared code with internet2 grouper
  */
 public class TfCombobox extends SimpleTagSupport {
 

@@ -22,13 +22,14 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 
 /**
- * two factor logic
+ * two factor logic default built in
  * @author mchyzer
  *
  */
 public class TwoFactorLogic implements TwoFactorLogicInterface {
 
   /**
+   * for debugging
    * @param secret 
    * @param sequentialPassIndex 
    * @param tokenIndex 
@@ -108,7 +109,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
   }
 
   /**
-   * 
+   * for debugging
    * @param username
    */
   public static void printPasswordsForUser(String username) {
@@ -119,7 +120,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
   }
   
   /**
-   * 
+   * for debugging
    * @param args
    */
   public static void main(String[] args) {
@@ -302,7 +303,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    * Calculates the checksum using the credit card algorithm.
    * This algorithm has the advantage that it detects any single
    * mistyped digit and any single transposition of
-   * adjacent digits.
+   * adjacent digits.  Used for HOTP
    *
    * @param num the number to calculate the checksum for
    * @param digits number of significant places in the number
@@ -330,7 +331,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 
   /**
    * This method uses the JCE to provide the HMAC-SHA-1
-   * algorithm.
+   * algorithm.  Used for HOTP
    * HMAC computes a Hashed Message Authentication Code and
    * in this case SHA1 is the hash algorithm used.
    *

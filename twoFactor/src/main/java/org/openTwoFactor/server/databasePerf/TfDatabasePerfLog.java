@@ -5,7 +5,11 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
-
+/**
+ * separate class for log4j to get database log records in their own file
+ * @author mchyzer
+ *
+ */
 public class TfDatabasePerfLog {
 
   /** logger */

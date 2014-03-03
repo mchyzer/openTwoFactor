@@ -13,7 +13,8 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
 /**
- *
+ * built in implmentation of the administrative actions interface, who 
+ * is an admin, etc.  Just check the config file
  */
 public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
 

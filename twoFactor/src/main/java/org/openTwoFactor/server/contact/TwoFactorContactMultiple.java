@@ -17,7 +17,7 @@ import edu.internet2.middleware.grouperClient.failover.FailoverConfig.FailoverSt
 
 
 /**
- *
+ * use the primary cloud service and if error or timeout, use the secondary
  */
 public class TwoFactorContactMultiple implements TwoFactorContactInterface {
 
@@ -38,7 +38,7 @@ public class TwoFactorContactMultiple implements TwoFactorContactInterface {
   }
   
   /**
-   * 
+   * init the two failover methods
    */
   private synchronized void init() {
 

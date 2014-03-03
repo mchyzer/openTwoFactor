@@ -60,7 +60,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
 
   
   /**
-   * thread to store audits from WS
+   * thread to store audits from WS asynchronously to improve performance
    */
   private static Thread storeThread = new Thread(new Runnable() {
 

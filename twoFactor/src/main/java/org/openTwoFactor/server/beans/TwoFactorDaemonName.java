@@ -6,7 +6,7 @@ package org.openTwoFactor.server.beans;
 
 
 /**
- * status of daemon
+ * name of daemon
  */
 public enum TwoFactorDaemonName {
 

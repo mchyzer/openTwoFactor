@@ -2,7 +2,11 @@ package org.openTwoFactor.server.ui.beans;
 
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 
-
+/**
+ * misc config things needed from JSP
+ * @author mchyzer
+ *
+ */
 public class TwoFactorConfigContainer {
 
   /**

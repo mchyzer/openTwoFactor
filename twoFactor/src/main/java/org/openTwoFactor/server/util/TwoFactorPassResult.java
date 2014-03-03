@@ -5,7 +5,7 @@ package org.openTwoFactor.server.util;
 
 
 /**
- * bean that holds if pss is correct, and which index is the next hotp index if it changed
+ * bean that holds if pass is correct, and which index is the next hotp index if it changed
  * @author mchyzer
  *
  */
