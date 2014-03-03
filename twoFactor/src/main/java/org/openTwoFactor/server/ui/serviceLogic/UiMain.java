@@ -1147,10 +1147,8 @@ public class UiMain extends UiServiceLogicBase {
         //validate
         if (!numberMatcher.matcher(twoFactorPass).matches()) {
           
-          //TODO remove this log message
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
-          LOG.error("Error for " + loginId + " validating code not number: '" + twoFactorSecret + "', '" 
-              + twoFactorPass + "', now: " 
+          LOG.error("Error for " + loginId + " validating code not number, now: " 
               + System.currentTimeMillis() 
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
@@ -1169,9 +1167,9 @@ public class UiMain extends UiServiceLogicBase {
           } catch (RuntimeException re) {
             LOG.error("error generating code: ", re);
           }
-          //TODO remove this log message
+
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
-          LOG.error("Error for " + loginId + " validating code: '" + twoFactorSecret + "', '" + twoFactorPass + "', now: " 
+          LOG.error("Error for " + loginId + " validating code, now: " 
               + System.currentTimeMillis() + ", qrCode: " + TwoFactorServerUtils.hostname() + ": " + qrCodePath
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
