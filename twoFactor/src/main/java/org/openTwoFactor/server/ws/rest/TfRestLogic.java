@@ -658,6 +658,14 @@ public class TfRestLogic {
   
       //send this back even if require reauth
       if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted) {
+        
+        //update the browser trust if inactivity date
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.browserTrustIsInactivityBased", true)) {
+          trafficLogMap.put("previousBrowserTrustedOn", new Date(twoFactorBrowser.getWhenTrusted()).toString());
+          twoFactorBrowser.setWhenTrusted(System.currentTimeMillis());
+          twoFactorBrowser.store(twoFactorDaoFactory);
+          trafficLogMap.put("newBrowserTrustedOn", new Date(twoFactorBrowser.getWhenTrusted()).toString());
+        }
         tfCheckPasswordResponse.setWhenTrusted(TwoFactorServerUtils.convertToIso8601(new Date(twoFactorBrowser.getWhenTrusted())));
         trafficLogMap.put("requireReauthOverall", true);
       }
