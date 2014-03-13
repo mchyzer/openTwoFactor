@@ -265,6 +265,38 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * test adding phone
+   */
+  ADD_PHONE_TEST {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAddPhoneTest";
+    }
+
+  }, 
+  
+  /**
+   * add phone
+   */
+  ADD_PHONE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAddPhone";
+    }
+    
+  }, 
+  
+  /**
    * optin to two factor
    */
   INVITE_COLLEAGUES {

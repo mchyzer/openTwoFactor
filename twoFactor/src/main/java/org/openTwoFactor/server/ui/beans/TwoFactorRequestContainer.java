@@ -37,6 +37,22 @@ public class TwoFactorRequestContainer {
   }
   
   /**
+   * container for adding phone
+   */
+  private TwoFactorAddPhoneContainer twoFactorAddPhoneContainer = null;
+  
+  /**
+   * container for adding phone
+   * @return container
+   */
+  public TwoFactorAddPhoneContainer getTwoFactorAddPhoneContainer() {
+    if (this.twoFactorAddPhoneContainer == null) {
+      this.twoFactorAddPhoneContainer = new TwoFactorAddPhoneContainer();
+    }
+    return this.twoFactorAddPhoneContainer;
+  }
+
+  /**
    * admin container bean for users using the admin screen(s)
    */
   private TwoFactorAdminContainer twoFactorAdminContainer = null;

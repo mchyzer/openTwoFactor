@@ -619,8 +619,18 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     String theTwoFactorSecret = this.getTwoFactorSecretTempUnencrypted();
     
     
+    return formatSecret(theTwoFactorSecret);
+  }
+
+  /**
+   * @param theTwoFactorSecret
+   * @return
+   */
+  private static String formatSecret(String theTwoFactorSecret) {
     //strip whitespace
-    
+    if (theTwoFactorSecret == null) {
+      return null;
+    }
     {
       StringBuilder newString = new StringBuilder();
       for (int i=0;i<theTwoFactorSecret.length(); i++) {
@@ -659,6 +669,17 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       return twoFactorSecretTemp;
     }
     String theTwoFactorSecret = this.getTwoFactorSecretTempUnencrypted();
+    return hexFormat(theTwoFactorSecret);
+  }
+
+  /**
+   * @param theTwoFactorSecret
+   * @return
+   */
+  private static String hexFormat(String theTwoFactorSecret) {
+    if (theTwoFactorSecret == null) {
+      return null;
+    }
     Base32 codec = new Base32();
     byte[] plainText = codec.decode(theTwoFactorSecret);
     StringBuilder hexStringBuilder = new StringBuilder();
@@ -1391,6 +1412,35 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     }
     return false;
 
+  }
+
+  /**
+   * two factor secret formatted
+   * @return the secret formatted
+   */
+  public String getTwoFactorSecretUnencryptedFormatted() {
+    String twoFactorSecret = this.getTwoFactorSecret();
+    if (twoFactorSecret == null) {
+      return twoFactorSecret;
+    }
+    String theTwoFactorSecret = this.getTwoFactorSecretUnencrypted();
+    
+    
+    //strip whitespace
+    return formatSecret(theTwoFactorSecret);
+  }
+
+  /**
+   * two factor secret formatted
+   * @return the secret formatted
+   */
+  public String getTwoFactorSecretUnencryptedHexFormatted() {
+    String twoFactorSecret = this.getTwoFactorSecret();
+    if (twoFactorSecret == null) {
+      return twoFactorSecret;
+    }
+    String theTwoFactorSecret = this.getTwoFactorSecretUnencrypted();
+    return hexFormat(theTwoFactorSecret);
   }
 }
   

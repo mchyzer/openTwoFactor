@@ -68,10 +68,10 @@
       </form>
       &nbsp;
     
-      <form action="../../twoFactorUi/app/UiMain.changeDevice" method="get" style="display: inline">
+      <form action="../../twoFactorUi/app/UiMain.addPhoneOrDevice" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonChangeDevice']}" class="tfBlueButton"
         onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
-        onclick="return confirm('${textContainer.textEscapeSingleDouble['buttonChangeDeviceConfirm']}');" />
+        />
       </form>
       &nbsp;
     

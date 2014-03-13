@@ -446,7 +446,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
       
       //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
       if (success[0] && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptoutByAdmin", true)) {
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptoutByAdmin", true)) {
         
         Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 

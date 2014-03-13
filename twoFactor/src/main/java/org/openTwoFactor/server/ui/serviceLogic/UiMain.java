@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -53,6 +54,7 @@ import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
+import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 
@@ -608,6 +610,299 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * add phone or device
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void addPhoneOrDevice(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    AddPhoneOrDeviceView addPhoneOrDeviceView = addPhoneOrDeviceLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    showJsp(addPhoneOrDeviceView.getJsp());
+  }
+
+  /**
+   * view from add phone or device
+   */
+  public static enum AddPhoneOrDeviceView {
+    
+    /**
+     */
+    addPhoneOrDevice("addPhoneOrDevice.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp");
+
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private AddPhoneOrDeviceView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * add phone or device logic
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param subjectSource 
+   * @return which view to go to
+   * 
+   */
+  private AddPhoneOrDeviceView addPhoneOrDeviceLogic(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final Source subjectSource) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneOrDeviceNotOptedIn"));
+
+      return AddPhoneOrDeviceView.index;
+    }
+    
+    return AddPhoneOrDeviceView.addPhoneOrDevice;
+  }
+
+  /**
+   * add phone to the profile
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void addPhone(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    AddPhoneView addPhoneView = addPhoneLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource, true);
+
+    showJsp(addPhoneView.getJsp());
+  }
+
+  /**
+   * view from add phone
+   */
+  public static enum AddPhoneView {
+    
+    /**
+     */
+    addPhone("addPhone.jsp") {
+
+      /**
+       * @see AddPhoneView#toAddPhoneTestView()
+       */
+      @Override
+      public AddPhoneTestSubmitView toAddPhoneTestView() {
+        return AddPhoneTestSubmitView.addPhone;
+      }
+
+    },
+    
+    /**
+     */
+    index("twoFactorIndex.jsp") {
+
+      /**
+       * @see AddPhoneView#toAddPhoneTestView()
+       */
+      @Override
+      public AddPhoneTestSubmitView toAddPhoneTestView() {
+        return AddPhoneTestSubmitView.index;
+      }
+
+    };
+
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private AddPhoneView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+    
+    /**
+     * convert to add phone test view
+     * @return the view for the test click
+     */
+    public abstract AddPhoneTestSubmitView toAddPhoneTestView();
+    
+  }
+
+  /**
+   * add phone
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param subjectSource 
+   * @param audit if should audit
+   * @return which view to go to
+   * 
+   */
+  private AddPhoneView addPhoneLogic(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final Source subjectSource, final boolean audit) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneOrDeviceNotOptedIn"));
+
+      return AddPhoneView.index;
+    }
+    
+    String imageId = TwoFactorServerUtils.uuid();
+    
+    twoFactorRequestContainer.getTwoFactorAddPhoneContainer().setQrCodeUniqueId(imageId);
+    
+    String userEmail = null;
+    try {
+
+      MultiKey multiKey = new MultiKey(loggedInUser, imageId);
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForAddPhone", true)) {
+        
+        Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+        
+        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailAddPhoneSubject");
+        subject = TextContainer.massageText("emailAddPhoneSubject", subject);
+
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailAddPhoneBody");
+        body = TextContainer.massageText("emailAddPhoneBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+          emailAddressFromDatabase = null;
+        }
+        
+        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
+
+        boolean sendEmail = true;
+        
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addBcc(bccsString);
+        }
+
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+
+        }
+
+      }
+      //add to cache
+      addPhoneSecretEmailCache().put(multiKey, Boolean.TRUE);
+      
+      if (audit) {
+        //audit to keep track of what happened
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADD_PHONE, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
+
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneError"));
+
+      //if you cant send email, dont do it
+      return AddPhoneView.index;
+    }
+    
+    return AddPhoneView.addPhone;
+  }
+
+  /**
+   * dont send two emails for image and secret on screen...  multikey is loginid, and imageId
+   */
+  private static ExpirableCache<MultiKey, Boolean> addPhoneSecretEmailCache = null;
+  
+  /**
+   * dont send two emails for image and secret on screen...  key is loginid and imageId
+   * cache lazy loaded
+   * @return the cache, lazy loaded
+   */
+  private static ExpirableCache<MultiKey, Boolean> addPhoneSecretEmailCache() {
+    if (addPhoneSecretEmailCache == null) {
+      addPhoneSecretEmailCache = new ExpirableCache<MultiKey, Boolean>(1);
+    }
+    return addPhoneSecretEmailCache;
+  }
+    
+  /**
    * optout of the service, then start the optin process
    * @param httpServletRequest
    * @param httpServletResponse
@@ -695,11 +990,59 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * show qrCode image of the actual secret when adding a phone
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void qrCodeSecret(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    File qrImageFile = TwoFactorServerUtils.tempFile(".gif", "qrCodes");
+
+    String imageId = httpServletRequest.getParameter("imageId");
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    MultiKey multiKey = new MultiKey(loggedInUser, imageId);
+    
+    //see if we just emailed about the use of this image
+    if (Boolean.TRUE != addPhoneSecretEmailCache().get(multiKey)) {
+      throw new RuntimeException("Not sending QR code to browser since not expecting request!  Reload the containing page.");
+    }
+    
+    qrCodeSecretFile(qrImageFile);
+
+    TwoFactorServerUtils.sendFileToBrowser(qrImageFile.getAbsolutePath(), false, true, true, null, null, true);
+
+  }
+
+  /**
+   * generate qr code file
+   * @return the file
+   */
+  private void qrCodeSecretFile(File qrImageFile) {
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+    
+    int qrImageWidth = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.qrImageWidth", 400);
+        
+    TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    String twoFactorSecret = twoFactorUserLoggedIn.getTwoFactorSecretUnencrypted();
+
+    String accountName = twoFactorRequestContainer.getTwoFactorProfileContainer().getAccountName();
+    
+    //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
+    String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
+    TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateQrFile(uri, qrImageFile, qrImageWidth);
+  }
+
+  /**
    * optin to the service
    * @param httpServletRequest
    * @param httpServletResponse
    */
-  public void optinTestSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  public void addPhoneTestSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
     
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
@@ -709,11 +1052,11 @@ public class UiMain extends UiServiceLogicBase {
 
     Source subjectSource = TfSourceUtils.mainSource();
     
-    OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+    AddPhoneTestSubmitView addPhoneTestSubmitView = addPhoneTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource);
 
-    showJsp(optinTestSubmitView.getJsp());
+    showJsp(addPhoneTestSubmitView.getJsp());
 
   }
 
@@ -865,7 +1208,7 @@ public class UiMain extends UiServiceLogicBase {
       
       //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
       if (success && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptoutFriend", true)) {
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptoutFriend", true)) {
         
         Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
@@ -1042,6 +1385,42 @@ public class UiMain extends UiServiceLogicBase {
     }
   }
   
+  
+  /**
+   * 
+   */
+  public static enum AddPhoneTestSubmitView {
+    
+    /**
+     */
+    addPhone("addPhone.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private AddPhoneTestSubmitView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+  
   /**
    * 
    */
@@ -1159,18 +1538,10 @@ public class UiMain extends UiServiceLogicBase {
         TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
             twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
         if (!twoFactorPassResult.isPasswordCorrect()) {
-          String qrCodePath = null;
-          try {
-            File tempFile = new File((TwoFactorServerUtils.isWindows() ? "c:/temp" : "/tmp") + "/twoFactorQr_" + TwoFactorServerUtils.uniqueId() + ".gif");
-            qrCodeFile(tempFile);
-            qrCodePath = tempFile.getAbsolutePath();
-          } catch (RuntimeException re) {
-            LOG.error("error generating code: ", re);
-          }
 
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
           LOG.error("Error for " + loginId + " validating code, now: " 
-              + System.currentTimeMillis() + ", qrCode: " + TwoFactorServerUtils.hostname() + ": " + qrCodePath
+              + System.currentTimeMillis() + ": " + TwoFactorServerUtils.hostname()
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
           return OptinTestSubmitView.optin;
@@ -1213,7 +1584,7 @@ public class UiMain extends UiServiceLogicBase {
         
         //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
         if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-            && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptin", true)) {
+            && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptin", true)) {
           
           Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
           
@@ -1331,7 +1702,7 @@ public class UiMain extends UiServiceLogicBase {
       
       //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
       if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-          && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForOptout", true)) {
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptout", true)) {
         
         Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         
@@ -2010,7 +2381,7 @@ public class UiMain extends UiServiceLogicBase {
           
           //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
           if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-              && TwoFactorTextConfig.retrieveText(null).propertyValueBoolean("mail.sendForSelectFriend", true)) {
+              && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForSelectFriend", true)) {
             
             Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
             Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, newColleague.getLoginid(), true, false, false);
@@ -2440,6 +2811,149 @@ public class UiMain extends UiServiceLogicBase {
       HttpServletResponse httpServletResponse) {
     
     personPicker(httpServletRequest, httpServletResponse);
+
+  }
+
+
+  /**
+   * optin to the service
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinTestSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource);
+  
+    showJsp(optinTestSubmitView.getJsp());
+  
+  }
+
+
+  /**
+   * add phone test code to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param twoFactorPass 
+   * @param subjectSource
+   * @return error message if there is one and jsp
+   */
+  public AddPhoneTestSubmitView addPhoneTestSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String twoFactorPass, final Source subjectSource) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    AddPhoneTestSubmitView result =  (AddPhoneTestSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+    
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        String twoFactorSecret = twoFactorUser.getTwoFactorSecretUnencrypted();
+          
+        if (StringUtils.isBlank(twoFactorSecret)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneSubmitErrorInconsistent"));
+          return AddPhoneTestSubmitView.index;
+          
+        }
+          
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneErrorCodeRequired"));
+          
+          //go back to add phone screen
+          //dont audit again
+          AddPhoneView addPhoneView = addPhoneLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource, false);
+          
+          return addPhoneView.toAddPhoneTestView();
+        }
+          
+        //validate
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " add phone validating code not number, now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneErrorCodeInvalid"));
+
+          //go back to add phone screen
+          //dont audit again
+          AddPhoneView addPhoneView = addPhoneLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource, false);
+          
+          return addPhoneView.toAddPhoneTestView();
+
+        }
+          
+        //no need to validate the password, the password checker will do that
+        TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
+            twoFactorSecret, twoFactorPass, twoFactorUser.getSequentialPassIndex(), 
+            twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), twoFactorUser.getTokenIndex(), null);
+        if (!twoFactorPassResult.isPasswordCorrect()) {
+  
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code, now: " 
+              + System.currentTimeMillis() + ", " + TwoFactorServerUtils.hostname()
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneErrorCodeInvalid"));
+
+          //go back to add phone screen
+          //dont audit again
+          AddPhoneView addPhoneView = addPhoneLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource, false);
+          
+          return addPhoneView.toAddPhoneTestView();
+        }
+          
+        //set the object
+        if (twoFactorPassResult.getNextHotpIndex() != null) {
+          twoFactorUser.setSequentialPassIndex(twoFactorPassResult.getNextHotpIndex());
+        }
+        if (twoFactorPassResult.getLastTotp30TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp30TimestampUsed());
+        }
+        if (twoFactorPassResult.getLastTotp60TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp60TimestampUsed());
+        }
+        if (twoFactorPassResult.getNextTokenIndex() != null) {
+          twoFactorUser.setTokenIndex(twoFactorPassResult.getNextTokenIndex());
+        }
+        twoFactorUser.store(twoFactorDaoFactory);
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADD_PHONE_TEST, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneSuccess"));
+
+        return AddPhoneTestSubmitView.index;
+      }
+    });
+
+    return result;
 
   }
   

@@ -81,7 +81,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "phoneVoice0", "phoneText0", 
       "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
-      "checkedAdminAllReallySend", "emailBody", "emailSubject",
+      "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId",
       
       //for status calls
       "status", "diagnosticType",
@@ -151,7 +151,8 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       Map<String, String> newMap = new LinkedHashMap<String, String>();
       Set<String> newUnusedParams = new LinkedHashSet<String>();
 
-      Enumeration enumeration = super.getParameterNames();
+      @SuppressWarnings("unchecked")
+      Enumeration<String> enumeration = super.getParameterNames();
       Set<String> paramsToIgnore = new HashSet<String>();
       {
         String paramsToIgnoreString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.httpParamsToIgnore");
@@ -202,8 +203,9 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
   /**
    * @see javax.servlet.ServletRequestWrapper#getParameterNames()
    */
+  @SuppressWarnings("unchecked")
   @Override
-  public Enumeration getParameterNames() {
+  public Enumeration<String> getParameterNames() {
     return IteratorUtils.asEnumeration(this.getParameterMap().keySet().iterator());
   }
 
