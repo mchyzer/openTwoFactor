@@ -797,6 +797,8 @@ public class UiMain extends UiServiceLogicBase {
     
     TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
 
+    twoFactorUser.setSubjectSource(subjectSource);
+
     if (!twoFactorUser.isOptedIn()) {
 
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneOrDeviceNotOptedIn"));
@@ -982,7 +984,6 @@ public class UiMain extends UiServiceLogicBase {
     String twoFactorSecret = twoFactorUserLoggedIn.getTwoFactorSecretTempUnencrypted();
 
     String accountName = twoFactorRequestContainer.getTwoFactorProfileContainer().getAccountName();
-    
     
     //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
     String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
