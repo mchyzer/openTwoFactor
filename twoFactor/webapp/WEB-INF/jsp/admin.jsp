@@ -158,6 +158,18 @@
     </form>
     
   </c:if>  
+
+  <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canImportSerials}">
+    
+    &nbsp; &nbsp;
+    
+    <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminImportSerialsPage" method="get" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonAdminImportSerials']}" class="tfLinkButton"
+      type="submit" />
+    </form>
+    
+  </c:if>  
+
   <br /><br />
   
   <%@ include file="../assetsJsp/commonAbout.jsp"%>

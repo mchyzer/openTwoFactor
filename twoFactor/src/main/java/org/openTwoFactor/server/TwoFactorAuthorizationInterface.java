@@ -30,4 +30,9 @@ public interface TwoFactorAuthorizationInterface {
    */
   public Set<String> adminUserIdsWhoCanEmailAllUsers();
   
+  /**
+   * admin user ids who can import serials of fobs in the admin console
+   * @return the set of user ids
+   */
+  public Set<String> adminUserIdsWhoCanImportSerials();
 }

@@ -71,4 +71,20 @@ public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
     return TwoFactorServerUtils.splitTrimToSet(adminsAllowedToActAsOtherUsers, ",");
   }
 
+  /**
+   * @see TwoFactorAuthorizationInterface#adminUserIdsWhoCanImportSerials()
+   */
+  @Override
+  public Set<String> adminUserIdsWhoCanImportSerials() {
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String adminsAllowedImportFobSerials = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.adminsAllowedToImportFobSerialNumbers");
+    
+    if (TwoFactorServerUtils.isBlank(adminsAllowedImportFobSerials)) {
+      return new HashSet<String>();
+    }
+
+    return TwoFactorServerUtils.splitTrimToSet(adminsAllowedImportFobSerials, ",");
+  }
+
 }

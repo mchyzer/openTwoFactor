@@ -7,6 +7,18 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  */
 public enum TwoFactorAuditAction {
   
+  IMPORT_FOB_SERIALS {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsImportFobSerials";
+    }
+
+  }, 
   /**
    * send a code to a phone
    */
@@ -260,6 +272,22 @@ public enum TwoFactorAuditAction {
     @Override
     public String toStringForUi() {
       return "auditsOptIn";
+    }
+    
+  }, 
+  
+  /**
+   * optin to two factor registering a fob serial number
+   */
+  REGISTER_FOB_SERIAL_NUMBER {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsRegisterFobBySerial";
     }
     
   }, 

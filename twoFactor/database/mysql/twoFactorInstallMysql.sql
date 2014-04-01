@@ -734,4 +734,34 @@ ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
   REFERENCES TWO_FACTOR_REPORT (UUID));
 
 
+CREATE TABLE TWO_FACTOR_DEVICE_SERIAL
+(
+  UUID               VARCHAR(40)          NOT NULL comment 'UUID of the row, primary key',
+  LAST_UPDATED       BIGINT(20)                    NOT NULL comment 'millis since 1970 that this row was last updated',
+  DELETED_ON         BIGINT(20) comment 'millis since 1970 that this row was deleted',
+  VERSION_NUMBER     BIGINT(20)                    NOT NULL comment 'hibernate version for optimistic locking', 
+  USER_UUID          VARCHAR(40) comment 'uuid of the user who registered this fob',
+  WHEN_REGISTERED    BIGINT(20) comment 'millis since 1970 that this secret was registered',
+  SERIAL_NUMBER      VARCHAR(40)         NOT NULL comment 'serial number on the device',
+  TWO_FACTOR_SECRET  VARCHAR(40)         NOT NULL comment 'encrypted secret for that device',
+  TWO_FACTOR_SECRET_HASH  VARCHAR(100)    NOT NULL comment 'hashed secret so we can see if a secret has been used already'
+);
 
+CREATE UNIQUE INDEX TWO_FACTOR_DEVICE_SERIAL_PK ON TWO_FACTOR_DEVICE_SERIAL (UUID);
+
+CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_SER_IDX ON TWO_FACTOR_DEVICE_SERIAL (SERIAL_NUMBER);
+
+CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_SECRET_IDX ON TWO_FACTOR_DEVICE_SERIAL (TWO_FACTOR_SECRET);
+
+CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_HASH_IDX ON TWO_FACTOR_ADMIN.TWO_FACTOR_DEVICE_SERIAL (TWO_FACTOR_SECRET_HASH);
+
+CREATE INDEX TWO_FACTOR_DEV_SER_USER_IDX ON TWO_FACTOR_DEVICE_SERIAL (USER_UUID);
+
+alter table TWO_FACTOR_DEVICE_SERIAL add primary key (UUID);
+             
+ALTER TABLE TWO_FACTOR_DEVICE_SERIAL ADD (
+ CONSTRAINT TWO_FACTOR_DEVICE_SERIAL_R01
+ FOREIGN KEY (USER_UUID)
+ REFERENCES TWO_FACTOR_USER (UUID));
+
+ 

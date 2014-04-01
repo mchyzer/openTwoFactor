@@ -6,6 +6,7 @@ import org.hibernate.cfg.Configuration;
 import org.openTwoFactor.server.dao.TwoFactorAuditDao;
 import org.openTwoFactor.server.dao.TwoFactorBrowserDao;
 import org.openTwoFactor.server.dao.TwoFactorDaemonLogDao;
+import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
 import org.openTwoFactor.server.dao.TwoFactorIpAddressDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
@@ -76,6 +77,11 @@ public abstract class TwoFactorDaoFactory {
    */
   public abstract TwoFactorAuditDao getTwoFactorAudit();
 
+  /**
+   * @return device serial
+   */
+  public abstract TwoFactorDeviceSerialDao getTwoFactorDeviceSerial();
+  
   /**
    * @return ip address
    */

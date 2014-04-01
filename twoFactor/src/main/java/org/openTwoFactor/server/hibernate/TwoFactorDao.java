@@ -13,6 +13,7 @@ import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditView;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorDaemonLog;
+import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorIpAddress;
 import org.openTwoFactor.server.beans.TwoFactorServiceProvider;
 import org.openTwoFactor.server.beans.TwoFactorUser;
@@ -95,6 +96,7 @@ public abstract class TwoFactorDao {
         addClass(CFG, TwoFactorDaemonLog.class);
         addClass(CFG, TwoFactorIpAddress.class);
         addClass(CFG, TwoFactorServiceProvider.class);
+        addClass(CFG, TwoFactorDeviceSerial.class);
         addClass(CFG, TwoFactorUser.class);
         addClass(CFG, TwoFactorUserAgent.class);
         addClass(CFG, TwoFactorUserAttr.class);

@@ -9,6 +9,7 @@ import org.hibernate.cfg.Configuration;
 import org.openTwoFactor.server.dao.TwoFactorAuditDao;
 import org.openTwoFactor.server.dao.TwoFactorBrowserDao;
 import org.openTwoFactor.server.dao.TwoFactorDaemonLogDao;
+import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
 import org.openTwoFactor.server.dao.TwoFactorIpAddressDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
@@ -119,6 +120,14 @@ public class HibernateDaoFactory extends TwoFactorDaoFactory {
   @Override
   public TwoFactorUserViewDao getTwoFactorUserView() {
     return new HibernateTwoFactorUserViewDao();
+  }
+
+  /**
+   * @see TwoFactorDaoFactory#getTwoFactorDeviceSerial()
+   */
+  @Override
+  public TwoFactorDeviceSerialDao getTwoFactorDeviceSerial() {
+    return new HibernateTwoFactorDeviceSerialDao();
   }
 
 }

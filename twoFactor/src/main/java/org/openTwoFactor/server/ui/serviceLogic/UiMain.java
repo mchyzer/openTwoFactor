@@ -29,6 +29,7 @@ import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorAuditView;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
+import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dojo.DojoComboDataResponse;
@@ -1481,12 +1482,15 @@ public class UiMain extends UiServiceLogicBase {
    * @param loggedInUser
    * @param twoFactorPass 
    * @param subjectSource
+   * @param serialNumber if opting in by serial number, this is the serial number
+   * @param optinBySerialNumber true to optin by serial number
    * @return error message if there is one and jsp
    */
   public OptinTestSubmitView optinTestSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final String twoFactorPass, final Source subjectSource) {
+      final String userAgent, final String twoFactorPass, final Source subjectSource, 
+      final String serialNumber, final boolean optinBySerialNumber) {
     
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
     
@@ -1506,22 +1510,81 @@ public class UiMain extends UiServiceLogicBase {
 
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
       
+        
+        
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
         
         twoFactorUser.setSubjectSource(subjectSource);
         
-        String twoFactorSecret = twoFactorUser.getTwoFactorSecretTempUnencrypted();
-        
-        if (StringUtils.isBlank(twoFactorSecret)) {
-          
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitErrorInconsistent"));
-          return OptinTestSubmitView.index;
-          
-        }
-        
+        String twoFactorSecret = null;
+
         if (StringUtils.isBlank(twoFactorPass)) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          if (optinBySerialNumber) {
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+          }
           return OptinTestSubmitView.optin;
+        }
+
+        TwoFactorDeviceSerial twoFactorDeviceSerial = null;
+
+        if (optinBySerialNumber) {
+          
+          if (StringUtils.isBlank(serialNumber)) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRequired"));
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+            return OptinTestSubmitView.optin;
+            
+          }
+
+          //lets make sure the serial number exists
+          twoFactorDeviceSerial = TwoFactorDeviceSerial.retrieveBySerial(twoFactorDaoFactory, serialNumber);
+          
+          if (twoFactorDeviceSerial == null) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialNotFound"));
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+            return OptinTestSubmitView.optin;
+            
+          }
+
+          //lets see if this device has been registered to someone else
+          if (!StringUtils.isBlank(twoFactorDeviceSerial.getUserUuid()) 
+              && !StringUtils.equals(twoFactorDeviceSerial.getUserUuid(), twoFactorUser.getUuid())) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRegisteredToSomeoneElse"));
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+            return OptinTestSubmitView.optin;
+            
+          }
+ 
+          twoFactorSecret = twoFactorDeviceSerial.getTwoFactorSecretUnencrypted();
+          
+        } else {
+
+          twoFactorSecret = twoFactorUser.getTwoFactorSecretTempUnencrypted();
+
+          if (StringUtils.isBlank(twoFactorSecret)) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitErrorInconsistent"));
+            return OptinTestSubmitView.index;
+            
+          }
+        }
+
+        //lets see if the secret is registered to another user
+        {
+          TwoFactorDeviceSerial twoFactorDeviceSerialTemp = TwoFactorDeviceSerial.retrieveBySecretUnencrypted(
+              twoFactorDaoFactory, twoFactorSecret);
+          if (twoFactorDeviceSerialTemp != null && !StringUtils.isBlank(twoFactorDeviceSerialTemp.getUserUuid()) 
+              && !StringUtils.equals(twoFactorUser.getUuid(), twoFactorDeviceSerialTemp.getUserUuid())) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSecretRegisteredToSomeoneElse"));
+            return OptinTestSubmitView.optin;
+          }
+
+          //if we are registering by secret, and circumventing the serial number, register that one as taken
+          if (twoFactorDeviceSerial == null) {
+            twoFactorDeviceSerial = twoFactorDeviceSerialTemp;
+          }
         }
         
         //validate
@@ -1531,7 +1594,11 @@ public class UiMain extends UiServiceLogicBase {
           LOG.error("Error for " + loginId + " validating code not number, now: " 
               + System.currentTimeMillis() 
               + ", user-agent: " + userAgent);
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
+          if (optinBySerialNumber) {
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+          }
           return OptinTestSubmitView.optin;
         }
         
@@ -1544,12 +1611,16 @@ public class UiMain extends UiServiceLogicBase {
           LOG.error("Error for " + loginId + " validating code, now: " 
               + System.currentTimeMillis() + ": " + TwoFactorServerUtils.hostname()
               + ", user-agent: " + userAgent);
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeInvalid"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
+          if (optinBySerialNumber) {
+            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+          }
           return OptinTestSubmitView.optin;
         }
         
         //set the object
-        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
         twoFactorUser.setTwoFactorSecretTemp(null);
         twoFactorUser.setOptedIn(true);
         twoFactorUser.setSequentialPassIndex(null);
@@ -1572,6 +1643,22 @@ public class UiMain extends UiServiceLogicBase {
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
             userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+        
+        //register the device as assigned to the current user, add another audit
+        //note, wont be null if registering by secret, but matches a registered serial number
+        if (optinBySerialNumber || twoFactorDeviceSerial != null) {
+          twoFactorDeviceSerial.setUserUuid(twoFactorUser.getUuid());
+          twoFactorDeviceSerial.setWhenRegistered(System.currentTimeMillis());
+          twoFactorDeviceSerial.store(twoFactorDaoFactory);
+          
+          twoFactorRequestContainer.getTwoFactorAdminContainer().setImportSerial(serialNumber);
+          
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.REGISTER_FOB_SERIAL_NUMBER, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+              TextContainer.retrieveFromRequest().getText().get("optionStep2auditRegisterFob"),
+              null);
+        }
         
         return OptinTestSubmitView.optinSuccess;
       }
@@ -2597,7 +2684,7 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
-   * optin to two factor
+   * submit custom code
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
    * @param ipAddress 
@@ -2611,12 +2698,41 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent, String twoFactorCustomCode, final Source subjectSource) {
 
-    //validation
-    if (StringUtils.isBlank(twoFactorCustomCode)) {
-      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretRequired"));
+    String[] error = new String[1];
+    
+    twoFactorCustomCode = validateCustomCode(twoFactorCustomCode, error);
+
+    if (!StringUtils.isBlank(error[0])) {
+      twoFactorRequestContainer.setError(error[0]);
       return OptinView.index;
     }
 
+    if (StringUtils.isBlank(twoFactorCustomCode)) {
+      throw new RuntimeException("Why blank?");
+    }
+
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitSecretValueSuccess"));
+
+    return optinSetup(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress,
+        userAgent, twoFactorCustomCode, subjectSource);
+
+  }
+
+
+  /**
+   * validate a custom code and convert to a standard format
+   * @param twoFactorCustomCode
+   * @param error
+   * @return the code
+   */
+  public static String validateCustomCode(String twoFactorCustomCode, String[] error) {
+    
+    //validation
+    if (StringUtils.isBlank(twoFactorCustomCode)) {
+      error[0] = TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretRequired");
+      return null;
+    }
+    
     //strip whitespace and validate chars
     boolean isBase32 = false;
     {
@@ -2641,16 +2757,15 @@ public class UiMain extends UiServiceLogicBase {
           continue;
         }
         //bad char
-        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid"));
-        return OptinView.index;
-        
+        error[0] = TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid");
+        return null;
       }
       twoFactorCustomCode = newString.toString();
     }
     
     if (twoFactorCustomCode.length() < 6) {
-      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretNotLongEnough"));
-      return OptinView.index;
+      error[0] = TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretNotLongEnough");
+      return null;
     }
 
     if (!isBase32) {
@@ -2659,10 +2774,8 @@ public class UiMain extends UiServiceLogicBase {
       try {
         plainText = Hex.decodeHex(twoFactorCustomCode.toCharArray());
       } catch (DecoderException de) {
-        //TODO dont log the custom code, just do this for debugging temporarily
-        LOG.error("Bad hex in custom secret '" + twoFactorCustomCode + "'");
-        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid"));
-        return OptinView.index;
+        error[0] = TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid");
+        return null;
       }
 
       Base32 codec = new Base32();
@@ -2687,13 +2800,9 @@ public class UiMain extends UiServiceLogicBase {
 
     }
 
-    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitSecretValueSuccess"));
-
-    return optinSetup(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress,
-        userAgent, twoFactorCustomCode, subjectSource);
-
+    return twoFactorCustomCode.toUpperCase();
   }
-
+  
   /**
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer
@@ -2815,7 +2924,32 @@ public class UiMain extends UiServiceLogicBase {
 
   }
 
+  
 
+  /**
+   * optin to the serviceby serial of token
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinBySerialAndTest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+    String serialNumber = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumber");
+    
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, serialNumber, true);
+  
+    showJsp(optinTestSubmitView.getJsp());
+  
+  }
+  
   /**
    * optin to the service
    * @param httpServletRequest
@@ -2833,12 +2967,11 @@ public class UiMain extends UiServiceLogicBase {
     
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource);
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, null, false);
   
     showJsp(optinTestSubmitView.getJsp());
   
   }
-
 
   /**
    * add phone test code to two factor

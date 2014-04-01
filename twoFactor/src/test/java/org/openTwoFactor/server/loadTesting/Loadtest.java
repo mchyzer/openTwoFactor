@@ -70,7 +70,7 @@ public class Loadtest {
         twoFactorRequestContainer.setError(null);
 
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(daoFactory, 
-            twoFactorRequestContainer, loggedInUser, "130.91.219.176", userAgent1, passString, null);
+            twoFactorRequestContainer, loggedInUser, "130.91.219.176", userAgent1, passString, null, null, false);
 
         if (OptinTestSubmitView.optinSuccess != optinTestSubmitView) {
           throw new RuntimeException(optinTestSubmitView.name() 

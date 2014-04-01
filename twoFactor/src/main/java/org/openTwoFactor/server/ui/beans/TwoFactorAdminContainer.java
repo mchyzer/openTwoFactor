@@ -26,6 +26,35 @@ import edu.internet2.middleware.subject.Subject;
 public class TwoFactorAdminContainer {
 
   /**
+   * if we should show the serial section of the screen
+   */
+  private boolean showSerialSection;
+  
+  /**
+   * if we should show the serial section of the screen
+   * @return if show serial section
+   */
+  public boolean isShowSerialSection() {
+    return this.showSerialSection;
+  }
+
+  /**
+   * if we should show the serial section of the screen
+   * @param showSerialSection1
+   */
+  public void setShowSerialSection(boolean showSerialSection1) {
+    this.showSerialSection = showSerialSection1;
+  }
+
+  /**
+   * if allowed to register by fob serial number
+   * @return true if allowed to register by serial number
+   */
+  public boolean isAllowSerialNumberRegistration() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.allowFobSerialRegistration", true);
+  }
+  
+  /**
    * number of users emailed
    */
   private int adminEmailNumberOfUsers;
@@ -145,9 +174,12 @@ public class TwoFactorAdminContainer {
     return TwoFactorFilterJ2ee.allowedToActAsOtherUsers();
   }
 
+  /** cache of users who can send emails to all users */
   private static TwoFactorCache<String, Boolean> adminEmailCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminEmailCache", 100, false, 120, 120, false);
 
-  
+  /** cache of users who can upload new serials */
+  private static TwoFactorCache<String, Boolean> adminSerialCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminSerialCache", 100, false, 120, 120, false);
+
   /**
    * if the logged in user can send email to all users
    * @return if the logged in user can send email to ll users
@@ -174,6 +206,139 @@ public class TwoFactorAdminContainer {
     adminEmailCache.put(originalLoginid, isAdminEmail);
     
     return isAdminEmail;
+
+  }
+  
+  /**
+   * number of import fob errors
+   */
+  private int importFobErrors;
+
+  /**
+   * serial number with issue
+   */
+  private String importSerial;
+  
+  /**
+   * serial number with issue
+   * @return serial number
+   */
+  public String getImportSerial() {
+    return this.importSerial;
+  }
+
+  /**
+   * serial number with issue
+   * @param importSerial1
+   */
+  public void setImportSerial(String importSerial1) {
+    this.importSerial = importSerial1;
+  }
+
+  /**
+   * line number of fob import with issue
+   */
+  private int importFobLineNumber;
+  
+  /**
+   * line number of fob import with issue
+   * @return line number of fob import
+   */
+  public int getImportFobLineNumber() {
+    return this.importFobLineNumber;
+  }
+
+  /**
+   * line number of fob import with issue
+   * @param importFobLineNumber1
+   */
+  public void setImportFobLineNumber(int importFobLineNumber1) {
+    this.importFobLineNumber = importFobLineNumber1;
+  }
+
+  /**
+   * number of import fob errors
+   * @return number of import fob errors
+   */
+  public int getImportFobErrors() {
+    return this.importFobErrors;
+  }
+
+  /**
+   * number of import fob errors
+   * @param importFobErrors1
+   */
+  public void setImportFobErrors(int importFobErrors1) {
+    this.importFobErrors = importFobErrors1;
+  }
+
+  /**
+   * error on an import fob serial
+   */
+  private String importFobError;
+
+  /**
+   * error on an import fob serial
+   * @return import fob error
+   */
+  public String getImportFobError() {
+    return this.importFobError;
+  }
+
+  /**
+   * error on an import fob serial
+   * @param importFobError1
+   */
+  public void setImportFobError(String importFobError1) {
+    this.importFobError = importFobError1;
+  }
+
+  /**
+   * count of fob serials imported
+   */
+  private int importFobCount;
+  
+  /**
+   * count of fob serials imported
+   * @return import fob count
+   */
+  public int getImportFobCount() {
+    return this.importFobCount;
+  }
+
+  /**
+   * count of fob serials imported
+   * @param importFobCount1
+   */
+  public void setImportFobCount(int importFobCount1) {
+    this.importFobCount = importFobCount1;
+  }
+
+  /**
+   * if the logged in user can send email to all users
+   * @return if the logged in user can send email to ll users
+   */
+  public boolean isCanImportSerials() {
+
+    String originalLoginid = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs();
+
+    //see if it is in cache
+    Boolean isAdminImportSerials = adminSerialCache.get(originalLoginid);
+    if (isAdminImportSerials != null) {
+      return isAdminImportSerials;
+    }
+    
+    TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+
+    Set<String> adminUserIdsWhoCanImportSerialsSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanImportSerials();
+
+    Source theSource = TfSourceUtils.mainSource();
+
+    isAdminImportSerials = TfSourceUtils.subjectIdOrNetIdInSet(theSource, originalLoginid, adminUserIdsWhoCanImportSerialsSet);
+  
+    adminSerialCache.put(originalLoginid, isAdminImportSerials);
+    
+    return isAdminImportSerials;
 
   }
   

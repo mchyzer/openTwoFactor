@@ -137,10 +137,12 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    // printPasswordsForSecret("RPAR TWTW 4EPP CT7T ", null, null);
    // printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
     
-    printPasswordsForSecret("DUUE TNCV DGNK DXUL", null, null, 1391019502150L);
+    //printPasswordsForSecret("DUUE TNCV DGNK DXUL", null, null, 1391019502150L);
     
-//    String secret = new TwoFactorLogic().generateBase32secret(10);
-//    System.out.println(secret);
+    for (int i=0;i<100;i++) {
+      String secret = new TwoFactorLogic().generateBase32secret(10);
+      System.out.println(secret);
+    }
 //    secret = "KJARPPQYTM3E7QYR";
 //    System.out.println(secret);
 //    Base32 codec = new Base32();

@@ -81,7 +81,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "phoneVoice0", "phoneText0", 
       "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
-      "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId",
+      "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId", "serialNumbers", "serialNumber",
       
       //for status calls
       "status", "diagnosticType",

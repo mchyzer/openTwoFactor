@@ -4,6 +4,9 @@
  */
 package org.openTwoFactor.server.ui.serviceLogic;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
+import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -37,6 +41,7 @@ import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
+import au.com.bytecode.opencsv.CSVReader;
 import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
@@ -94,13 +99,35 @@ public class UiMainAdmin extends UiServiceLogicBase {
     twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
 
     //make sure user is an admin
-    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin()) {
-      throw new RuntimeException("Not an admin! " + loggedInUser);
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanLoggedInUserEmailAll()) {
+      throw new RuntimeException("Cant email all! " + loggedInUser);
     }
 
     showJsp("adminEmailAll.jsp");
   }
 
+  /**
+   * admin import serials
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void adminImportSerialsPage(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanImportSerials()) {
+      throw new RuntimeException("Cant import serials! " + loggedInUser);
+    }
+
+    showJsp("adminImportSerials.jsp");
+  }
+
+  
+  
   /**
    * submit an email to all users
    * @param httpServletRequest
@@ -114,7 +141,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
     twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
 
     //make sure user is an admin
-    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin()) {
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanLoggedInUserEmailAll()) {
       throw new RuntimeException("Not an admin! " + loggedInUser);
     }
 
@@ -164,7 +191,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         twoFactorUserLoggedIn.setSubjectSource(subjectSource);
         
         //make sure user is an admin
-        if (!twoFactorUserLoggedIn.isAdmin()) {
+        if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanLoggedInUserEmailAll()) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
           return AdminEmailSubmitView.index;
         }
@@ -768,6 +795,236 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
 
   /**
+   * import serials
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void importSerialsSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+  
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanImportSerials()) {
+      throw new RuntimeException("Cant import serials! " + loggedInUser);
+    }
+
+    String serialNumbersCsv = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumbers");
+    
+    AdminImportSerialsSubmitView adminImportSerialsSubmitView = importSerialsSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), serialNumbersCsv);
+
+    showJsp(adminImportSerialsSubmitView.getJsp());
+
+  }
+
+  /**
+   * import serials
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param importSerialCsv
+   * @param hasHeader
+   * @return page to go to
+   */
+  @SuppressWarnings("unchecked")
+  public AdminImportSerialsSubmitView importSerialsSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String importSerialCsv) {
+  
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+    
+    TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanImportSerials()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsErrorUserNotImportSerials"));
+      return AdminImportSerialsSubmitView.index;
+    }
+
+    if (StringUtils.isBlank(importSerialCsv)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsSerialsBlank"));
+      return AdminImportSerialsSubmitView.adminImportSerials;
+    }
+    
+    StringBuilder screenMessage = new StringBuilder();
+    
+    Reader originalReader = new StringReader(importSerialCsv);
+
+    //convert from CSV to 
+    CSVReader csvReader = null;
+
+    int successCount = 0;
+    int errorCount = 0;
+
+    try {
+      //note, the first row is the title
+      List<String[]> csvEntries = null;
+    
+      try {
+        csvReader = new CSVReader(originalReader);
+        csvEntries = csvReader.readAll();
+      } catch (IOException ioe) {
+        throw new RuntimeException("Error processing CSV", ioe);
+      }
+            
+      //lets get the headers
+      int serialNumberColumn = -1;
+      int secretColumn = -1;
+      
+      //must have lines
+      if (TwoFactorServerUtils.length(csvEntries) == 0) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsSerialsBlank"));
+        return AdminImportSerialsSubmitView.adminImportSerials;
+      }
+      
+      //lets go through the headers
+      String[] headers = csvEntries.get(0);
+      int headerSize = headers.length;
+      
+      if (headerSize != 2) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsErrorColumns"));
+        return AdminImportSerialsSubmitView.adminImportSerials;
+      }
+      
+      for (int i=0;i<headerSize;i++) {
+        if ("serialNumber".equalsIgnoreCase(StringUtils.trimToEmpty(headers[i]))) {
+          serialNumberColumn = i;
+        }
+        if ("secret".equalsIgnoreCase(StringUtils.trimToEmpty(headers[i]))) {
+          secretColumn = i;
+        }
+      }
+      
+      //normally start on index 1, if the first row is header
+      int startIndex = 1;
+      
+      //must pass in an id
+      if (serialNumberColumn == -1 || secretColumn == -1) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsErrorColumns"));
+        return AdminImportSerialsSubmitView.adminImportSerials;
+      }
+
+      //ok, lets go through the rows, start after the headers
+      for (int i=startIndex;i<csvEntries.size();i++) {
+        
+        twoFactorAdminContainer.setImportSerial("-");
+        
+        String[] csvEntry = csvEntries.get(i);
+        int row = i+1;
+        
+        twoFactorAdminContainer.setImportFobLineNumber(row);
+        
+        //try catch each one and see where we get
+        String serialNumber = null;
+        String secret = null;
+
+        try {
+
+          if (csvEntry.length != 2) {
+            throw new RuntimeException("Row has " + csvEntry.length + " columns, but it should have 2 columns");
+          }
+          
+          serialNumber = StringUtils.trimToEmpty(csvEntry[serialNumberColumn]); 
+          
+          twoFactorAdminContainer.setImportSerial(serialNumber);
+
+          secret = StringUtils.trimToEmpty(csvEntry[secretColumn]);
+          
+          String[] error = new String[1];
+          
+          if (StringUtils.equals("12345", serialNumber) || StringUtils.equals("23456", serialNumber) 
+              || StringUtils.equals("ABCDEFGHIJKLMNOP", secret) || StringUtils.equals("PONMLKJIIHGFEDBA", secret)) {
+            throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsNoSamples"));
+          }
+          
+          secret = UiMain.validateCustomCode(secret, error);
+          
+          if (!StringUtils.isBlank(error[0])) {
+            throw new RuntimeException(error[0]);
+          }
+          
+          TwoFactorDeviceSerial twoFactorDeviceSerial = null;
+          
+          //NOTE: this doesnt really work since the encryption is done with a timestamp
+          twoFactorDeviceSerial = TwoFactorDeviceSerial.retrieveBySecretUnencrypted(twoFactorDaoFactory, secret);
+          
+          if (twoFactorDeviceSerial != null) {
+            throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsSecretExists"));
+          }
+
+          twoFactorDeviceSerial = TwoFactorDeviceSerial.retrieveBySerial(twoFactorDaoFactory, serialNumber);
+
+          if (twoFactorDeviceSerial != null) {
+            throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsSerialExists"));
+          }
+
+          //doesnt exist, good to go
+          
+          twoFactorDeviceSerial = new TwoFactorDeviceSerial();
+          twoFactorDeviceSerial.setSerialNumber(serialNumber);
+          twoFactorDeviceSerial.setTwoFactorSecretUnencrypted(secret);
+          twoFactorDeviceSerial.store(twoFactorDaoFactory);
+          
+          successCount++;
+          
+        } catch (Exception e) {
+          LOG.warn("error on row: " + row, e);
+          
+          errorCount++;
+
+          twoFactorAdminContainer.setImportFobError(e.getMessage());
+          
+          screenMessage.append("<br />").append(TextContainer.retrieveFromRequest().getText().get("adminImportSerialsErrorOnRow"));
+          
+        }
+      
+      }
+      
+    } finally {
+      if (originalReader != null) {
+        try {
+          originalReader.close();
+        } catch (Exception e) {
+          LOG.warn("error", e);
+        }
+      }
+      if (csvReader != null) {
+        try {
+          csvReader.close();
+        } catch (Exception e) {
+          LOG.warn("error", e);
+        }
+      }
+    }
+    
+    twoFactorAdminContainer.setImportFobErrors(errorCount);
+    twoFactorAdminContainer.setImportFobCount(successCount);
+    
+    //make an audit message
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.IMPORT_FOB_SERIALS, ipAddress, 
+        userAgent, twoFactorUserLoggedIn.getUuid(),
+        twoFactorUserLoggedIn.getUuid(),  
+        TextContainer.retrieveFromRequest().getText().get("auditsImportSerialsDescription"), null);
+
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsImportSerialsDescription")
+        + screenMessage.toString());
+    
+    return AdminImportSerialsSubmitView.admin;
+  }
+
+
+  /**
    * 
    */
   public static enum AdminSubmitView {
@@ -829,6 +1086,45 @@ public class UiMainAdmin extends UiServiceLogicBase {
      * @param theJsp
      */
     private AdminEmailSubmitView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum AdminImportSerialsSubmitView {
+    
+    /**
+     */
+    admin("admin.jsp"),
+    
+    /**
+     */
+    index("index.jsp"),
+    
+    /**
+     */
+    adminImportSerials("adminImportSerials.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private AdminImportSerialsSubmitView(String theJsp) {
       this.jsp = theJsp;
     }
     

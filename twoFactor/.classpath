@@ -6,6 +6,7 @@
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/activation.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/mail.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/csrfguard.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/opencsv.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/nonwebapp/servlet.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-logging.jar"/>

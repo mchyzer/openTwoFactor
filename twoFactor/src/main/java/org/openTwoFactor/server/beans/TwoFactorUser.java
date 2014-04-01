@@ -569,8 +569,8 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
-   * two factor secret formatted
-   * @return the secret formatted
+   * two factor secret unencrypted
+   * @return the secret unencrypted
    */
   public String getTwoFactorSecretUnencrypted() {
     return EncryptionKey.decrypt(this.getTwoFactorSecret());

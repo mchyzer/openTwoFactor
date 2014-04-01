@@ -72,7 +72,8 @@ public class TwoFactorUiServlet extends HttpServlet {
       UiMain.class.getSimpleName() + ".uiTestPersonPickerCombo",
       UiMainAdmin.class.getSimpleName() + ".adminIndex",
       UiMainAdmin.class.getSimpleName() + ".personPicker",
-      UiMainAdmin.class.getSimpleName() + ".adminEmailAllPage"
+      UiMainAdmin.class.getSimpleName() + ".adminEmailAllPage",
+      UiMainAdmin.class.getSimpleName() + ".adminImportSerialsPage"
   );
 
   /** logger */
