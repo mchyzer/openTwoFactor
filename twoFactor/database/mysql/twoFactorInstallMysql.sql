@@ -679,59 +679,88 @@ commit;
 
 CREATE TABLE TWO_FACTOR_REPORT
 (
-  UUID                     VARCHAR(40)    NOT NULL comment 'uuid primary key of this row',
-  LAST_UPDATED             BIGINT(20)               NOT NULL comment 'when this row was last updated',
-  LAST_SENT                BIGINT(20) comment 'timestamp of when this report was last sent',
-  REPORT_TYPE              VARCHAR(32)    NOT NULL comment 'must be of the TwoFactorReportType enum, e.g. group or rollup',
-  SEND_TOS                 VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to',
-  SEND_CCS                 VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to as cc',
-  SEND_BCCS                VARCHAR(4000) comment 'list of subject ids or identifiers that the report should be sent to as a bcc',
-  REPORT_NAME_FRIENDLY     VARCHAR(200)   NOT NULL comment 'friendly name is included in the report email',
-  SEND_FIRST_ON_TIMESTAMP  BIGINT(20) comment 'timestamp of the when the first should be sent... e.g. if you want it sent monday morning at 8am, enter a timestamp of monday morning 8am in the past',
-  DAYS_BETWEEN_SEND        BIGINT(20) comment 'if you want a weekly report, enter 7.  If you want every 4 weeks, enter 28',
-  REPORT_NAME_SYSTEM       VARCHAR(4000)  NOT NULL comment 'some system key on the report which can be used for queries to populate data and should not change'
+  UUID                  VARCHAR(40)       NOT NULL comment 'uuid primary key of this row',
+  LAST_UPDATED          BIGINT(20)                  NOT NULL comment 'when this row was last updated',
+  REPORT_TYPE           VARCHAR(32)       NOT NULL comment 'must be of the TwoFactorReportType enum, e.g. group or rollup',
+  REPORT_NAME_FRIENDLY  VARCHAR(200)      NOT NULL comment 'friendly name is included in the report email',
+  REPORT_NAME_SYSTEM    VARCHAR(400)     NOT NULL comment 'some system key on the report which can be used for queries to populate data and should not change',
+  VERSION_NUMBER        BIGINT(20)                  NOT NULL comment 'column for DAO optimistic locking'
 );
 
+CREATE UNIQUE INDEX TF_REPORT_NAME_SYSTEM_IDX ON TWO_FACTOR_REPORT (REPORT_NAME_SYSTEM);
 
-CREATE INDEX TF_REPORT_NAME_SYSTEM_IDX ON TWO_FACTOR_REPORT (REPORT_NAME_SYSTEM(200));
 
 CREATE INDEX TF_REPORT_TYPE_IDX ON TWO_FACTOR_REPORT (REPORT_TYPE);
 
+
 CREATE UNIQUE INDEX TWO_FACTOR_REPORT_PK ON TWO_FACTOR_REPORT (UUID);
 
-alter table TWO_FACTOR_REPORT add primary key (UUID);
+CREATE INDEX TWO_FACTOR_REPORT_IDX ON TWO_FACTOR_REPORT (USER_UUID);
+
+Alter table TWO_FACTOR_REPORT
+  add primary key (UUID);
+
+
 
 
 CREATE TABLE TWO_FACTOR_REPORT_ROLLUP
 (
-  UUID                VARCHAR(40)         NOT NULL comment 'uuid of this report',
-  LAST_UPDATED        BIGINT(20)          NOT NULL comment 'when this record was last updated',
-  PARENT_REPORT_UUID  VARCHAR(40)         NOT NULL comment 'the report which is being run',
-  CHILD_REPORT_UUID   VARCHAR(40)         NOT NULL comment 'the child reports there are in this report'
+  UUID                VARCHAR(40)         NOT NULL comment 'unique id for the row',
+  LAST_UPDATED        BIGINT(20)                    NOT NULL comment 'millis since 1970 that this record was edited',
+  PARENT_REPORT_UUID  VARCHAR(40)         NOT NULL comment 'report uuid that implies another report',
+  CHILD_REPORT_UUID   VARCHAR(40)         NOT NULL comment 'report uuid that is implied by another report',
+  VERSION_NUMBER      BIGINT(20)                    NOT NULL comment 'incrementing integer for DAO versioning and optimistic locking'
 );
 
 
-CREATE UNIQUE INDEX TWO_FACTOR_REPORT_ROLLUP_PK ON TWO_FACTOR_REPORT_ROLLUP
-(UUID);
-
-CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX1 ON TWO_FACTOR_REPORT_ROLLUP
-(PARENT_REPORT_UUID);
 
 
-CREATE INDEX TWO_FACTOR_REPORT_ROLLUP_IDX2 ON TWO_FACTOR_REPORT_ROLLUP
-(CHILD_REPORT_UUID);
+CREATE UNIQUE INDEX TWO_FACTOR_REPORT_ROLLUP_PK ON TWO_FACTOR_REPORT_ROLLUP (UUID);
 
-alter table TWO_FACTOR_REPORT_ROLLUP add primary key (UUID);
+Alter table TWO_FACTOR_REPORT_ROLLUP add primary key (UUID);
 
-ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
-  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R01 
-  FOREIGN KEY (PARENT_REPORT_UUID) 
+CREATE UNIQUE INDEX TF_REPORT_ROLLUP_PARENT_IDX ON TWO_FACTOR_REPORT_ROLLUP
+  (PARENT_REPORT_UUID, CHILD_REPORT_UUID);
+
+CREATE INDEX TF_REPORT_ROLLUP_CHILD_IDX ON TWO_FACTOR_REPORT_ROLLUP (CHILD_REPORT_UUID);
+
+ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD  (
+CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R01
+ FOREIGN KEY (PARENT_REPORT_UUID)
+ REFERENCES TWO_FACTOR_REPORT (UUID));
+ 
+ ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
+ CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R02
+  FOREIGN KEY (CHILD_REPORT_UUID)
   REFERENCES TWO_FACTOR_REPORT (UUID));
+  
 
-ALTER TABLE TWO_FACTOR_REPORT_ROLLUP ADD (
-  CONSTRAINT TWO_FACTOR_REPORT_ROLLUP_R02 
-  FOREIGN KEY (CHILD_REPORT_UUID) 
-  REFERENCES TWO_FACTOR_REPORT (UUID));
+CREATE TABLE TWO_FACTOR_REPORT_PRIVILEGE
+(
+  UUID            VARCHAR(40)             NOT NULL comment 'uuid uniquely identifies each row',
+  LAST_UPDATED    BIGINT(20)                        NOT NULL comment 'millis since 1970 that this row was last updated',
+  VERSION_NUMBER  BIGINT(20)                        NOT NULL comment 'incrementing number used by the DAO for versioning and optimistic locking',
+  USER_UUID       VARCHAR(40)             NOT NULL comment 'uuid foreign key to the user table is the user who can access the report',
+  REPORT_UUID     VARCHAR(40)             NOT NULL comment 'uuid foreign key to the report table is the report that the user can access'
+);
+
+
+Alter table TWO_FACTOR_REPORT_PRIVILEGE add primary key (UUID);
+
+CREATE INDEX TF_REPORT_PRIVILEGE_USER_IDX ON TWO_FACTOR_REPORT_PRIVILEGE (USER_UUID);
+
+CREATE INDEX TF_REPORT_PRIVILEGE_REPORT_IDX ON TWO_FACTOR_REPORT_PRIVILEGE (REPORT_UUID);
+
+ALTER TABLE TWO_FACTOR_REPORT_PRIVILEGE ADD (
+CONSTRAINT TWO_FACTOR_REPORT_PRIVILEGER01
+ FOREIGN KEY (USER_UUID)
+ REFERENCES TWO_FACTOR_USER (UUID));
+
+ALTER TABLE TWO_FACTOR_REPORT_PRIVILEGE ADD (
+CONSTRAINT TWO_FACTOR_REPORT_PRIVILEGER02
+ FOREIGN KEY (REPORT_UUID)
+ REFERENCES TWO_FACTOR_REPORT (UUID));
+
 
 
 CREATE TABLE TWO_FACTOR_DEVICE_SERIAL
@@ -753,7 +782,7 @@ CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_SER_IDX ON TWO_FACTOR_DEVICE_SERIAL (SERI
 
 CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_SECRET_IDX ON TWO_FACTOR_DEVICE_SERIAL (TWO_FACTOR_SECRET);
 
-CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_HASH_IDX ON TWO_FACTOR_ADMIN.TWO_FACTOR_DEVICE_SERIAL (TWO_FACTOR_SECRET_HASH);
+CREATE UNIQUE INDEX TWO_FACTOR_DEV_SER_HASH_IDX ON TWO_FACTOR_DEVICE_SERIAL (TWO_FACTOR_SECRET_HASH);
 
 CREATE INDEX TWO_FACTOR_DEV_SER_USER_IDX ON TWO_FACTOR_DEVICE_SERIAL (USER_UUID);
 

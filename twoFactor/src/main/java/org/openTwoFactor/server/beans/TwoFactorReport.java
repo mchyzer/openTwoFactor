@@ -8,7 +8,6 @@ package org.openTwoFactor.server.beans;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
@@ -40,17 +39,14 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
     
   }
 
-  /** constant for field name for: browserTrustedUuid */
-  public static final String FIELD_BROWSER_TRUSTED_UUID = "browserTrustedUuid";
+  /** constant for field name for: reportNameFriendly */
+  public static final String FIELD_REPORT_NAME_FRIENDLY = "reportNameFriendly";
 
-  /** constant for field name for: trustedBrowser */
-  public static final String FIELD_TRUSTED_BROWSER = "trustedBrowser";
+  /** constant for field name for: reportNameSystem */
+  public static final String FIELD_REPORT_NAME_SYSTEM = "reportNameSystem";
 
-  /** constant for field name for: userUuid */
-  public static final String FIELD_USER_UUID = "userUuid";
-
-  /** constant for field name for: whenTrusted */
-  public static final String FIELD_WHEN_TRUSTED = "whenTrusted";
+  /** constant for field name for: reportType */
+  public static final String FIELD_REPORT_TYPE = "reportType";
 
   
   
@@ -59,13 +55,13 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
    */
   private static final Set<String> DB_VERSION_FIELDS = Collections.unmodifiableSet(
         TwoFactorServerUtils.toSet(
-      FIELD_BROWSER_TRUSTED_UUID,
       FIELD_DELETED_ON,
       FIELD_LAST_UPDATED,
-      FIELD_TRUSTED_BROWSER,
       FIELD_UUID,
       FIELD_VERSION_NUMBER,
-      FIELD_WHEN_TRUSTED
+      FIELD_REPORT_NAME_FRIENDLY,
+      FIELD_REPORT_NAME_SYSTEM,
+      FIELD_REPORT_TYPE
       ));
 
   /**
@@ -76,95 +72,6 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
     //lets get the state from the db so we know what has changed
     this.assignDbVersion(TwoFactorServerUtils.clone(this, DB_VERSION_FIELDS));
 
-  }
-
-  /**
-   * WHEN_TRUSTED          INTEGER
-   * timestamp of when the browser was last trusted
-   */
-  private long whenTrusted;
-  
-  /**
-   * WHEN_TRUSTED          INTEGER
-   * timestamp of when the browser was last trusted
-   * @return the whenTrusted
-   */
-  public long getWhenTrusted() {
-    return this.whenTrusted;
-  }
-  
-  /**
-   * WHEN_TRUSTED          INTEGER
-   * timestamp of when the browser was last trusted
-   * @param whenTrusted1 the whenTrusted to set
-   */
-  public void setWhenTrusted(long whenTrusted1) {
-    this.whenTrusted = whenTrusted1;
-  }
-
-  /**
-   * TRUSTED_BROWSER       VARCHAR2(1 BYTE)        NOT NULL,
-   * if the browser is trusted (indicated by user)
-   */
-  private boolean trustedBrowser;
-
-  
-  
-  
-  /**
-   * TRUSTED_BROWSER       VARCHAR2(1 BYTE)        NOT NULL,
-   * if the browser is trusted (indicated by user)
-   * @return the trustedBrowser
-   */
-  public boolean isTrustedBrowser() {
-    return this.trustedBrowser;
-  }
-
-  /**
-   * TRUSTED_BROWSER       VARCHAR2(1 BYTE)        NOT NULL,
-   * if the browser is trusted (indicated by user)
-   * @param trustedBrowser1 the trustedBrowser to set
-   */
-  public void setTrustedBrowser(boolean trustedBrowser1) {
-    this.trustedBrowser = trustedBrowser1;
-  }
-
-  /**
-   * BROWSER_TRUSTED_UUID  VARCHAR2(40 CHAR)       NOT NULL,
-   * the cookie value of the, encrypted
-   */
-  private String browserTrustedUuid;
-  
-  /**
-   * BROWSER_TRUSTED_UUID  VARCHAR2(40 CHAR)       NOT NULL,
-   * the cookie value of the, encrypted
-   * @return the browserTrustedUuid
-   */
-  public String getBrowserTrustedUuid() {
-    return this.browserTrustedUuid;
-  }
-  
-  /**
-   * BROWSER_TRUSTED_UUID  VARCHAR2(40 CHAR)       NOT NULL,
-   * the cookie value of the, encrypted
-   * @param browserTrustedUuid1 the browserTrustedUuid to set
-   */
-  public void setBrowserTrustedUuid(String browserTrustedUuid1) {
-    this.browserTrustedUuid = browserTrustedUuid1;
-  }
-
-  /**
-   * cookie value unencrypted
-   * @param browserTrustedUuidUnencrypted
-   */
-  public void setBrowserTrustedUuidUnencrypted(String browserTrustedUuidUnencrypted) {
-    if (StringUtils.isBlank(browserTrustedUuidUnencrypted)) {
-      this.setBrowserTrustedUuid(browserTrustedUuidUnencrypted); 
-      
-    } else {
-      String browserTrustedUuidEncrypted = encryptBrowserUserUuid(browserTrustedUuidUnencrypted);
-      this.setBrowserTrustedUuid(browserTrustedUuidEncrypted);
-    }
   }
 
   /**
@@ -179,48 +86,23 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
   }
   
   /**
-   * foreign key to the user table
-   * USER_UUID             VARCHAR2(40 CHAR),
-   */
-  private String userUuid;
-
-  /**
    * number of inserts and updates
    */
   static int testDeletes = 0;
 
   
   /**
-   * foreign key to the user table
-   * USER_UUID             VARCHAR2(40 CHAR),
-   * @return the userUuid
-   */
-  public String getUserUuid() {
-    return this.userUuid;
-  }
-
-  
-  /**
-   * foreign key to the user table
-   * USER_UUID             VARCHAR2(40 CHAR),
-   * @param userUuid1 the userUuid to set
-   */
-  public void setUserUuid(String userUuid1) {
-    this.userUuid = userUuid1;
-  }
-
-  /**
    * fields which are included in clone
    */
   private static final Set<String> CLONE_FIELDS = Collections.unmodifiableSet(
         TwoFactorServerUtils.toSet(
-      FIELD_BROWSER_TRUSTED_UUID,
       FIELD_DELETED_ON,
       FIELD_LAST_UPDATED,
-      FIELD_TRUSTED_BROWSER,
       FIELD_UUID,
       FIELD_VERSION_NUMBER,
-      FIELD_WHEN_TRUSTED
+      FIELD_REPORT_NAME_FRIENDLY,
+      FIELD_REPORT_NAME_SYSTEM,
+      FIELD_REPORT_TYPE
       ));
 
 
@@ -229,13 +111,13 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
    */
   private static final Set<String> DB_NEEDS_UPDATE_FIELDS = Collections.unmodifiableSet(
         TwoFactorServerUtils.toSet(
-            FIELD_BROWSER_TRUSTED_UUID,
             FIELD_DELETED_ON,
             FIELD_LAST_UPDATED,
-            FIELD_TRUSTED_BROWSER,
             FIELD_UUID,
             FIELD_VERSION_NUMBER,
-            FIELD_WHEN_TRUSTED
+            FIELD_REPORT_NAME_FRIENDLY,
+            FIELD_REPORT_NAME_SYSTEM,
+            FIELD_REPORT_TYPE
         ));
 
   /**
@@ -258,7 +140,7 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
   private static final Log LOG = TwoFactorServerUtils.getLog(TwoFactorReport.class);
 
   /**
-   * 
+   * @see TwoFactorHibernateBeanBase
    */
   @Override
   public void delete(TwoFactorDaoFactory twoFactorDaoFactory) {
@@ -266,5 +148,70 @@ public class TwoFactorReport extends TwoFactorHibernateBeanBase {
     LOG.debug("");
   }
 
+  /**
+   * must be of the TwoFactorReportType enum, e.g. group or rollup
+   */
+  private String reportType;
+
+  /**
+   * must be of the TwoFactorReportType enum, e.g. group or rollup
+   * @return reportType
+   */
+  public String getReportType() {
+    return this.reportType;
+  }
+
+  /**
+   * must be of the TwoFactorReportType enum, e.g. group or rollup
+   * @param reportType1
+   */
+  public void setReportType(String reportType1) {
+    this.reportType = reportType1;
+  }
+  
+  /**
+   * friendly name is included in the report UI
+   */
+  private String reportNameFriendly;
+
+  /**
+   * friendly name is included in the report UI
+   * @return friendly name
+   */
+  public String getReportNameFriendly() {
+    return this.reportNameFriendly;
+  }
+
+  /**
+   * friendly name is included in the report UI
+   * @param reportNameFriendly1
+   */
+  public void setReportNameFriendly(String reportNameFriendly1) {
+    this.reportNameFriendly = reportNameFriendly1;
+  }
+  
+  /**
+   * some system key on the report which can be used for queries to populate data and should not change
+   */
+  private String reportNameSystem;
+
+  /**
+   * some system key on the report which can be used for queries to populate data and should not change
+   * @return system name
+   */
+  public String getReportNameSystem() {
+    return this.reportNameSystem;
+  }
+
+  /**
+   * some system key on the report which can be used for queries to populate data and should not change
+   * @param reportNameSystem1
+   */
+  public void setReportNameSystem(String reportNameSystem1) {
+    this.reportNameSystem = reportNameSystem1;
+  }
+  
+  
+  
 }
   
