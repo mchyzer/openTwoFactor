@@ -1,4 +1,4 @@
-Currently on dojo 1.8.3
+Currently on dojo version 1.8.3
 
 ########################################################
 0. Filtering select format:
