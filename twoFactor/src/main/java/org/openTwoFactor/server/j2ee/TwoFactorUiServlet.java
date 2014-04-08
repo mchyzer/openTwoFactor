@@ -73,7 +73,12 @@ public class TwoFactorUiServlet extends HttpServlet {
       UiMainAdmin.class.getSimpleName() + ".adminIndex",
       UiMainAdmin.class.getSimpleName() + ".personPicker",
       UiMainAdmin.class.getSimpleName() + ".adminEmailAllPage",
-      UiMainAdmin.class.getSimpleName() + ".adminImportSerialsPage"
+      UiMainAdmin.class.getSimpleName() + ".adminImportSerialsPage",
+      UiMainAdmin.class.getSimpleName() + ".reportsIndex",
+      UiMainAdmin.class.getSimpleName() + ".reportsAdd",
+      UiMainAdmin.class.getSimpleName() + ".reportsEdit",
+      UiMainAdmin.class.getSimpleName() + ".reportsPrivilegesEdit",
+      UiMainAdmin.class.getSimpleName() + ".reportsRollupsEdit"
   );
 
   /** logger */
@@ -176,7 +181,6 @@ public class TwoFactorUiServlet extends HttpServlet {
         }
       }
 
-      
       //I think we are all post all the time, right?  ok, most of the time
       if (!StringUtils.equalsIgnoreCase("post", request.getMethod() )) {
         if (!operationsOkGet.contains(classAndMethodName)) {

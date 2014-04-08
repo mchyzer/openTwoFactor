@@ -371,7 +371,40 @@ public enum TwoFactorAuditAction {
     }
     
   }, 
+
+  /**
+   * edit report
+   */
+  ADMIN_REPORT_EDIT {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAdminReportEdit";
+    }
+    
+  }, 
   
+  /**
+   * view report
+   */
+  REPORT_VIEW {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsReportView";
+    }
+    
+  }, 
+  
+
   /**
    * untrust browsers
    */

@@ -310,13 +310,13 @@ table.tfDarkDataTable tr.tfTableHeader th a.tfLinkButton {
 }
 
 table.tfDarkDataTable th, table.tfDarkDataTable td, table.tfDarkDataTable th a.tfSortHeader {
-    font-size: 11px;
+    font-size: 1em;
     text-decoration: none;
     padding-top: 0px;
     padding-right: 0px;
     padding-bottom: 0px;
     padding-left: 0px;
-    height: 16px;
+    height: 1.3em;
 }
 table.tfDarkDataTable th, table.tfDarkDataTable td {
     padding-right: 2px;
@@ -358,13 +358,17 @@ table.tfDarkDataTable tr {
 }
 /* gray rows in table */
 table.tfDarkDataTable tr.tfEven,
-table.tfDarkDataTable tr.tfEven td table tr {
+table.tfDarkDataTable tr.tfEven td table tr,
+table.tfDarkDataTable tr:nth-child(even),
+table.tfDarkDataTable tr:nth-child(even) td table tr {
       background-color: #dddddd;
 }
 /* white rows in table, start with white */
 table.tfDarkDataTable tr.tfOdd,
-table.tfDarkDataTable tr.tfOdd td table tr {
-      background-color: #ffffff;
+table.tfDarkDataTable tr.tfOdd td table tr,
+table.tfDarkDataTable tr:nth-child(odd),
+table.tfDarkDataTable tr:nth-child(odd) td table tr {
+  background-color: #ffffff;
 }
 /* new rows in table should be light green */
 table.tfDarkDataTable tr.tfNew,

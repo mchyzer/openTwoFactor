@@ -23,6 +23,12 @@ public interface TwoFactorUserDao {
   public List<TwoFactorUser> retrieveUsersWhoPickedThisUserToOptThemOut(String uuid);
   
   /**
+   * find the users who have privileges in a report
+   * @return the list of users
+   */
+  public List<TwoFactorUser> retrieveUsersWhoHavePrivilegesInReport();
+  
+  /**
    * retrieve users that are deleted for longer than a certain amount of time
    * @param selectBeforeThisMilli is the millis since 1970 where records should be older
    * @return the users

@@ -9,6 +9,10 @@ import org.openTwoFactor.server.dao.TwoFactorBrowserDao;
 import org.openTwoFactor.server.dao.TwoFactorDaemonLogDao;
 import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
 import org.openTwoFactor.server.dao.TwoFactorIpAddressDao;
+import org.openTwoFactor.server.dao.TwoFactorReportDao;
+import org.openTwoFactor.server.dao.TwoFactorReportDataDao;
+import org.openTwoFactor.server.dao.TwoFactorReportPrivilegeDao;
+import org.openTwoFactor.server.dao.TwoFactorReportRollupDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
@@ -128,6 +132,39 @@ public class TfMemoryDaoFactory extends TwoFactorDaoFactory {
   @Override
   public TwoFactorDeviceSerialDao getTwoFactorDeviceSerial() {
     return new TfMemoryDeviceSerialDao();
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorReport()
+   */
+  @Override
+  public TwoFactorReportDao getTwoFactorReport() {
+    return new TfMemoryReportDao();
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorReportPrivilege()
+   */
+  @Override
+  public TwoFactorReportPrivilegeDao getTwoFactorReportPrivilege() {
+    return new TfMemoryReportPrivilegeDao();
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorReportRollup()
+   */
+  @Override
+  public TwoFactorReportRollupDao getTwoFactorReportRollup() {
+    return new TfMemoryReportRollupDao();
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorReportData()
+   */
+  @Override
+  public TwoFactorReportDataDao getTwoFactorReportData() {
+    //need to do something for this at some point
+    return null;
   }
 
 }

@@ -82,10 +82,12 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
       "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId", "serialNumbers", "serialNumber",
+      "reportUuid", "reportType", "reportNameSystem", "reportNameDisplay", "reportNameSystemSelect",
+      "reportPrivilegeUuid", "parentReportUuid", "childReportUuid", "reportRollupUuid", 
       
       //for status calls
       "status", "diagnosticType",
-      
+
       "OWASP_CSRFTOKEN"
       );
 

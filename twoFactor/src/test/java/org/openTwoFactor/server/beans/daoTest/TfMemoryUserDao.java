@@ -150,4 +150,11 @@ public class TfMemoryUserDao implements TwoFactorUserDao {
     return count;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserDao#retrieveUsersWhoHavePrivilegesInReport()
+   */
+  public List<TwoFactorUser> retrieveUsersWhoHavePrivilegesInReport() {
+    throw new RuntimeException("Not implemented");
+  }
+
 }

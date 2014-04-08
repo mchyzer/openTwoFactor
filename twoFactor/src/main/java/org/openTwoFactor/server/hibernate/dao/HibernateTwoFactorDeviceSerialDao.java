@@ -25,8 +25,6 @@ public class HibernateTwoFactorDeviceSerialDao implements TwoFactorDeviceSerialD
    * @param args
    */
   public static void main(String[] args) {
-    System.out.println(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedInUsers());
-    System.out.println(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedOutUsers());
   }
 
 

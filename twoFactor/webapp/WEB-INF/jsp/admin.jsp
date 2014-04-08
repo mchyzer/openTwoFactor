@@ -170,6 +170,17 @@
     
   </c:if>  
 
+  <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canAdminReports}">
+    
+    &nbsp; &nbsp;
+    
+    <form action="../../twoFactorAdminUi/app/UiMainAdmin.reportsIndex" method="get" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonAdminReportAdmin']}" class="tfLinkButton"
+      type="submit" />
+    </form>
+    
+  </c:if>  
+
   <br /><br />
   
   <%@ include file="../assetsJsp/commonAbout.jsp"%>

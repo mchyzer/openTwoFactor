@@ -7,6 +7,8 @@ package org.openTwoFactor.server.ui.serviceLogic;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,6 +24,11 @@ import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
+import org.openTwoFactor.server.beans.TwoFactorReport;
+import org.openTwoFactor.server.beans.TwoFactorReportData;
+import org.openTwoFactor.server.beans.TwoFactorReportPrivilege;
+import org.openTwoFactor.server.beans.TwoFactorReportRollup;
+import org.openTwoFactor.server.beans.TwoFactorReportType;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -107,6 +114,317 @@ public class UiMainAdmin extends UiServiceLogicBase {
   }
 
   /**
+   * reports index
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsIndex(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    showJsp("adminReportsIndex.jsp");
+
+  }
+  
+  
+  /**
+   * reports privileges edit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsPrivilegesEdit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    reportsPrivilegesEditLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource());
+    
+    showJsp("adminReportsPrivileges.jsp");
+
+  }
+  
+  /**
+   * reports edit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsEdit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    reportsEditLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource());
+    
+    showJsp("adminReportsEdit.jsp");
+
+  }
+
+  
+  
+  /**
+   * reports privileges delete
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsPrivilegesDelete(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    String reportPrivilegeUuid = httpServletRequest.getParameter("reportPrivilegeUuid");
+    
+    reportsPrivilegesDeleteLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportPrivilegeUuid);
+    
+    showJsp("adminReportsPrivileges.jsp");
+
+  }
+
+  /**
+   * delete a report, show the reports edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param reportPrivilegeUuid
+   *
+   */
+  public void reportsPrivilegesDeleteLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String reportPrivilegeUuid) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(reportPrivilegeUuid)) {
+          throw new RuntimeException("Why is reportUuid blank?");
+        }
+
+        TwoFactorReportPrivilege twoFactorReportPrivilege = TwoFactorReportPrivilege.retrieveByUuid(twoFactorDaoFactory, reportPrivilegeUuid);
+
+        
+        if (twoFactorReportPrivilege == null) {
+          throw new RuntimeException("Why is report not found?");
+        }
+
+        TwoFactorReport twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportPrivilege.getReportUuid());
+        TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, twoFactorReportPrivilege.getUserUuid());
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        twoFactorReportPrivilege.delete(twoFactorDaoFactory);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), "Deleted privilege to " + twoFactorReport.getReportNameSystem() + ", " 
+                + twoFactorReport.getReportNameFriendly() + ", for " + twoFactorUser.getLoginid() 
+                + ", " + twoFactorUser.getDescriptionAdmin(), null);
+
+        
+        
+        return null;
+      }
+    });
+
+    reportsPrivilegesEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+    
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsPrivilegeDeleteSuccess"));
+      
+
+  }
+  
+  /**
+   * reports edit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsDelete(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    String reportUuid = httpServletRequest.getParameter("reportUuid");
+    
+    reportsDeleteLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportUuid);
+    
+    showJsp("adminReportsEdit.jsp");
+
+  }
+
+  /**
+   * delete a report, show the reports edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param reportUuid
+   *
+   */
+  public void reportsDeleteLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String reportUuid) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(reportUuid)) {
+          throw new RuntimeException("Why is reportUuid blank?");
+        }
+
+        TwoFactorReport twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, reportUuid);
+
+        if (twoFactorReport == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditReportNotFound"));
+          return null;
+        }
+        
+        if (twoFactorReport.retrieveChildRollups(twoFactorDaoFactory).size() > 0) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditReportCantDeleteChildRollups"));
+          return null;          
+        }
+
+        if (twoFactorReport.retrieveParentRollups(twoFactorDaoFactory).size() > 0) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditReportCantDeleteParentRollups"));
+          return null;          
+        }
+
+        if (twoFactorReport.retrievePrivileges(twoFactorDaoFactory).size() > 0) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditReportCantDeletePrivileges"));
+          return null;          
+        }
+        twoFactorReport.delete(twoFactorDaoFactory);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), "Deleted report: " + twoFactorReport.getUuid() + ", " 
+                + twoFactorReport.getReportNameSystem() + ", " + twoFactorReport.getReportNameFriendly(), null);
+        
+        reportsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+        
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditReportDeleteSuccess"));
+          
+        return null;
+      }
+    });
+    
+  }
+  
+  
+  
+  /**
+   * show the reports edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   *
+   */
+  public void reportsEditLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+    
+    twoFactorUserUsingApp.setSubjectSource(subjectSource);
+
+    //make sure user is an admin
+    if (!twoFactorUserUsingApp.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    //lets get all the reports and set them in the admin container bean
+    List<TwoFactorReport> twoFactorReports = TwoFactorReport.retrieveAll(twoFactorDaoFactory);
+    
+    twoFactorAdminContainer.setReports(twoFactorReports);
+    
+    //setup the drop down
+    List<String> reportNameSystems = TwoFactorReportData.retrieveReportNameSystems(twoFactorDaoFactory);
+    twoFactorAdminContainer.setReportNameSystems(reportNameSystems);
+    
+
+  }
+  
+  /**
+   * reports rollups edit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsRollupsEdit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    reportsRollupsEditLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource());
+
+    showJsp("adminReportsRollups.jsp");
+
+  }
+  
+  
+  
+  /**
    * admin import serials
    * @param httpServletRequest
    * @param httpServletResponse
@@ -145,12 +463,12 @@ public class UiMainAdmin extends UiServiceLogicBase {
       throw new RuntimeException("Not an admin! " + loggedInUser);
     }
 
-    String checkedAdminAllReallySendString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("checkedAdminAllReallySend");
+    String checkedAdminAllReallySendString = httpServletRequest.getParameter("checkedAdminAllReallySend");
 
     boolean checkedAdminAllReallySend = TwoFactorServerUtils.booleanValue(checkedAdminAllReallySendString, false);
 
-    String emailSubject = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("emailSubject");
-    String emailBody = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("emailBody");
+    String emailSubject = httpServletRequest.getParameter("emailSubject");
+    String emailBody = httpServletRequest.getParameter("emailBody");
 
     Source subjectSource = TfSourceUtils.mainSource();
     
@@ -168,8 +486,10 @@ public class UiMainAdmin extends UiServiceLogicBase {
    * @param ipAddress 
    * @param userAgent 
    * @param loggedInUser
-   * @param userIdOperatingOn 
    * @param subjectSource 
+   * @param emailSubject 
+   * @param emailBody 
+   * @param sendEmailToUsers 
    * @return page to go to
    */
   public AdminEmailSubmitView emailAllUsersSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
@@ -340,7 +660,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
-    String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOn");
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
 
     Source subjectSource = TfSourceUtils.mainSource();
 
@@ -559,7 +879,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
-    String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOnName");
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOnName");
 
     Source subjectSource = TfSourceUtils.mainSource();
     
@@ -668,7 +988,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
-    String userIdOperatingOn = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("userIdOperatingOn");
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOnName");
 
     Source subjectSource = TfSourceUtils.mainSource();
 
@@ -811,7 +1131,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
       throw new RuntimeException("Cant import serials! " + loggedInUser);
     }
 
-    String serialNumbersCsv = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumbers");
+    String serialNumbersCsv = httpServletRequest.getParameter("serialNumbers");
     
     AdminImportSerialsSubmitView adminImportSerialsSubmitView = importSerialsSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
@@ -829,7 +1149,6 @@ public class UiMainAdmin extends UiServiceLogicBase {
    * @param userAgent 
    * @param loggedInUser
    * @param importSerialCsv
-   * @param hasHeader
    * @return page to go to
    */
   @SuppressWarnings("unchecked")
@@ -1021,6 +1340,812 @@ public class UiMainAdmin extends UiServiceLogicBase {
         + screenMessage.toString());
     
     return AdminImportSerialsSubmitView.admin;
+  }
+
+  
+  
+  /**
+   * reports privileges submit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsPrivilegesSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    String reportUuid = httpServletRequest.getParameter("reportUuid");
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOnName");
+    
+    reportsPrivilegesSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportUuid, userIdOperatingOn);
+    
+    showJsp("adminReportsPrivileges.jsp");
+  
+  }
+
+  /**
+   * show the reports edit screen with add panel
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param reportUuid 
+   * @param userIdOperatingOn
+   *
+   */
+  public void reportsPrivilegesSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String reportUuid, final String userIdOperatingOn) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    @SuppressWarnings("unused")
+    final TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+
+    reportsPrivilegesEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+    
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+    
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        
+        TwoFactorReport twoFactorReport = null;
+        
+        if (!StringUtils.isBlank(reportUuid)) {
+          
+          twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, reportUuid);
+        }
+          
+        if (twoFactorReport == null) { 
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsPrivilegesErrorReportRequired"));
+          return null;
+        }
+
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false, true);
+
+        String theUserIdOperatingOn = userIdOperatingOn;
+        
+        if (subject != null) {
+          
+          theUserIdOperatingOn = subject.getId();
+          
+        }
+        
+        TwoFactorUser twoFactorUser = null;
+        
+        if (!StringUtils.isBlank(theUserIdOperatingOn)) {
+          twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, theUserIdOperatingOn);
+        }
+        
+        if (twoFactorUser == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsPrivilegesErrorUserRequired"));
+          return null;
+        }
+        twoFactorUser.setSubjectSource(subjectSource);
+        //see if one exists
+        for (TwoFactorReportPrivilege twoFactorReportPrivilege : twoFactorDaoFactory.getTwoFactorReportPrivilege().retrieveAll()) {
+          if (StringUtils.equals(twoFactorReportPrivilege.getReportUuid(), twoFactorReport.getUuid())
+              && StringUtils.equals(twoFactorReportPrivilege.getUserUuid(), twoFactorUser.getUuid())) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsPrivilegesErrorPrivilegeExists"));
+            return null;
+          }
+        }
+
+        TwoFactorReportPrivilege twoFactorReportPrivilege = new TwoFactorReportPrivilege();
+        twoFactorReportPrivilege.setReportUuid(twoFactorReport.getUuid());
+        twoFactorReportPrivilege.setUserUuid(twoFactorUser.getUuid());
+        
+        twoFactorDaoFactory.getTwoFactorReportPrivilege().store(twoFactorReportPrivilege);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), "Added privilege to " + twoFactorReport.getReportNameSystem() + ", " 
+                + twoFactorReport.getReportNameFriendly() + ", for " + twoFactorUser.getLoginid() 
+                + ", " + twoFactorUser.getDescriptionAdmin(), null);
+                
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsPrivilegeAddSuccess"));
+          
+        return null;
+      }
+    });
+    
+    //note, this was already done, but do it again to update the list
+    reportsPrivilegesEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+    
+  }
+
+  /**
+   * reports add submit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsAddEditSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    String reportUuid = httpServletRequest.getParameter("reportUuid");
+    String reportTypeString = httpServletRequest.getParameter("reportType");
+    String reportNameSystem = httpServletRequest.getParameter("reportNameSystem");
+    String reportNameSystemSelect = httpServletRequest.getParameter("reportNameSystemSelect");
+    String reportNameDisplay = httpServletRequest.getParameter("reportNameDisplay");
+    
+    reportsAddEditSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportNameSystem, reportNameSystemSelect, 
+        reportNameDisplay, reportTypeString, reportUuid);
+    
+    showJsp("adminReportsEdit.jsp");
+  
+  }
+
+  /**
+   * show the reports edit screen with add panel
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param theReportNameSystem 
+   * @param reportNameSystemSelect
+   * @param reportNameDisplay 
+   * @param reportTypeString 
+   * @param reportUuid 
+   *
+   */
+  public void reportsAddEditSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, String theReportNameSystem, 
+      String reportNameSystemSelect,
+      final String reportNameDisplay, final String reportTypeString, final String reportUuid) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    @SuppressWarnings("unused")
+    final TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+
+    reportsAddLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+
+    final String reportNameSystem = StringUtils.defaultIfEmpty(theReportNameSystem, reportNameSystemSelect);
+
+    final boolean isAddNotEdit = StringUtils.isBlank(reportUuid);
+    
+    {
+      //set the values so the fields are populated if there is a validation problem
+      TwoFactorReport twoFactorReport = new TwoFactorReport();
+      twoFactorReport.setReportNameFriendly(reportNameDisplay);
+      twoFactorReport.setReportNameSystem(reportNameSystem);
+      twoFactorReport.setReportType(reportTypeString);
+      twoFactorReport.setUuid(reportUuid);
+      twoFactorAdminContainer.setTwoFactorReport(twoFactorReport);
+    }
+    
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+    
+    if (!StringUtils.isBlank(theReportNameSystem) && !StringUtils.isBlank(reportNameSystemSelect)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorKeySelectAndManual"));
+      return;
+    }
+    if (StringUtils.isBlank(theReportNameSystem) && StringUtils.isBlank(reportNameSystemSelect)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorKeyRequired"));
+      return;
+    }
+    if (StringUtils.isBlank(reportNameDisplay)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorNameRequired"));
+      return;
+    }
+    if (StringUtils.isBlank(reportTypeString)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorTypeRequired"));
+      return;
+    }
+    //lets see if the name system or display exists
+    for (TwoFactorReport twoFactorReport : TwoFactorReport.retrieveAll(twoFactorDaoFactory)) {
+      if (StringUtils.equals(twoFactorReport.getReportNameFriendly(), reportNameDisplay)) {
+        //if we are inserting, or if this is not othe same report
+        if (isAddNotEdit || !StringUtils.equals(reportUuid, twoFactorReport.getUuid())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorNameExists"));
+          return;
+        }
+      }
+      if (StringUtils.equals(twoFactorReport.getReportNameSystem(), reportNameSystem)) {
+        //if we are inserting, or if this is not othe same report
+        if (isAddNotEdit || !StringUtils.equals(reportUuid, twoFactorReport.getUuid())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorKeyExists"));
+          return;
+        }
+      }
+    }
+
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        TwoFactorReport twoFactorReport = null;
+        
+        if (isAddNotEdit) {
+          twoFactorReport = new TwoFactorReport();
+        } else {
+          twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, reportUuid);
+        }
+
+        twoFactorReport.setReportNameFriendly(reportNameDisplay);
+        twoFactorReport.setReportNameSystem(reportNameSystem);
+        twoFactorReport.setReportType(reportTypeString);
+
+        //if editing, and the type is now group, but there are child reports, thats a problem
+        if (!isAddNotEdit) {
+          if (TwoFactorReportType.valueOf(reportTypeString) == TwoFactorReportType.group) {
+            if (twoFactorReport.retrieveChildRollups(twoFactorDaoFactory).size() > 0) {
+              
+              twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditErrorGroupTypeChildExists"));
+              return null;
+              
+            }
+          }
+        }
+        
+        twoFactorDaoFactory.getTwoFactorReport().store(twoFactorReport);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), (isAddNotEdit ? "Added" : "Edited" ) + " report: " + twoFactorReport.getUuid() + ", " 
+                + twoFactorReport.getReportNameSystem() + ", " + twoFactorReport.getReportNameFriendly(), null);
+                
+        if (isAddNotEdit) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditAddSuccess"));
+        } else {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsEditEditSuccess"));
+          
+        }
+          
+        return null;
+      }
+    });
+    
+    //clear out the fields
+    twoFactorAdminContainer.setTwoFactorReport(null);
+    
+    //note, tihs was already done, but do it again to update the list
+    reportsAddLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+    
+  }
+
+
+  /**
+   * reports add
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsAdd(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    reportsAddLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource());
+    
+    showJsp("adminReportsEdit.jsp");
+  
+  }
+
+  /**
+   * show the reports edit screen with add panel
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   *
+   */
+  public void reportsAddLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+    
+    twoFactorUserUsingApp.setSubjectSource(subjectSource);
+  
+    //make sure user is an admin
+    if (!twoFactorUserUsingApp.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+    
+    twoFactorAdminContainer.setReportAdd(true);
+
+    reportsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+
+  }
+
+  /**
+   * reports edit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsEditReport(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String reportUuid = httpServletRequest.getParameter("reportUuid");
+
+    reportsEditReportLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportUuid);
+    
+    showJsp("adminReportsEdit.jsp");
+  
+  }
+
+  /**
+   * show the reports edit screen with add/edit panel
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param reportUuid 
+   *
+   */
+  public void reportsEditReportLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String reportUuid) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+    
+    twoFactorUserUsingApp.setSubjectSource(subjectSource);
+  
+    //make sure user is an admin
+    if (!twoFactorUserUsingApp.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+    
+    twoFactorAdminContainer.setReportAdd(true);
+  
+    //make sure searching for a user id
+    if (StringUtils.isBlank(reportUuid)) {
+      throw new RuntimeException("Why is reportUuid blank?");
+    }
+
+    TwoFactorReport twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, reportUuid);
+
+    if (twoFactorReport == null) {
+      throw new RuntimeException("Report doesnt exist");
+    }
+
+    twoFactorAdminContainer.setTwoFactorReport(twoFactorReport);
+    
+    reportsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+  
+  }
+
+
+  /**
+   * show the reports privileges edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  public void reportsPrivilegesEditLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+    
+    twoFactorUserUsingApp.setSubjectSource(subjectSource);
+  
+    //make sure user is an admin
+    if (!twoFactorUserUsingApp.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    //lets get all the reports and set them in the admin container bean
+    List<TwoFactorReport> twoFactorReports = TwoFactorReport.retrieveAll(twoFactorDaoFactory);
+    
+    twoFactorAdminContainer.setReports(twoFactorReports);
+    
+    Map<String, TwoFactorReport> twoFactorReportMap = new HashMap<String, TwoFactorReport>();
+    
+    for (TwoFactorReport twoFactorReport : twoFactorReports) {
+      twoFactorReportMap.put(twoFactorReport.getUuid(), twoFactorReport);
+    }
+
+    //get all the users and set them in the privilege object
+    List<TwoFactorUser> twoFactorUsers = twoFactorDaoFactory.getTwoFactorUser().retrieveUsersWhoHavePrivilegesInReport();
+    
+    Map<String, TwoFactorUser> twoFactorUserMap = new HashMap<String, TwoFactorUser>();
+    
+    List<String> loginids = new ArrayList<String>();
+    
+    for (TwoFactorUser twoFactorUser : twoFactorUsers) {
+      twoFactorUserMap.put(twoFactorUser.getUuid(), twoFactorUser);
+      twoFactorUser.setSubjectSource(subjectSource);
+      
+      loginids.add(twoFactorUser.getLoginid());
+    }
+
+    //get all the loginids, this sets up the cache
+    TfSourceUtils.retrieveSubjectsByIdsOrIdentifiers(subjectSource, loginids, true);
+
+    List<TwoFactorReportPrivilege> twoFactorReportPrivileges = twoFactorDaoFactory.getTwoFactorReportPrivilege().retrieveAll();
+    
+    for (TwoFactorReportPrivilege twoFactorReportPrivilege : twoFactorReportPrivileges) {
+      TwoFactorUser twoFactorUser = twoFactorUserMap.get(twoFactorReportPrivilege.getUserUuid());
+      if (twoFactorUser == null) {
+        twoFactorUser = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, twoFactorReportPrivilege.getUserUuid());
+        twoFactorUserMap.put(twoFactorReportPrivilege.getUserUuid(), twoFactorUser);
+      }
+      twoFactorReportPrivilege.setTwoFactorUser(twoFactorUser);
+      
+      TwoFactorReport twoFactorReport = twoFactorReportMap.get(twoFactorReportPrivilege.getReportUuid());
+      if (twoFactorReport == null) {
+        twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportPrivilege.getReportUuid());
+        twoFactorReportMap.put(twoFactorReportPrivilege.getReportUuid(), twoFactorReport);
+      }
+      twoFactorReportPrivilege.setTwoFactorReport(twoFactorReport);
+    }
+    twoFactorAdminContainer.setTwoFactorReportPrivileges(twoFactorReportPrivileges);
+    
+  }
+
+
+  /**
+   * show the reports rollups edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  public void reportsRollupsEditLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+
+    twoFactorUserUsingApp.setSubjectSource(subjectSource);
+
+    //make sure user is an admin
+    if (!twoFactorUserUsingApp.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+
+    //lets get all the reports and set them in the admin container bean
+    List<TwoFactorReport> twoFactorReports = TwoFactorReport.retrieveAll(twoFactorDaoFactory);
+    
+    twoFactorAdminContainer.setReports(twoFactorReports);
+    
+    Map<String, TwoFactorReport> twoFactorReportMap = new HashMap<String, TwoFactorReport>();
+    
+    for (TwoFactorReport twoFactorReport : twoFactorReports) {
+      twoFactorReportMap.put(twoFactorReport.getUuid(), twoFactorReport);
+    }
+
+    List<TwoFactorReportRollup> twoFactorReportRollups = twoFactorDaoFactory.getTwoFactorReportRollup().retrieveAll();
+    
+    for (TwoFactorReportRollup twoFactorReportRollup : twoFactorReportRollups) {
+      {
+        TwoFactorReport twoFactorReport = twoFactorReportMap.get(twoFactorReportRollup.getChildReportUuid());
+        if (twoFactorReport == null) {
+          twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportRollup.getChildReportUuid());
+          twoFactorReportMap.put(twoFactorReportRollup.getChildReportUuid(), twoFactorReport);
+        }
+        twoFactorReportRollup.setChildReport(twoFactorReport);
+      }
+      
+      {
+        TwoFactorReport twoFactorReport = twoFactorReportMap.get(twoFactorReportRollup.getParentReportUuid());
+        if (twoFactorReport == null) {
+          twoFactorReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportRollup.getParentReportUuid());
+          twoFactorReportMap.put(twoFactorReportRollup.getParentReportUuid(), twoFactorReport);
+        }
+        twoFactorReportRollup.setParentReport(twoFactorReport);
+      }
+    }
+    twoFactorAdminContainer.setTwoFactorReportRollups(twoFactorReportRollups);
+    
+  }
+
+
+  /**
+   * reports rollups submit
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsRollupsSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String parentReportUuid = httpServletRequest.getParameter("parentReportUuid");
+    String childReportUuid = httpServletRequest.getParameter("childReportUuid");
+    
+    reportsRollupsSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), parentReportUuid, childReportUuid);
+    
+    showJsp("adminReportsRollups.jsp");
+  
+  }
+
+  /**
+   * submit the reports rollups edit screen with add panel
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param parentReportUuid 
+   * @param childReportUuid
+   *
+   */
+  public void reportsRollupsSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String parentReportUuid, final String childReportUuid) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    @SuppressWarnings("unused")
+    final TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+  
+    reportsRollupsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+  
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+    
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+    
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        
+        TwoFactorReport parentReport = null;
+        
+        if (!StringUtils.isBlank(parentReportUuid)) {
+          
+          parentReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, parentReportUuid);
+        }
+          
+        if (parentReport == null) { 
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsErrorParentReportRequired"));
+          return null;
+        }
+
+        if (parentReport.getReportTypeEnum() != TwoFactorReportType.rollup) {
+          throw new RuntimeException("Why is this not a rollup???? " + parentReport.getUuid() + ", " 
+              + parentReport.getReportNameSystem() + ", " + parentReport.getReportNameFriendly());
+        }
+        
+        TwoFactorReport childReport = null;
+        
+        if (!StringUtils.isBlank(childReportUuid)) {
+          
+          childReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, childReportUuid);
+        }
+          
+        if (childReport == null) { 
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsErrorChildReportRequired"));
+          return null;
+        }
+
+        //see if one exists
+        for (TwoFactorReportRollup twoFactorReportRollup : twoFactorDaoFactory.getTwoFactorReportRollup().retrieveAll()) {
+          if (StringUtils.equals(twoFactorReportRollup.getChildReportUuid(), childReportUuid)
+              && StringUtils.equals(twoFactorReportRollup.getParentReportUuid(), parentReportUuid)) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsErrorRollupExists"));
+            return null;
+          }
+        }
+  
+        //parent cant be child
+        if (StringUtils.equals(parentReport.getUuid(), childReport.getUuid())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsErrorParentCantBeChild"));
+          return null;
+        }
+        
+        //lets see if it is a circular reference.. if the child implies the parent, then it is circular
+        {
+          List<TwoFactorReportRollup> childChildrenRollups = childReport.retrieveChildRollups(twoFactorDaoFactory);
+          for (TwoFactorReportRollup childChildRollup : childChildrenRollups) {
+            
+            if (StringUtils.equals(childChildRollup.getChildReportUuid(), parentReportUuid)) {
+              twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsErrorCircularReference"));
+              return null;
+              
+            }
+            
+          }
+        }
+        TwoFactorReportRollup twoFactorReportRollup = new TwoFactorReportRollup();
+        twoFactorReportRollup.setChildReportUuid(childReportUuid);
+        twoFactorReportRollup.setParentReportUuid(parentReportUuid);
+        
+        twoFactorDaoFactory.getTwoFactorReportRollup().store(twoFactorReportRollup);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), "Added report rollup parent: " + parentReport.getReportNameSystem() + ", " 
+                + parentReport.getReportNameFriendly() + ", to child report: " + childReport.getReportNameSystem()
+                + ", " + childReport.getReportNameFriendly(), null);
+                
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsAddSuccess"));
+          
+        return null;
+      }
+    });
+    
+    //note, this was already done, but do it again to update the list
+    reportsRollupsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+    
+  }
+
+
+  /**
+   * reports rollups delete
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportsRollupsDelete(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String reportRollupUuid = httpServletRequest.getParameter("reportRollupUuid");
+    
+    reportsRollupsDeleteLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), TfSourceUtils.mainSource(), reportRollupUuid);
+    
+    showJsp("adminReportsRollups.jsp");
+  
+  }
+
+  /**
+   * delete a report rollup, show the reports edit screen
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param reportRollupUuid
+   *
+   */
+  public void reportsRollupsDeleteLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String reportRollupUuid) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    twoFactorUserLoggedIn.setSubjectSource(subjectSource);
+  
+    //make sure user is an admin
+    if (!twoFactorUserLoggedIn.isAdmin()) {
+      throw new RuntimeException(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+    }
+    if (!twoFactorRequestContainer.getTwoFactorAdminContainer().isCanAdminReports()) {
+      throw new RuntimeException("Cant admin reports! " + loggedInUser);
+    }
+  
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(reportRollupUuid)) {
+          throw new RuntimeException("Why is reportUuid blank?");
+        }
+  
+        TwoFactorReportRollup twoFactorReportRollup = TwoFactorReportRollup.retrieveByUuid(twoFactorDaoFactory, reportRollupUuid);
+  
+        
+        if (twoFactorReportRollup == null) {
+          throw new RuntimeException("Why is report rollup not found?");
+        }
+  
+        TwoFactorReport childReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportRollup.getChildReportUuid());
+        TwoFactorReport parentReport = TwoFactorReport.retrieveByUuid(twoFactorDaoFactory, twoFactorReportRollup.getParentReportUuid());
+        
+        twoFactorReportRollup.delete(twoFactorDaoFactory);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_REPORT_EDIT, ipAddress, 
+            userAgent, twoFactorUserLoggedIn.getUuid(), 
+            twoFactorUserLoggedIn.getUuid(), "Deleted report rollup from: " + parentReport.getReportNameSystem()
+              + ", " + parentReport.getReportNameFriendly() + ", to: "
+              + childReport.getReportNameSystem() + ", " 
+                + childReport.getReportNameFriendly(), null);
+        
+        return null;
+      }
+    });
+  
+    reportsRollupsEditLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+    
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsDeleteSuccess"));
+      
+  
   }
 
 

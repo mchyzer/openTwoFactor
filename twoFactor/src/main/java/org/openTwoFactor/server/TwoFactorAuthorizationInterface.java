@@ -35,4 +35,10 @@ public interface TwoFactorAuthorizationInterface {
    * @return the set of user ids
    */
   public Set<String> adminUserIdsWhoCanImportSerials();
+  
+  /**
+   * admin user ids who can admin reports
+   * @return the set of user ids
+   */
+  public Set<String> adminUserIdsWhoCanAdminReports();
 }

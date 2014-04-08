@@ -151,4 +151,15 @@ public class HibernateTwoFactorUserDao implements TwoFactorUserDao {
     return count;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserDao#retrieveUsersWhoHavePrivilegesInReport()
+   */
+  public List<TwoFactorUser> retrieveUsersWhoHavePrivilegesInReport() {
+    List<TwoFactorUser> theList = HibernateSession.byHqlStatic().createQuery(
+        "select tfu from TwoFactorUser as tfu where " +
+          " exists (select tfrp from TwoFactorReportPrivilege tfrp where tfrp.userUuid = tfu.uuid ) ")
+        .list(TwoFactorUser.class);
+    return theList;
+  }
+
 }

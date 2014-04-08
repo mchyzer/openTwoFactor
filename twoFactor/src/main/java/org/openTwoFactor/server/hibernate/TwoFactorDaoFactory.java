@@ -8,6 +8,10 @@ import org.openTwoFactor.server.dao.TwoFactorBrowserDao;
 import org.openTwoFactor.server.dao.TwoFactorDaemonLogDao;
 import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
 import org.openTwoFactor.server.dao.TwoFactorIpAddressDao;
+import org.openTwoFactor.server.dao.TwoFactorReportDao;
+import org.openTwoFactor.server.dao.TwoFactorReportDataDao;
+import org.openTwoFactor.server.dao.TwoFactorReportPrivilegeDao;
+import org.openTwoFactor.server.dao.TwoFactorReportRollupDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
@@ -81,6 +85,26 @@ public abstract class TwoFactorDaoFactory {
    * @return device serial
    */
   public abstract TwoFactorDeviceSerialDao getTwoFactorDeviceSerial();
+  
+  /**
+   * @return two factor report
+   */
+  public abstract TwoFactorReportDao getTwoFactorReport();
+  
+  /**
+   * @return two factor report data
+   */
+  public abstract TwoFactorReportDataDao getTwoFactorReportData();
+  
+  /**
+   * @return two factor report privilege
+   */
+  public abstract TwoFactorReportPrivilegeDao getTwoFactorReportPrivilege();
+  
+  /**
+   * @return two factor report rollup
+   */
+  public abstract TwoFactorReportRollupDao getTwoFactorReportRollup();
   
   /**
    * @return ip address

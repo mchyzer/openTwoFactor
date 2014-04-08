@@ -5,6 +5,7 @@
 package org.openTwoFactor.server.util;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +27,7 @@ public class TfSourceUtils {
 
   /**
    * convert subject id to netid (or subject id if there is no netid)
+   * @param source 
    * @param subjectId
    * @return the netid or subject id
    */
@@ -35,7 +37,9 @@ public class TfSourceUtils {
   
   /**
    * convert subject id to netid (or subject id if there is no netid)
+   * @param source 
    * @param subjectId
+   * @param exceptionOnProblem 
    * @return the netid or subject id
    */
   public static String convertSubjectIdToNetId(Source source, String subjectId, boolean exceptionOnProblem) {
@@ -61,7 +65,9 @@ public class TfSourceUtils {
 
   /**
    * does the set of subject ids or net ids contain one
+   * @param source 
    * @param subjectIdOrNetIdOfSubject
+   * @param subjectIdsOrNetIds 
    * @return true if in the set
    */
   public static boolean subjectIdOrNetIdInSet(Source source, String subjectIdOrNetIdOfSubject, Set<String> subjectIdsOrNetIds) {
@@ -134,6 +140,7 @@ public class TfSourceUtils {
    * @param source
    * @param searchString
    * @param isAdmin true if this is an admin query
+   * @return  subjects
    */
   public static Set<Subject> searchPage(Source source, String searchString, boolean isAdmin) {
     return TwoFactorServerUtils.nonNull(source.searchPage(searchString, subjectSourceRealm(isAdmin)).getResults());
@@ -144,6 +151,7 @@ public class TfSourceUtils {
    * @param source
    * @param searchString
    * @param isAdmin true if this is an admin query
+   * @return set
    */
   public static Set<Subject> search(Source source, String searchString, boolean isAdmin) {
     return TwoFactorServerUtils.nonNull(source.search(searchString, subjectSourceRealm(isAdmin)));
@@ -153,7 +161,9 @@ public class TfSourceUtils {
    * resolve a subject by id or identifier
    * @param source
    * @param subjectIdOrIdentifier
+   * @param okToReadFromCache 
    * @param exceptionIfNotFound
+   * @param isAdminView 
    * @return the subject
    */
   public static Subject retrieveSubjectByIdOrIdentifier(Source source, String subjectIdOrIdentifier, 
@@ -218,7 +228,7 @@ public class TfSourceUtils {
   /**
    * resolve subjects by ids or identifiers
    * @param source
-   * @param subjectIdOrIdentifiers
+   * @param subjectIdsOrIdentifiers
    * @param isAdminView
    * @return the subject
    */
@@ -233,8 +243,28 @@ public class TfSourceUtils {
       return null;
     }
     
+    if (TwoFactorServerUtils.length(subjectIdsOrIdentifiers) == 0) {
+      return new HashMap<String, Subject>();
+    }
+    
     Map<String, Subject> subjectMap = source.getSubjectsByIdsOrIdentifiers(subjectIdsOrIdentifiers, subjectSourceRealm(isAdminView));
 
+    for (String loginid : TwoFactorServerUtils.nonNull(subjectMap).keySet()) {
+      
+      Subject subject = subjectMap.get(loginid);
+      
+      MultiKey multiKey = new MultiKey(subjectSourceRealm(isAdminView), source.getId(), loginid);
+      
+      if (subject == null) {
+        continue;
+      }
+      //put it back to cache
+      synchronized (TfSourceUtils.class) {
+        subjectIdOrIdentifierToSubject.put(multiKey, subject);      
+      }
+
+    }
+    
     return subjectMap;
     
   }
@@ -260,7 +290,9 @@ public class TfSourceUtils {
 
   /**
    * resolve a subject id or netid into a subject id
+   * @param subjectSource 
    * @param idOrIdentifier the subject id or eppn
+   * @param isAdmin 
    * @return the resolved subject id
    */
   public static String resolveSubjectId(Source subjectSource, String idOrIdentifier, boolean isAdmin) {
@@ -362,6 +394,7 @@ public class TfSourceUtils {
   
   /**
    * get the subject attribute name for two factor source
+   * @param subjectSource 
    * @return the attribute name
    */
   public static String emailAttributeNameForSource(Source subjectSource) {
