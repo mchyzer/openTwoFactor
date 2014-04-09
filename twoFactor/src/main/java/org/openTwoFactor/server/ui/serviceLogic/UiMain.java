@@ -6,11 +6,14 @@ package org.openTwoFactor.server.ui.serviceLogic;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +33,10 @@ import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorAuditView;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
+import org.openTwoFactor.server.beans.TwoFactorReport;
+import org.openTwoFactor.server.beans.TwoFactorReportPrivilege;
+import org.openTwoFactor.server.beans.TwoFactorReportRollup;
+import org.openTwoFactor.server.beans.TwoFactorReportType;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dojo.DojoComboDataResponse;
@@ -49,7 +56,9 @@ import org.openTwoFactor.server.ui.UiServiceLogicBase;
 import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorOneTimePassRow;
 import org.openTwoFactor.server.ui.beans.TwoFactorProfileContainer;
+import org.openTwoFactor.server.ui.beans.TwoFactorReportStat;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
+import org.openTwoFactor.server.ui.beans.TwoFactorViewReportContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -233,6 +242,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer
    * @param loggedInUser
+   * @param subjectSource 
    * @return if user cant login
    */
   public boolean userCantLoginNotActiveLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
@@ -1941,6 +1951,169 @@ public class UiMain extends UiServiceLogicBase {
     showJsp("profile.jsp");
   }
 
+  /**
+   * view reports
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reports(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    String reportUuid = httpServletRequest.getParameter("reportUuid");
+    
+    ReportsView reportsView = reportsLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource, reportUuid);
+
+    showJsp(reportsView.getJsp());
+  }
+
+  /**
+   * view report
+   */
+  public static enum ReportsView {
+    
+    /**
+     */
+    reports("reports.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp");
+
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private ReportsView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+    
+  }
+
+  /**
+   * reportsLogic
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param subjectSource 
+   * @param reportUuid
+   * @return which view to go to
+   * 
+   */
+  private ReportsView reportsLogic(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final Source subjectSource, final String reportUuid) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    twoFactorUser.setSubjectSource(subjectSource);
+
+    if (!twoFactorUser.isOptedIn()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("viewReportsErrorLoggedInSubjectNotOptedIn"));
+
+      return ReportsView.index;
+    }
+
+    if (!twoFactorUser.isHasReportPrivilege()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("viewReportsErrorLoggedInSubjectHasNoReports"));
+
+      return ReportsView.index;
+    }
+
+    TwoFactorViewReportContainer twoFactorViewReportContainer = twoFactorRequestContainer.getTwoFactorViewReportContainer();
+    
+    List<TwoFactorReport> twoFactorReports = TwoFactorReport.retrieveAll(twoFactorDaoFactory);
+    
+    Map<String, TwoFactorReport> twoFactorReportMap = new HashMap<String, TwoFactorReport>();
+    
+    for (TwoFactorReport twoFactorReport : twoFactorReports) {
+      twoFactorReportMap.put(twoFactorReport.getUuid(), twoFactorReport);
+    }
+
+    List<TwoFactorReport> reportsAllowedToView = new ArrayList<TwoFactorReport>();
+    twoFactorViewReportContainer.setReportsAllowedToView(reportsAllowedToView);
+    
+    //there arent that many privs, so just loop through them
+    for (TwoFactorReportPrivilege twoFactorReportPrivilege : TwoFactorReportPrivilege.retrieveAllPrivileges(twoFactorDaoFactory)) {
+      if (StringUtils.equals(twoFactorUser.getUuid(), twoFactorReportPrivilege.getUserUuid())) {
+        TwoFactorReport twoFactorReport = twoFactorReportMap.get(twoFactorReportPrivilege.getReportUuid());
+        reportsAllowedToView.add(twoFactorReport);
+      }
+    }
+
+    if (!StringUtils.isBlank(reportUuid)) {
+      
+      TwoFactorReport twoFactorReport = twoFactorReportMap.get(reportUuid);
+      
+      if (twoFactorReport == null) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("viewReportsErrorReportNotFound"));
+        
+      } else {
+        
+        TwoFactorReportStat twoFactorReportStat = new TwoFactorReportStat();
+        twoFactorReportStat.setTwoFactorReport(twoFactorReport);
+        twoFactorViewReportContainer.setMainReportStat(twoFactorReportStat);
+        
+        Map<String, TwoFactorReportRollup> allRollups = TwoFactorReportRollup.retrieveAllRollups(twoFactorDaoFactory);
+
+        Set<String> usersNotOptedIn = new TreeSet<String>();
+        
+        twoFactorReportStat.calculateStats(twoFactorDaoFactory, twoFactorReportMap, allRollups, usersNotOptedIn, subjectSource);
+        
+        twoFactorViewReportContainer.setSubjectDescriptionsNotOptedIn(new ArrayList<String>(usersNotOptedIn));
+        
+        if (twoFactorReport.getReportTypeEnum() == TwoFactorReportType.rollup) {
+          
+          
+          List<TwoFactorReportRollup> childRollups = TwoFactorReportRollup.retrieveChildRollups(allRollups, twoFactorReport.getUuid());
+          if (TwoFactorServerUtils.length(childRollups) > 0) {
+            List<TwoFactorReportStat> childReportStats = new ArrayList<TwoFactorReportStat>();
+            twoFactorViewReportContainer.setChildReportStats(childReportStats);
+            for (TwoFactorReportRollup twoFactorReportRollup : childRollups) {
+              TwoFactorReport theTwoFactorReport = twoFactorReportMap.get(twoFactorReportRollup.getChildReportUuid());
+              TwoFactorReportStat theTwoFactorReportStat =  new TwoFactorReportStat();
+              theTwoFactorReportStat.setTwoFactorReport(theTwoFactorReport);
+              theTwoFactorReportStat.calculateStats(twoFactorDaoFactory, twoFactorReportMap, allRollups, null, subjectSource);
+              childReportStats.add(theTwoFactorReportStat);
+            }
+          }          
+        }
+
+        
+      }
+      
+    }
+    
+    
+    return ReportsView.reports;
+  }
+
+
+  
   /**
    * show the profile screen readonly
    * @param httpServletRequest

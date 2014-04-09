@@ -132,11 +132,11 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   
   /**
    * get the count of trusted browsers
-   * @param twoFactorDaoFactory two factor dao factory
+   * @param theTwoFactorDaoFactory two factor dao factory
    * @return the trusted browser count from the database
    */
-  public int trustedBrowserCountHelper(TwoFactorDaoFactory twoFactorDaoFactory) {
-    List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(this.getUuid());
+  public int trustedBrowserCountHelper(TwoFactorDaoFactory theTwoFactorDaoFactory) {
+    List<TwoFactorBrowser> twoFactorBrowsers = theTwoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(this.getUuid());
     return TwoFactorServerUtils.length(twoFactorBrowsers);
   }
   
@@ -303,8 +303,8 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
             
           } else {
             
-            TwoFactorUser.useAdminCache = true;
             adminCache = new ExpirableCache<String, Boolean>(cacheForMinutes);
+            TwoFactorUser.useAdminCache = true;
             
           }
           
@@ -341,6 +341,51 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     }
     
     return isAdmin;
+  }
+  
+  /**
+   * dao factory for object for subsequent queries
+   */
+  private TwoFactorDaoFactory twoFactorDaoFactory;
+  
+  /**
+   * @return the twoFactorDaoFactory
+   */
+  public TwoFactorDaoFactory getTwoFactorDaoFactory() {
+    return this.twoFactorDaoFactory;
+  }
+  
+  /**
+   * @param twoFactorDaoFactory1 the twoFactorDaoFactory to set
+   */
+  public void setTwoFactorDaoFactory(TwoFactorDaoFactory twoFactorDaoFactory1) {
+    this.twoFactorDaoFactory = twoFactorDaoFactory1;
+  }
+
+  /**
+   * get the factory or 
+   * @return the factory
+   */
+  private TwoFactorDaoFactory twoFactorDaoFactory() {
+    if (this.twoFactorDaoFactory == null) {
+      this.twoFactorDaoFactory = TwoFactorDaoFactory.getFactory();
+    }
+    return this.twoFactorDaoFactory;
+  }
+  
+  /**
+   * see if the user has report privileges
+   * @return if the user has report privileges
+   */
+  public boolean isHasReportPrivilege() {
+    
+    //there arent that many privs, so just loop through them
+    for (TwoFactorReportPrivilege twoFactorReportPrivilege : TwoFactorReportPrivilege.retrieveAllPrivileges(this.twoFactorDaoFactory())) {
+      if (StringUtils.equals(this.getUuid(), twoFactorReportPrivilege.getUserUuid())) {
+        return true;
+      }
+    }
+    return false;
   }
   
   /**

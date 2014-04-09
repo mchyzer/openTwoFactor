@@ -21,6 +21,21 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 public class TwoFactorRequestContainer {
   
   /**
+   * two factor view report container
+   */
+  private TwoFactorViewReportContainer twoFactorViewReportContainer;
+  
+  /**
+   * @return the twoFactorViewReportContainer
+   */
+  public TwoFactorViewReportContainer getTwoFactorViewReportContainer() {
+    if (this.twoFactorViewReportContainer == null) {
+      this.twoFactorViewReportContainer = new TwoFactorViewReportContainer();
+    }
+    return this.twoFactorViewReportContainer;
+  }
+
+  /**
    * is has logout url
    * @return if has logout url
    */

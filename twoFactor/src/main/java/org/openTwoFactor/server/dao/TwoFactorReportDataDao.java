@@ -31,7 +31,7 @@ public interface TwoFactorReportDataDao {
   /**
    * return a page (e.g. size 200?) of loginids who are not signed up for 2-step verficiation
    * @param reportSystemNames
-   * @return the list of users
+   * @return the list of users loginids
    */
   public List<String> retrieveUsersNotOptedInPageByReportSystemNames(Collection<String> reportSystemNames);
 

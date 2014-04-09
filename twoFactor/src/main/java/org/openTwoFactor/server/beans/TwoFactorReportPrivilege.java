@@ -6,12 +6,15 @@ package org.openTwoFactor.server.beans;
 
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+
+import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 
 
 
@@ -21,6 +24,41 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 @SuppressWarnings("serial")
 public class TwoFactorReportPrivilege extends TwoFactorHibernateBeanBase {
 
+  /**
+   * holds for true the list of all privileges
+   */
+  private static ExpirableCache<Boolean, List<TwoFactorReportPrivilege>> allPrivilegesCache = null;
+
+  /**
+   * 
+   * @return the cache lazy loaded
+   */
+  private static ExpirableCache<Boolean, List<TwoFactorReportPrivilege>> allPrivilegesCache() {
+    if (allPrivilegesCache == null) {
+      allPrivilegesCache = new ExpirableCache<Boolean, List<TwoFactorReportPrivilege>>(2);
+    }
+    return allPrivilegesCache;
+  }
+
+  /**
+   * retrieve all privileges, might be from cache
+   * @param twoFactorDaoFactory 
+   * @return the list of privileges
+   */
+  public static List<TwoFactorReportPrivilege> retrieveAllPrivileges(TwoFactorDaoFactory twoFactorDaoFactory) {
+    List<TwoFactorReportPrivilege> twoFactorReportPrivileges = allPrivilegesCache().get(Boolean.TRUE);
+    
+    if (twoFactorReportPrivileges == null) {
+      synchronized (TwoFactorReportPrivilege.class) {
+        if (twoFactorReportPrivileges == null) {
+          twoFactorReportPrivileges = twoFactorDaoFactory.getTwoFactorReportPrivilege().retrieveAll();
+          allPrivilegesCache().put(Boolean.TRUE, twoFactorReportPrivileges);
+        }
+      }
+    }
+    return twoFactorReportPrivileges;
+  }
+  
   /**
    * retrieve a report privilege by uuid
    * @param twoFactorDaoFactory

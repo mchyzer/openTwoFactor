@@ -50,8 +50,12 @@ public class TwoFactorReportData extends TwoFactorHibernateBeanBase {
     List<String> reportNames = reportNameSystemCache().get(Boolean.TRUE);
     
     if (reportNames == null) {
-      reportNames = twoFactorDaoFactory.getTwoFactorReportData().retrieveReportNameSystems();
-      reportNameSystemCache().put(Boolean.TRUE, reportNames);
+      synchronized (TwoFactorReportData.class) {
+        if (reportNames == null) {
+          reportNames = twoFactorDaoFactory.getTwoFactorReportData().retrieveReportNameSystems();
+          reportNameSystemCache().put(Boolean.TRUE, reportNames);
+        }
+      }
     }
     
     return reportNames;

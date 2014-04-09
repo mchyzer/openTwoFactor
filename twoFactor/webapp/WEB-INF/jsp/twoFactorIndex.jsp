@@ -139,6 +139,16 @@
 
         </c:when>
       </c:choose>
+      <c:choose>
+        <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.hasReportPrivilege}">
+          <form action="../../twoFactorUi/app/UiMain.reports" method="get" style="display: inline">
+            <input value="${textContainer.textEscapeDouble['buttonViewReports']}" class="tfBlueButton"
+            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+          </form>
+          &nbsp;
+
+        </c:when>
+      </c:choose>
       <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
         <div class="logoutBottom">
           <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
