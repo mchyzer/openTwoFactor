@@ -114,6 +114,13 @@
       </table>
     
     </c:if>
+
+    <br />
+    <br />
+    ${textContainer.text['viewReportsOptedInUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedInUsers}
+    <br />
+    ${textContainer.text['viewReportsOptedOutUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedOutUsers}
+
     <br />
     <br /> 
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
@@ -127,12 +134,6 @@
     type="submit" />
   </form>
 
-  <br />
-  <br />
-  ${textContainer.text['adminOptedInUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedInUsers}
-  <br />
-  ${textContainer.text['adminOptedOutUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedOutUsers}
-  
   
   <br /><br />
   
