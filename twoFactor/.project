@@ -14,4 +14,26 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>CSRF_GUARD_RESOURCES</name>
+			<type>2</type>
+			<locationURI>CSRF_GUARD_RESOURCES</locationURI>
+		</link>
+		<link>
+			<name>CSRF_GUARD_SOURCE</name>
+			<type>2</type>
+			<locationURI>CSRF_GUARD_SOURCE</locationURI>
+		</link>
+	</linkedResources>
+	<variableList>
+		<variable>
+			<name>CSRF_GUARD_RESOURCES</name>
+			<value>file:/C:/Users/mchyzer/Documents/GitHub/OWASP-CSRFGuard/csrfguard/src/main/resources</value>
+		</variable>
+		<variable>
+			<name>CSRF_GUARD_SOURCE</name>
+			<value>file:/C:/Users/mchyzer/Documents/GitHub/OWASP-CSRFGuard/csrfguard/src/main/java</value>
+		</variable>
+	</variableList>
 </projectDescription>
