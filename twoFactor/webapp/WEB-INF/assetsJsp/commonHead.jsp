@@ -2,7 +2,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<script type="text/javascript" src="../../OwaspJavaScriptServlet?v=1.0.13"></script>
+<script type="text/javascript" src="../../twoFactorUnprotectedUi/OwaspJavaScriptServlet?v=1.0.13"></script>
 
 <link href="../../assets/dojo/dijit/themes/claro/claro.css" rel="stylesheet" type="text/css" />
 <link href="../../assets/dojo/dojo/resources/dojo.css" rel="stylesheet" type="text/css" />

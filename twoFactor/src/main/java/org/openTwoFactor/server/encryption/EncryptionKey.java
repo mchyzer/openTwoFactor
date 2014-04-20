@@ -97,6 +97,11 @@ public class EncryptionKey {
       InputStream inputStream = TwoFactorServerUtils.fileOrClasspathInputstream(encryptionFileLocation, 
           "twoFactorServer.encryptKeyFileLocation");
       
+      if (inputStream == null) {
+        throw new RuntimeException("Cant find encryption keys.  You should encrypt with GenerateKeys.main(), save to: " 
+            + TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.encryptKeyFileLocation"));
+      }
+      
       Properties properties = new Properties();
       try {
         properties.load(inputStream);

@@ -35,9 +35,6 @@ CREATE TABLE two_factor_browser
 Alter table two_factor_browser
   add primary key (UUID);
 
-CREATE UNIQUE INDEX two_factor_browser_U01 ON two_factor_browser
-(BROWSER_UUID_HASH);
-
 CREATE unique INDEX two_factor_browser_USER_ID_IDX ON two_factor_browser
 (USER_UUID);
 
@@ -45,7 +42,6 @@ CREATE INDEX tf_browser_delete_idx ON two_factor_browser(DELETED_ON);
 
 
 CREATE UNIQUE INDEX two_factor_browser_cook_idx ON two_factor_browser(BROWSER_TRUSTED_UUID);
-
 
 
 
@@ -73,7 +69,8 @@ CREATE TABLE two_factor_daemon_log
   DELETED_ON         BIGINT(20)                    comment 'millis since 1970 that this row was deleted',
   SERVER_NAME        VARCHAR(100)         NOT NULL comment 'server name the daemon ran on',
   LAST_UPDATED       BIGINT(20)           NOT NULL comment 'millis since 1970 that this record has been updated',
-  PROCESS_ID         VARCHAR(100)         NOT NULL comment 'process id of the daemon'
+  PROCESS_ID         VARCHAR(100)         NOT NULL comment 'process id of the daemon',
+  DETAILS            VARCHAR(100)                  comment 'details of the daemon log'
 );
 
 alter table two_factor_daemon_log
@@ -683,7 +680,7 @@ CREATE TABLE TWO_FACTOR_REPORT
   LAST_UPDATED          BIGINT(20)                  NOT NULL comment 'when this row was last updated',
   REPORT_TYPE           VARCHAR(32)       NOT NULL comment 'must be of the TwoFactorReportType enum, e.g. group or rollup',
   REPORT_NAME_FRIENDLY  VARCHAR(200)      NOT NULL comment 'friendly name is included in the report email',
-  REPORT_NAME_SYSTEM    VARCHAR(400)     NOT NULL comment 'some system key on the report which can be used for queries to populate data and should not change',
+  REPORT_NAME_SYSTEM    VARCHAR(200)     NOT NULL comment 'some system key on the report which can be used for queries to populate data and should not change',
   VERSION_NUMBER        BIGINT(20)                  NOT NULL comment 'column for DAO optimistic locking'
 );
 
@@ -695,12 +692,11 @@ CREATE INDEX TF_REPORT_TYPE_IDX ON TWO_FACTOR_REPORT (REPORT_TYPE);
 
 CREATE UNIQUE INDEX TWO_FACTOR_REPORT_PK ON TWO_FACTOR_REPORT (UUID);
 
-CREATE INDEX TWO_FACTOR_REPORT_IDX ON TWO_FACTOR_REPORT (USER_UUID);
-
 Alter table TWO_FACTOR_REPORT
   add primary key (UUID);
 
-
+  
+  
 
 
 CREATE TABLE TWO_FACTOR_REPORT_ROLLUP
