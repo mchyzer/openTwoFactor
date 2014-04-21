@@ -13,7 +13,7 @@
      <servlet-name>OwaspJavaScriptServlet</servlet-name>
      <servlet-class>org.owasp.csrfguard.servlet.JavaScriptServlet</servlet-class>
   </servlet>
-  
+
   <servlet-mapping>
      <servlet-name>OwaspJavaScriptServlet</servlet-name>
      <url-pattern>/twoFactorUnprotectedUi/OwaspJavaScriptServlet</url-pattern>
