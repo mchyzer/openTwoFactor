@@ -42,10 +42,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/xstream.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/userAgentUtils.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/quartz.jar"/>
-	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/twilio-java-sdk-3.3.15.jar"/>
-	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/httpclient-4.2.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/httpcore-4.2.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="webapp/WEB-INF/lib/twilioDeps.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/subject.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-digester.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/morphString.jar"/>
