@@ -4,13 +4,19 @@
  */
 package org.openTwoFactor.server.util;
 
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.beans.TwoFactorUserAgent;
+import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 
 import eu.bitwalker.useragentutils.UserAgent;
+import eu.bitwalker.useragentutils.Version;
 
 
 /**
- *
+ * run the main after updating the userAgentUtils to process browsers again
  */
 public class UserAgentUtils {
 
@@ -23,7 +29,61 @@ public class UserAgentUtils {
    * @param args
    */
   public static void main(String[] args) {
-    //request.getHeader("User-Agent")
+    
+    if (args.length != 1 || (!StringUtils.equalsIgnoreCase(args[0], "read")) && !StringUtils.equalsIgnoreCase(args[0], "write")) {
+      System.out.println("Pass in arg: read|write");
+      return;
+    }
+    
+    //loop through and fix all user agents
+    List<TwoFactorUserAgent> twoFactorUserAgents = TwoFactorDaoFactory.getFactory().getTwoFactorUserAgent().retrieveAll();
+    
+    StringBuilder report = new StringBuilder();
+    
+    for (TwoFactorUserAgent twoFactorUserAgent : twoFactorUserAgents) {
+            
+      TwoFactorUserAgent twoFactorUserAgentFromDb = (TwoFactorUserAgent)twoFactorUserAgent.clone();
+      
+      twoFactorUserAgent.dbVersionReset();
+      twoFactorUserAgent.calculateBrowserFields();
+      if (twoFactorUserAgent.dbNeedsUpdate()) {
+        StringBuilder diffs = new StringBuilder();
+        diffs.append("UserAgent diff " + StringUtils.abbreviate(twoFactorUserAgent.getUserAgent(), 20));
+        
+        if (!StringUtils.equals(twoFactorUserAgent.getOperatingSystem(), twoFactorUserAgentFromDb.getOperatingSystem())) {
+          
+          diffs.append(", OS from: " + twoFactorUserAgentFromDb.getOperatingSystem() + ", and now: " + twoFactorUserAgent.getOperatingSystem());
+          
+        }
+        
+        if (twoFactorUserAgent.getMobile() != twoFactorUserAgentFromDb.getMobile()) {
+
+          diffs.append(", mobileFrom: " + twoFactorUserAgentFromDb.getMobile() + ", and now: " + twoFactorUserAgent.getMobile());
+
+        }
+
+        if (!StringUtils.equals(twoFactorUserAgent.getBrowser(), twoFactorUserAgentFromDb.getBrowser())) {
+
+          diffs.append(", browser: " + twoFactorUserAgentFromDb.getBrowser() + ", and now: " + twoFactorUserAgent.getBrowser());
+
+        }
+
+        if (!TwoFactorServerUtils.equals(twoFactorUserAgent.getVersionNumber(), twoFactorUserAgentFromDb.getVersionNumber())) {
+
+          diffs.append(", versionNumber: " + twoFactorUserAgentFromDb.getVersionNumber() + ", and now: " + twoFactorUserAgent.getVersionNumber());
+
+        }
+        report.append(diffs).append("\n");
+        if (StringUtils.equalsIgnoreCase(args[0], "write")) {
+          twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory(), false);
+        }
+
+      }
+      
+    }
+    
+    System.out.println(report);
+    
   }
   
   /**
@@ -71,7 +131,24 @@ public class UserAgentUtils {
       
       UserAgent userAgent = userAgent(userAgentString);
       if (userAgent != null && userAgent.getBrowser() != null) {
-        return userAgent.getBrowser().getName();
+        StringBuilder result = new StringBuilder(userAgent.getBrowser().getName());
+        
+        Version version = userAgent == null ? null : userAgent.getBrowserVersion();
+        
+        if (version != null) {
+          if (!StringUtils.isBlank(version.getMajorVersion())) {
+            
+            //version might already be in there
+            if (result.indexOf(version.getMajorVersion()) == -1) {
+            
+              result.append(" ").append(version.getMajorVersion());
+              if (!StringUtils.isBlank(version.getMinorVersion()) && !StringUtils.equals("0", version.getMinorVersion())) {
+                result.append(".").append(version.getMinorVersion());
+              }
+            }
+          }
+        }
+        return result.toString();
       }
       
     } catch (Exception e) {

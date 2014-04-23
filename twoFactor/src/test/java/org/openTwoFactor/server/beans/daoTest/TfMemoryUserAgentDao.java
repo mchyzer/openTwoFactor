@@ -99,4 +99,11 @@ public class TfMemoryUserAgentDao implements TwoFactorUserAgentDao {
     return result;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#retrieveAll()
+   */
+  public List<TwoFactorUserAgent> retrieveAll() {
+    return new ArrayList<TwoFactorUserAgent>(userAgents);
+  }
+
 }

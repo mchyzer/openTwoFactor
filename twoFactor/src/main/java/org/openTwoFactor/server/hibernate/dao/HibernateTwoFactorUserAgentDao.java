@@ -119,4 +119,14 @@ public class HibernateTwoFactorUserAgentDao implements TwoFactorUserAgentDao {
     return theList;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserAgentDao#retrieveAll()
+   */
+  public List<TwoFactorUserAgent> retrieveAll() {
+    List<TwoFactorUserAgent> theList = HibernateSession.byHqlStatic().createQuery(
+        "select tfua from TwoFactorUserAgent as tfua where tfua.deletedOn is null")
+        .list(TwoFactorUserAgent.class);
+    return theList;
+  }
+
 }

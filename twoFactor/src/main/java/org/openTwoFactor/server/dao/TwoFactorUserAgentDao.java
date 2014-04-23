@@ -16,6 +16,12 @@ import org.openTwoFactor.server.beans.TwoFactorUserAgent;
 public interface TwoFactorUserAgentDao {
 
   /**
+   * get all user agents
+   * @return all user agents
+   */
+  public List<TwoFactorUserAgent> retrieveAll();
+  
+  /**
    * retrieve user agents that are deleted for longer than a certain amount of time
    * @param selectBeforeThisMilli is the millis since 1970 where records should be older
    * @return the user agents
