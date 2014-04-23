@@ -21,6 +21,8 @@ a {
   border-top-color: #666;
   border-left-color: #666;
   padding: .3em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .tfLinkButton {
