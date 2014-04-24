@@ -38,8 +38,6 @@ public class UserAgentUtils {
     //loop through and fix all user agents
     List<TwoFactorUserAgent> twoFactorUserAgents = TwoFactorDaoFactory.getFactory().getTwoFactorUserAgent().retrieveAll();
     
-    StringBuilder report = new StringBuilder();
-    
     for (TwoFactorUserAgent twoFactorUserAgent : twoFactorUserAgents) {
             
       TwoFactorUserAgent twoFactorUserAgentFromDb = (TwoFactorUserAgent)twoFactorUserAgent.clone();
@@ -73,7 +71,7 @@ public class UserAgentUtils {
           diffs.append(", versionNumber: " + twoFactorUserAgentFromDb.getVersionNumber() + ", and now: " + twoFactorUserAgent.getVersionNumber());
 
         }
-        report.append(diffs).append("\n");
+        System.out.println(diffs);
         if (StringUtils.equalsIgnoreCase(args[0], "write")) {
           twoFactorUserAgent.store(TwoFactorDaoFactory.getFactory(), false);
         }
@@ -81,9 +79,7 @@ public class UserAgentUtils {
       }
       
     }
-    
-    System.out.println(report);
-    
+        
   }
   
   /**
