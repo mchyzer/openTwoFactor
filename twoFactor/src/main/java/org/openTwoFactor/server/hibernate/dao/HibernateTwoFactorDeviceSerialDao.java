@@ -10,7 +10,6 @@ import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
 import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
-import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -108,6 +107,17 @@ public class HibernateTwoFactorDeviceSerialDao implements TwoFactorDeviceSerialD
         "select tfds from TwoFactorDeviceSerial as tfds where tfds.deletedOn is not null and tfds.deletedOn < :selectBeforeThisMilli ")
         .setLong("selectBeforeThisMilli", selectBeforeThisMilli)
         .options(new TfQueryOptions().paging(1000, 1,false))
+        .list(TwoFactorDeviceSerial.class);
+    return theList;
+  }
+
+
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveAll()
+   */
+  public List<TwoFactorDeviceSerial> retrieveAll() {
+    List<TwoFactorDeviceSerial> theList = HibernateSession.byHqlStatic().createQuery(
+        "select tfds from TwoFactorDeviceSerial as tfds order by tfds.uuid")
         .list(TwoFactorDeviceSerial.class);
     return theList;
   }

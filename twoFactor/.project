@@ -14,18 +14,6 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>CSRF_GUARD_RESOURCES</name>
-			<type>2</type>
-			<locationURI>CSRF_GUARD_RESOURCES</locationURI>
-		</link>
-		<link>
-			<name>CSRF_GUARD_SOURCE</name>
-			<type>2</type>
-			<locationURI>CSRF_GUARD_SOURCE</locationURI>
-		</link>
-	</linkedResources>
 	<variableList>
 		<variable>
 			<name>CSRF_GUARD_RESOURCES</name>

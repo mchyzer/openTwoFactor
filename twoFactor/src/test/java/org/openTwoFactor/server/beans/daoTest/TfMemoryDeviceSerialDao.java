@@ -79,6 +79,9 @@ public class TfMemoryDeviceSerialDao implements TwoFactorDeviceSerialDao {
     return null;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveDeletedOlderThanAge(long)
+   */
   @Override
   public List<TwoFactorDeviceSerial> retrieveDeletedOlderThanAge(
       long selectBeforeThisMilli) {
@@ -100,6 +103,10 @@ public class TfMemoryDeviceSerialDao implements TwoFactorDeviceSerialDao {
     return result;
   }
 
+  /**
+   * 
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveByUuid(java.lang.String)
+   */
   @Override
   public TwoFactorDeviceSerial retrieveByUuid(String uuid) {
     for (TwoFactorDeviceSerial twoFactorDeviceSerial : TwoFactorServerUtils.nonNull(deviceSerials)) {
@@ -108,6 +115,14 @@ public class TfMemoryDeviceSerialDao implements TwoFactorDeviceSerialDao {
       }
     }
     return null;
+  }
+
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveAll()
+   */
+  @Override
+  public List<TwoFactorDeviceSerial> retrieveAll() {
+    return new ArrayList<TwoFactorDeviceSerial>(deviceSerials);
   }
 
 }

@@ -17,7 +17,7 @@ public interface TwoFactorDeviceSerialDao {
   
   /**
    * find the device serial by the encrypted secret
-   * @param uuid
+   * @param secretEncrypted
    * @return device serial row
    */
   public TwoFactorDeviceSerial retrieveBySecretHash(String secretEncrypted);
@@ -56,4 +56,10 @@ public interface TwoFactorDeviceSerialDao {
    */
   public void delete(TwoFactorDeviceSerial twoFactorDeviceSerial);
 
+  /**
+   * get all device serials
+   * @return all
+   */
+  public List<TwoFactorDeviceSerial> retrieveAll();
+  
 }

@@ -973,6 +973,30 @@ public class TwoFactorServerUtils {
   }
   
   /**
+   * encrypt a message to SHA 256
+   * @param plaintext
+   * @return the hash
+   */
+  public synchronized static String encryptMd5(String plaintext) {
+    MessageDigest md = null;
+    try {
+      md = MessageDigest.getInstance("MD5"); //step 2
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+    try {
+      md.update(plaintext.getBytes("UTF-8")); //step 3
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+  }
+    byte raw[] = md.digest(); //step 4
+    byte[] encoded = Base64.encodeBase64(raw); //step 5
+    String hash = new String(encoded);
+    //String hash = (new BASE64Encoder()).encode(raw); //step 5
+    return hash; //step 6
+  }
+  
+  /**
    * If we can, inject this into the exception, else return false
    * @param t
    * @param message

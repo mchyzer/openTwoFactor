@@ -31,6 +31,13 @@ public interface TwoFactorUserAttrDao {
   public TwoFactorUserAttr retrieveByUserAndAttributeName(String userUuid, String attributeName);
   
   /**
+   * retrieve user attrs by attribute name
+   * @param attributeName
+   * @return the user
+   */
+  public List<TwoFactorUserAttr> retrieveByAttributeName(String attributeName);
+  
+  /**
    * retrieve attributes for a user, cannot be delete dated
    * @param userUuid
    * @return the user

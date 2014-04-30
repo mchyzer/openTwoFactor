@@ -67,6 +67,22 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
   }
 
   /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserAttrDao#retrieveByAttributeName(java.lang.String)
+   */
+  @Override
+  public List<TwoFactorUserAttr> retrieveByAttributeName(String attributeName) {
+    if (TwoFactorServerUtils.isBlank(attributeName)) {
+      throw new RuntimeException("Why is attributeName blank? ");
+    }
+    
+    List<TwoFactorUserAttr> theList = HibernateSession.byHqlStatic().createQuery(
+        "select tfua from TwoFactorUserAttr as tfua where tfua.attributeName = :theAttributeName order by tfua.uuid")
+        .setString("theAttributeName", attributeName)
+        .list(TwoFactorUserAttr.class);
+    return theList;
+  }
+
+  /**
    * @see org.openTwoFactor.server.dao.TwoFactorUserAttrDao#store(org.openTwoFactor.server.beans.TwoFactorUserAttr)
    */
   @Override

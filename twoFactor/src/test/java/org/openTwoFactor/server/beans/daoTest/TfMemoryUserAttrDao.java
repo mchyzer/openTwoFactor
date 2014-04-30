@@ -95,6 +95,22 @@ public class TfMemoryUserAttrDao implements TwoFactorUserAttrDao {
   }
 
   /**
+   * @see org.openTwoFactor.server.dao.TwoFactorUserAttrDao#retrieveByAttributeName(java.lang.String)
+   */
+  @Override
+  public List<TwoFactorUserAttr> retrieveByAttributeName(
+      String attributeName) {
+    List<TwoFactorUserAttr> result = new ArrayList<TwoFactorUserAttr>();
+
+    for (TwoFactorUserAttr current : userAttrs) {
+      if (StringUtils.equals(current.getAttributeName(), attributeName)) {
+        result.add(current);
+      }
+    }
+    return result;
+  }
+
+  /**
    * @see org.openTwoFactor.server.dao.TwoFactorUserAttrDao#store(org.openTwoFactor.server.beans.TwoFactorUserAttr)
    */
   @Override

@@ -139,12 +139,23 @@ public class EncryptionKey {
    * @return the encrypted string
    */
   public static String encrypt(String data) {
+    return encrypt(data, symmetricEncryptionProvider());
+  }
+
+  
+  /**
+   * will return the timestamp used to encrypt underscore, underscore, and the data
+   * @param data
+   * @param tfSymmetricEncryption 
+   * @return the encrypted string
+   */
+  public static String encrypt(String data, TfSymmetricEncryption tfSymmetricEncryption) {
     
     long timestamp = System.currentTimeMillis();
     
     String encryptKeyForTimestamp = encryptKeyForTimestamp(timestamp);
     
-    String encryptedString = new Crypto(encryptKeyForTimestamp).encrypt(data);
+    String encryptedString = tfSymmetricEncryption.encrypt(encryptKeyForTimestamp, data);
     
     return timestamp + "__" + encryptedString;
   }
@@ -160,6 +171,18 @@ public class EncryptionKey {
    * @return the decrypted string
    */
   public static String decrypt(String timestampAndEncryptedData) {
+    
+    return decrypt(timestampAndEncryptedData, symmetricEncryptionProvider());
+    
+  }
+  
+  /**
+   * decrypt data based on the key referenced by the timestamp
+   * @param timestampAndEncryptedData must have the timestamp underscore underscore and the encrypted string
+   * @param tfSymmetricEncryption encryption provider
+   * @return the decrypted string
+   */
+  public static String decrypt(String timestampAndEncryptedData, TfSymmetricEncryption tfSymmetricEncryption) {
     
     if (StringUtils.isBlank(timestampAndEncryptedData)) {
       return null;
@@ -180,9 +203,21 @@ public class EncryptionKey {
     
     String encryptKeyForTimestamp = encryptKeyForTimestamp(timestamp);
     
-    String decryptedString = new Crypto(encryptKeyForTimestamp).decrypt(encryptedData);
+    String decryptedString = tfSymmetricEncryption.decrypt(encryptKeyForTimestamp, encryptedData);
     
     return decryptedString;
+  }
+  
+  
+  /**
+   * symmetric encryption provider instance
+   * @return the symmetic encryption provider
+   */
+  public static TfSymmetricEncryption symmetricEncryptionProvider() {
+    String symmeticEncryptionProviderClassName = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.symmetricEncryptionProvider", TfSymmetricEncryptAesCbcPkcs5Padding.class.getName());
+    Class<TfSymmetricEncryption> symmetricEncryptionProviderClass = TwoFactorServerUtils.forName(symmeticEncryptionProviderClassName);
+    return TwoFactorServerUtils.newInstance(symmetricEncryptionProviderClass);
   }
   
   /**

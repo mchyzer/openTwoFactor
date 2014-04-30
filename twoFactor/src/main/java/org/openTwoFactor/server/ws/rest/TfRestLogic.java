@@ -16,6 +16,7 @@ import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.encryption.TwoFactorOath;
+import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
@@ -662,8 +663,31 @@ public class TfRestLogic {
         //update the browser trust if inactivity date
         if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.browserTrustIsInactivityBased", true)) {
           trafficLogMap.put("previousBrowserTrustedOn", new Date(twoFactorBrowser.getWhenTrusted()).toString());
-          twoFactorBrowser.setWhenTrusted(System.currentTimeMillis());
-          twoFactorBrowser.store(twoFactorDaoFactory);
+          {
+            //we were getting stale object state right here... loop and make sure it works
+            int max = 5;
+            for (int i=0;i<max;i++) {
+              try {
+                if (twoFactorBrowser == null) {
+                  twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuid(twoFactorDaoFactory, cookieUserUuid, false);
+                }
+                twoFactorBrowser.setWhenTrusted(System.currentTimeMillis());
+                twoFactorBrowser.store(twoFactorDaoFactory);
+                //we are good
+                break;
+              } catch (TfStaleObjectStateException tsose) {
+                LOG.warn("Stale object exception on browser: " + cookieUserUuid);
+                if (i < max-1) {
+                  twoFactorBrowser = null;
+                  TwoFactorServerUtils.sleep(20);
+                  //its ok, try again
+                } else {
+                  //not good, its not working
+                  throw tsose; 
+                }
+              }
+            }
+          }
           trafficLogMap.put("newBrowserTrustedOn", new Date(twoFactorBrowser.getWhenTrusted()).toString());
         }
         tfCheckPasswordResponse.setWhenTrusted(TwoFactorServerUtils.convertToIso8601(new Date(twoFactorBrowser.getWhenTrusted())));
