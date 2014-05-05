@@ -175,7 +175,7 @@ CREATE TABLE two_factor_user_attr
   USER_UUID                VARCHAR(40) NOT NULL comment 'foreign key to two_factor_user',
   LAST_UPDATED             BIGINT(20) NOT NULL comment 'when this row was last updated',
   VERSION_NUMBER           BIGINT(20) NOT NULL comment 'hibernate version number to make sure two updates dont happen at once',
-  ATTRIBUTE_VALUE_STRING   VARCHAR(100) comment 'if this is a string or boolean attribute, this is the value',
+  ATTRIBUTE_VALUE_STRING   VARCHAR(400) comment 'if this is a string or boolean attribute, this is the value',
   ATTRIBUTE_VALUE_INTEGER  BIGINT(20) comment 'if this is an integer attribute, this is the value',
   DELETED_ON               BIGINT(20) comment 'if this row needs to be deleted, set a delete date for a week, then actually delete it',
   ENCRYPTION_TIMESTAMP     BIGINT(20) comment 'timestamp used for encrypting the data if applicable',
@@ -768,7 +768,7 @@ CREATE TABLE TWO_FACTOR_DEVICE_SERIAL
   USER_UUID          VARCHAR(40) comment 'uuid of the user who registered this fob',
   WHEN_REGISTERED    BIGINT(20) comment 'millis since 1970 that this secret was registered',
   SERIAL_NUMBER      VARCHAR(40)         NOT NULL comment 'serial number on the device',
-  TWO_FACTOR_SECRET  VARCHAR(40)         NOT NULL comment 'encrypted secret for that device',
+  TWO_FACTOR_SECRET  VARCHAR(400)         NOT NULL comment 'encrypted secret for that device',
   TWO_FACTOR_SECRET_HASH  VARCHAR(100)    NOT NULL comment 'hashed secret so we can see if a secret has been used already'
 );
 

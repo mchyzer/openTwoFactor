@@ -32,9 +32,6 @@ public class TfSymmetricLegacyAesEncryption implements TfSymmetricEncryption {
     String cbcDecrypted = new TfSymmetricEncryptAesCbcPkcs5Padding().decrypt(key, cbcEncrypted);
     System.out.println("AesEcbPkcs5Padding(" + key + ") decrypted: " + cbcDecrypted);
     
-    cbcDecrypted = new TfSymmetricEncryptAesCbcCombo().decrypt(key, legacyEncrypted);
-    System.out.println("Legacy(" + key + ") decrypted: " + cbcDecrypted);
-    
     
   }
   
