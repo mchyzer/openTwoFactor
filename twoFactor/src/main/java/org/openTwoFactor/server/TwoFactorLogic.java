@@ -4,6 +4,7 @@
 package org.openTwoFactor.server;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -210,8 +211,12 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     // Getting the key and converting it to Base32
     Base32 codec = new Base32();
     buffer = codec.encode(buffer);
-    String secret = new String(buffer);
-    return secret;
+    try {
+      String secret = new String(buffer, "UTF-8");
+      return secret;
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException("UTF-8");
+    }
   }
 
   /**

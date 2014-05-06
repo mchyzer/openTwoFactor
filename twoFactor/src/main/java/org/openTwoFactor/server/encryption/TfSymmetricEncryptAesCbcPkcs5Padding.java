@@ -3,6 +3,7 @@
  */
 package org.openTwoFactor.server.encryption;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
@@ -112,7 +113,7 @@ public class TfSymmetricEncryptAesCbcPkcs5Padding implements TfSymmetricEncrypti
       System.arraycopy(iv, 0, result, 0, iv.length);
       System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
       
-      return new String(new Base64().encode(result));
+      return new String(new Base64().encode(result), "UTF-8");
 
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -219,8 +220,12 @@ public class TfSymmetricEncryptAesCbcPkcs5Padding implements TfSymmetricEncrypti
     }
     
     //base64 sha-1
-    key = TwoFactorServerUtils.encryptSha(new String(keyBytesTemp));
-    
+    try {
+      key = TwoFactorServerUtils.encryptSha(new String(keyBytesTemp, "UTF-8"));
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException(uee);
+    }
+
     keyBytesTemp = Base64.decodeBase64(key);
     
     if (keyBytesTemp.length < 16) {
@@ -267,7 +272,7 @@ public class TfSymmetricEncryptAesCbcPkcs5Padding implements TfSymmetricEncrypti
       // decrypt the message
       byte[] decrypted = cipher.doFinal(encryptedDataBytes);
 
-      return new String(decrypted);
+      return new String(decrypted, "UTF-8");
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

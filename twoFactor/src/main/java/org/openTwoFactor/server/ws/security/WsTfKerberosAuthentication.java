@@ -6,6 +6,7 @@
 package org.openTwoFactor.server.ws.security;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -260,7 +261,13 @@ public class WsTfKerberosAuthentication implements WsTfCustomAuthentication {
     byte[] base64Bytes = authHeaderBase64Part.getBytes();
     byte[] unencodedBytes = Base64.decodeBase64(base64Bytes);
     
-    String unencodedString = new String(unencodedBytes);
+    String unencodedString = null;
+    
+    try {
+      unencodedString = new String(unencodedBytes, "UTF-8");
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException(uee);
+    }
     
     //split based on user/pass
     String user = TwoFactorServerUtils.prefixOrSuffix(unencodedString, ":", true);

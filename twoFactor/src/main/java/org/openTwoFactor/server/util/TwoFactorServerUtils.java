@@ -79,6 +79,7 @@ import net.sf.json.util.PropertyFilter;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -947,29 +948,21 @@ public class TwoFactorServerUtils {
       sleep(1000);
     }
   }
-  
+
   /**
    * encrypt a message to SHA
    * @param plaintext
    * @return the hash
    */
   public synchronized static String encryptSha(String plaintext) {
-    MessageDigest md = null;
+    
     try {
-      md = MessageDigest.getInstance("SHA"); //step 2
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
-    try {
-      md.update(plaintext.getBytes("UTF-8")); //step 3
+    
+      byte[] sha1bytes = DigestUtils.sha1(plaintext.getBytes("UTF-8"));
+      return Base64.encodeBase64String(sha1bytes);
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
-  }
-    byte raw[] = md.digest(); //step 4
-    byte[] encoded = Base64.encodeBase64(raw); //step 5
-    String hash = new String(encoded);
-    //String hash = (new BASE64Encoder()).encode(raw); //step 5
-    return hash; //step 6
+    }
   }
   
   /**
@@ -991,9 +984,14 @@ public class TwoFactorServerUtils {
   }
     byte raw[] = md.digest(); //step 4
     byte[] encoded = Base64.encodeBase64(raw); //step 5
-    String hash = new String(encoded);
-    //String hash = (new BASE64Encoder()).encode(raw); //step 5
-    return hash; //step 6
+    
+    try {
+      String hash = new String(encoded, "UTF-8");
+      //String hash = (new BASE64Encoder()).encode(raw); //step 5
+      return hash; //step 6
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException(uee);
+    }
   }
   
   /**

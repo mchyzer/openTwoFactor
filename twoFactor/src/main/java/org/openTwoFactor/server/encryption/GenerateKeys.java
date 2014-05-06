@@ -4,6 +4,7 @@
  */
 package org.openTwoFactor.server.encryption;
 
+import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 
 import org.apache.commons.codec.binary.Base64;
@@ -24,7 +25,13 @@ public class GenerateKeys {
     
     new SecureRandom().nextBytes(bytes);
     
-    String string = (new String(new Base64().encode(bytes)));
+    String string = null;
+    
+    try {
+      string = new String(new Base64().encode(bytes), "UTF-8");
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException(uee);
+    }
     
     for (char theChar : new char[]{'+', '/', '='}) {
       if (string.contains(Character.toString(theChar))) {

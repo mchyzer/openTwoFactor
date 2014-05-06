@@ -14,7 +14,7 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
 /**
- *
+ * call command line like:  /opt/appserv/tomcat/apps/twoFactor/java/bin/java -cp "/opt/appserv/tomcat/apps/twoFactorWs/webapps/twoFactorWs/WEB-INF/classes:/opt/appserv/tomcat/apps/twoFactorWs/webapps/twoFactorWs/WEB-INF/lib/*:/opt/appserv/common/tomcat6_32_ds_base/lib/servlet-api.jar" org.openTwoFactor.server.encryption.TfSymmetricUtils
  */
 public class TfSymmetricUtils {
 
@@ -32,11 +32,51 @@ public class TfSymmetricUtils {
    */
   public static void main(String[] args) throws Exception {
 
-    if (args.length != 1) {
+    if (args.length < 1) {
       usage();
     }
 
-    if (args.length == 1 && StringUtils.equals(args[0], "generatePass")) {
+    if (args.length == 3 && StringUtils.equals(args[0], "encryptCbc")) {
+      
+      String secret = args[1];
+      String text = args[2];
+      
+      String encrypted = new TfSymmetricEncryptAesCbcPkcs5Padding().encrypt(secret, text);
+      
+      System.out.println(encrypted);
+          
+      return;
+      
+    } else if (args.length == 3 && StringUtils.equals(args[0], "decryptCbc")) {
+      
+      String secret = args[1];
+      String encryptedText = args[2];
+      
+      String decrypted = new TfSymmetricEncryptAesCbcPkcs5Padding().decrypt(secret, encryptedText);
+      
+      System.out.println(decrypted);
+      return;
+      
+    } else     if (args.length == 2 && StringUtils.equals(args[0], "encryptKeyCbc")) {
+      
+      String text = args[1];
+      
+      String encrypted = EncryptionKey.encrypt(text, new TfSymmetricEncryptAesCbcPkcs5Padding());
+      
+      System.out.println(encrypted);
+          
+      return;
+      
+    } else if (args.length == 2 && StringUtils.equals(args[0], "decryptKeyCbc")) {
+      
+      String encryptedText = args[1];
+      
+      String decrypted = EncryptionKey.decrypt(encryptedText, new TfSymmetricEncryptAesCbcPkcs5Padding());
+      
+      System.out.println(decrypted);
+      return;
+            
+    } else if (args.length == 1 && StringUtils.equals(args[0], "generatePass")) {
       
       char[] pass = new char[40];
       for (int i=0;i<pass.length;i++) {
@@ -283,13 +323,17 @@ public class TfSymmetricUtils {
    * 
    */
   private static void usage() {
-    
-    System.out.println("Call with 'dumpSecretsCombo' to generate a backup script for secrets as CBC, ");
-    System.out.println("   or if the secrets are in legacy format then convert to CBC");
+
+    System.out.println("Call with 'generatePass' to generate a secure password for config file");
     System.out.println("Call with 'dumpSecretsAsIs' to generate a backup script for secrets");
+    System.out.println("Call with 'dumpSecretsLegacyToCbc' to generate an update script to convert from legacy to CBC");
+    System.out.println("Call with 'dumpSecretsPlainLegacy' to show secrets from legacy encryption");
+    System.out.println("Call with 'dumpSecretsPlainCbc' to show secrets from cbc encryption");
+    System.out.println("Call with 'encryptCbc secret text' encrypt something with cbc");
+    System.out.println("Call with 'decryptCbc secret encryptedText' decrypt something with cbc");
+    System.out.println("Call with 'encryptKeyCbc text' decrypt something with cbc encrypt key");
+    System.out.println("Call with 'decryptKeyCbc encryptedText' decrypt something with cbc encrypt key");
     System.exit(1);
   }
-
-
   
 }

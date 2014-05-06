@@ -422,9 +422,13 @@ public class TwoFactorServerUtilsElSafe {
   }
     byte raw[] = md.digest(); //step 4
     byte[] encoded = Base64.encodeBase64(raw); //step 5
-    String hash = new String(encoded);
-    //String hash = (new BASE64Encoder()).encode(raw); //step 5
-    return hash; //step 6
+    try {
+      String hash = new String(encoded, "UTF-8");
+      //String hash = (new BASE64Encoder()).encode(raw); //step 5
+      return hash; //step 6
+    } catch (UnsupportedEncodingException uee) {
+      throw new RuntimeException(uee);
+    }
   }
   
   /**
