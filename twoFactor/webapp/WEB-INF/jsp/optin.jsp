@@ -28,9 +28,6 @@
     <%@ include file="../assetsJsp/commonError.jsp"%>
     ${textContainer.text['optinStep1description']}
     <br /><br />
-    <div class="substep">
-      ${textContainer.text['optinStep1substep']}
-    </div><br />
     
     ${textContainer.text['optinStep2description']}
 
@@ -53,10 +50,13 @@
             <div class="clearboth"></div> 
             <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.allowSerialNumberRegistration}">
               ${textContainer.text['optinStep2howToRegisterToken']}<br />
+              <%-- the blur is for IE, the click doesnt work until a blur... --%>
               <input type="radio" name="howRegisterToken" value="serial" id="serialRadioId"
+                onclick="this.blur();"
                 onchange="$('.serialClass').show('slow'); $('.secretClass').hide('slow'); return true;"
                 /> ${textContainer.text['optinStep2registerWithSerialNumber'] } <br />
               <input type="radio" name="howRegisterToken" value="secret"  id="secretRadioId"
+                onclick="this.blur();"
                 onchange="$('.serialClass').hide('slow'); $('.secretClass').show('slow'); return true;"
                 /> ${textContainer.text['optinStep2registerWithSecret'] }<br /><br />
             </c:if>

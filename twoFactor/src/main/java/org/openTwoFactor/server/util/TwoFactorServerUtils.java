@@ -190,6 +190,25 @@ public class TwoFactorServerUtils {
       throw new RuntimeException(error, pse);
     }
   }
+  
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    
+    for (int i=0;i<100;i++) {
+      uuid();
+    }
+    
+    long now = System.nanoTime();
+    
+    for (int i=0;i<10000;i++) {
+      uuid();
+    }
+    
+    System.out.println((System.nanoTime() - now) / 10000);
+  }
 
   /**
    * include or exclude chars based on a regex
