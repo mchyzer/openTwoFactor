@@ -35,7 +35,7 @@
     <div class="formBox profileFormBox">
       <div class="formRow">
           <c:choose>
-            <c:when test="twoFactorRequestContainer.editableEmail" >
+            <c:when test="${twoFactorRequestContainer.editableEmail == true}" >
               <div class="formLabel"><b><label for="email0">${textContainer.text['profileEmailLabel']}</label></b></div>
               <div class="formValue">
                 <input type="text" name="email0" size="18" style="width: 16em;"
