@@ -520,7 +520,7 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
       throw new RuntimeException("attributeName is too long (30): '" + this.getAttributeName() + "'");
     }
 
-    if (this.getAttributeValueString() != null && this.getAttributeValueString().length() > 90) {
+    if (this.getAttributeValueString() != null && this.getAttributeValueString().length() > 390) {
       throw new RuntimeException("attributeValue is too long(90): '" + this.getAttributeValueString() + "'");
     }
     

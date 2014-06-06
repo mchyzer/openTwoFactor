@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
@@ -473,6 +474,11 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     
     if (this.action != null && this.action.length() > 30) {
       throw new RuntimeException("action is too long (30): '" + this.action + "'");
+    }
+    
+    //is the action on the ignore list?
+    if (TwoFactorServerConfig.retrieveConfig().dontAuditActions().contains(this.action)) {
+      return;
     }
     
     //max length if 1000, chop off some for invalid chars

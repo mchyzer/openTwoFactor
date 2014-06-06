@@ -6,7 +6,9 @@ package org.openTwoFactor.server.config;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,42 @@ import edu.internet2.middleware.grouperClient.config.ConfigPropertiesCascadeBase
  */
 public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
 
+  /**
+   * set of strings not null to not audit
+   */
+  private Set<String> dontAuditActions = null;
+  
+  /**
+   * audit actions that shouldnt be audited
+   * @return the set of strings or empty set, never null
+   */
+  public Set<String> dontAuditActions() {
+    
+    if (this.dontAuditActions == null) {
+
+      synchronized(this) {
+        
+        if (this.dontAuditActions == null) {
+          
+          String dontAuditActionsString = this.propertyValueString("twoFactorServer.dontAuditActions");
+          
+          Set<String> tempDontAuditActions = new HashSet<String>();
+          
+          if (!StringUtils.isBlank(dontAuditActionsString)) {
+            
+            tempDontAuditActions = TwoFactorServerUtils.splitTrimToSet(dontAuditActionsString, ",");
+            
+          }
+          this.dontAuditActions = tempDontAuditActions;
+        }
+        
+      }
+      
+    }
+    return this.dontAuditActions;
+    
+  }
+  
   /**
    * get the contact implementation
    * @return the authz

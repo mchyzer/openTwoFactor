@@ -12,7 +12,9 @@ import java.security.SecureRandom;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.binary.Hex;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 
@@ -34,19 +36,23 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    * @param secret 
    * @param sequentialPassIndex 
    * @param tokenIndex 
+   * @param currentTimeMillis 
+   * @param isHex 
    * 
    */
-  public static void printPasswordsForSecret(String secret, Long sequentialPassIndex, Long tokenIndex, Long currentTimeMillis) {
+  public static void printPasswordsForSecret(String secret, Long sequentialPassIndex, Long tokenIndex, Long currentTimeMillis, boolean isHex) {
     
     Base32 codec = new Base32();
     byte[] plainText = codec.decode(secret);
     
-//    try {
-//      plainText = Hex.decodeHex(secret.toCharArray());
-//    } catch (DecoderException de) {
-//      throw new RuntimeException("Bad hex");
-//    }
-      
+    if (isHex) {
+      try {
+        plainText = Hex.decodeHex(secret.toCharArray());
+      } catch (DecoderException de) {
+        throw new RuntimeException("Bad hex");
+      }
+    }
+    
     if (sequentialPassIndex == null) {
       sequentialPassIndex = 500001L;
     }
@@ -83,7 +89,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     currentTimeMillis = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
 
-    for (int i=-10;i<10;i++) {
+    for (int i=-20;i<20;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -96,7 +102,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     System.out.println("\nTOTP 30");
     
-    for (int i=-10;i<10;i++) {
+    for (int i=-20;i<20;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -117,7 +123,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), username);
     printPasswordsForSecret(twoFactorUser.getTwoFactorSecretUnencrypted(), 
-        twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), null);
+        twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), null, false);
   }
   
   /**
@@ -133,17 +139,30 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       userName = args[0];
     }
     
+    
+    
+    String secret = "XXXXXXXX";
+    System.out.println(secret);
+    Base32 codec = new Base32();
+    byte[] plainText = codec.decode(secret);
+    
+    secret = new String(Hex.encodeHex(plainText));
+    
+    System.out.println(secret);
+    
     //printPasswordsForUser(userName);
     
-   // printPasswordsForSecret("RPAR TWTW 4EPP CT7T ", null, null);
+   // printPasswordsForSecret("", null, null, null, true);
    // printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
     
     //printPasswordsForSecret("DUUE TNCV DGNK DXUL", null, null, 1391019502150L);
+
     
-    for (int i=0;i<100;i++) {
-      String secret = new TwoFactorLogic().generateBase32secret(10);
-      System.out.println(secret);
-    }
+    
+//    for (int i=0;i<100;i++) {
+//      String secret = new TwoFactorLogic().generateBase32secret(10);
+//      System.out.println(secret);
+//    }
 //    secret = "KJARPPQYTM3E7QYR";
 //    System.out.println(secret);
 //    Base32 codec = new Base32();

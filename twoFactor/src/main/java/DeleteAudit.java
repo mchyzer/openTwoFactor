@@ -28,23 +28,37 @@ public class DeleteAudit {
    */
   public static void main(String[] args) {
 
-    int batch = Integer.parseInt(args[0]);
     
-    for (int i=0;i<20000;i++) {
+    long since = System.currentTimeMillis() - (1000*60*60*24*15);
+    System.out.println("Records before " + since);
+    
+    if (true) {
+      return;
+    }
+    
+    for (int i=0;i<100000;i++) {
 
+      long now = System.currentTimeMillis();
+      
       List<String> theList = HibernateSession.bySqlStatic().listSelect(String.class,
-          "SELECT uuid FROM two_factor_audit tfa where tfa.the_Timestamp < 1397966400000 and tfa.action = 'AUTHN_NOT_OPTED_IN' and rownum < 30000", null);
+          "SELECT uuid FROM two_factor_audit tfa where tfa.the_Timestamp < " 
+              + since + " and tfa.action = 'AUTHN_NOT_OPTED_IN' and rownum < 400", null);
 
-      System.out.println("Selected : " + i + ": " + new Date());
+      System.out.println("Selected : " + i + ": " + new Date() + ", " + theList.size());
+
+      if (theList.size() == 0) {
+        break;
+      }
+      
 //      for (String uuid : theList) {
 //        ByHqlStatic byHqlStatic = HibernateSession.byHqlStatic();
 //        String sql = "delete from TwoFactorAudit where uuid = :theUuid";
 //        byHqlStatic.createQuery(sql).setString("theUuid", uuid).executeUpdate();
 //      }      
 
-      for (int j=0;j<10;j++) {
+      for (int j=0;j<TwoFactorServerUtils.batchNumberOfBatches(theList, 100);j++) {
         try {
-          List<String> batchUuids = TwoFactorServerUtils.batchList(theList, 100, batch*30+j);
+          List<String> batchUuids = TwoFactorServerUtils.batchList(theList, 100, j);
           ByHqlStatic byHqlStatic = HibernateSession.byHqlStatic();
           String sql = "delete from TwoFactorAudit where uuid in (" + TfHibUtils.convertToInClause(batchUuids, byHqlStatic) + ")";
           byHqlStatic.createQuery(sql).executeUpdate();
@@ -52,7 +66,14 @@ public class DeleteAudit {
           e.printStackTrace();
         }
       }
-      System.out.println("Done " + i + ": " + new Date());
+      
+      //sleep a minute
+      long millisToSleep = 60000 - (System.currentTimeMillis() - now);
+
+      System.out.println("Done " + i + ": " + new Date() + ", sleeping " + millisToSleep + "ms");
+
+      TwoFactorServerUtils.sleep(millisToSleep);
+      
     }
     
   }
