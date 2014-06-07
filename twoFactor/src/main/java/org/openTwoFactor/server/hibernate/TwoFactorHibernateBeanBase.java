@@ -306,6 +306,14 @@ public abstract class TwoFactorHibernateBeanBase implements TwoFactorCloneable, 
   private Long versionNumber = INITIAL_VERSION_NUMBER;
   
   /**
+   * if this object will be inserted, then true, else false means update
+   * @return true/false
+   */
+  public boolean isInsert() {
+    return this.versionNumber == INITIAL_VERSION_NUMBER;
+  }
+  
+  /**
    * hibernate increments with each insert/update (-1 means insert, 0+ means update, null means 0)
    * @return the hibernateVersion
    */

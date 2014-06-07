@@ -95,7 +95,7 @@ CREATE TABLE TWO_FACTOR_DAEMON_LOG
   RECORDS_PROCESSED  INTEGER,
   DELETED_ON         INTEGER,
   SERVER_NAME        VARCHAR(100 )          NOT NULL,
-  PROCESS_ID         VARCHAR(100 )          NOT NULL,
+  PROCESS_ID         VARCHAR(100 )         ,
   LAST_UPDATED       INTEGER                NOT NULL,
   DETAILS            VARCHAR(2000),
   primary key (uuid)

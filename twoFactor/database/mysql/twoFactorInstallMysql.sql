@@ -69,7 +69,7 @@ CREATE TABLE two_factor_daemon_log
   DELETED_ON         BIGINT(20)                    comment 'millis since 1970 that this row was deleted',
   SERVER_NAME        VARCHAR(100)         NOT NULL comment 'server name the daemon ran on',
   LAST_UPDATED       BIGINT(20)           NOT NULL comment 'millis since 1970 that this record has been updated',
-  PROCESS_ID         VARCHAR(100)         NOT NULL comment 'process id of the daemon',
+  PROCESS_ID         VARCHAR(100)          comment 'process id of the daemon',
   DETAILS            VARCHAR(100)                  comment 'details of the daemon log'
 );
 

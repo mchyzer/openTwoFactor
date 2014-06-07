@@ -370,6 +370,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    * @param serviceProviderId 
    * @param serviceProviderName 
    * @param userUuidUsingApp
+   * @param uuidOfBrowserRecord 
    */
   public static void createAndStoreFailsafe(TwoFactorDaoFactory twoFactorDaoFactory, 
       TwoFactorAuditAction twoFactorAuditAction, String ipAddress, String userAgent, String userUuidLoggedIn, String description,
@@ -405,6 +406,7 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
    * @param userAgent
    * @param userUuidOperatingOn
    * @param userUuidLoggedIn 
+   * @param uuidOfBrowserRecord 
    * @return the audit object to augment or store
    */
   public static TwoFactorAudit create(TwoFactorDaoFactory twoFactorDaoFactory,
@@ -477,7 +479,8 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     }
     
     //is the action on the ignore list?
-    if (TwoFactorServerConfig.retrieveConfig().dontAuditActions().contains(this.action)) {
+    //note, allow updates, or deletes of restricted actions
+    if (this.isInsert() && TwoFactorServerConfig.retrieveConfig().dontAuditActions().contains(this.action)) {
       return;
     }
     
