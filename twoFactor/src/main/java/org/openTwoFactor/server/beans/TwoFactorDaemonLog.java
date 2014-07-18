@@ -389,9 +389,9 @@ public class TwoFactorDaemonLog extends TwoFactorHibernateBeanBase {
    */
   @Override
   public boolean dbNeedsUpdate() {
-    TwoFactorAudit dbTwoFactorAudit = (TwoFactorAudit)this.dbVersion();
+    TwoFactorDaemonLog dbTwoFactorDaemonLog = (TwoFactorDaemonLog)this.dbVersion();
     
-    return TwoFactorServerUtils.dbVersionDifferent(dbTwoFactorAudit, this, DB_VERSION_FIELDS);
+    return TwoFactorServerUtils.dbVersionDifferent(dbTwoFactorDaemonLog, this, DB_VERSION_FIELDS);
   }
 
   /**

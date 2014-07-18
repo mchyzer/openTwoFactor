@@ -113,20 +113,20 @@ public class DiagnosticDaemonJobTest extends DiagnosticTask {
   }
 
   /**
-   * @see org.openTwoFactor.server.status.DiagnosticsTask#retrieveName()
+   * @see org.openTwoFactor.server.status.DiagnosticTask#retrieveName()
    */
   @Override
   public String retrieveName() {
     
-    return "loader_" + this.daemonName;
+    return "daemon_" + this.daemonName;
   }
 
   /**
-   * @see org.openTwoFactor.server.status.DiagnosticsTask#retrieveNameFriendly()
+   * @see org.openTwoFactor.server.status.DiagnosticTask#retrieveNameFriendly()
    */
   @Override
   public String retrieveNameFriendly() {
-    return "Loader job " + this.daemonName;
+    return "Daemon job " + this.daemonName;
   }
 
 }

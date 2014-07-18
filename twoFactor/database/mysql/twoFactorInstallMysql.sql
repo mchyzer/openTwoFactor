@@ -94,7 +94,7 @@ CREATE TABLE two_factor_ip_address
 (
   UUID                   VARCHAR(40 ) comment 'this is the primary key',
   IP_ADDRESS             VARCHAR(45 )      NOT NULL comment 'ip address (ipv4 or ipv6) of the source',
-  DOMAIN_NAME            VARCHAR(80 ) comment 'after doing a reverse lookup, domain name if one found',
+  DOMAIN_NAME            VARCHAR(200 ) comment 'after doing a reverse lookup, domain name if one found',
   LOOKED_UP_DOMAIN_NAME  VARCHAR(1)       NOT NULL comment 'T or F if this IP address has been looked up',
   DELETED_ON             BIGINT(20)    comment 'If this row is deleted, set a delete date, and delete it later',
   LAST_UPDATED           BIGINT(20)    NOT NULL comment 'millis since 1970 that this record has been updated',

@@ -18,6 +18,12 @@ public class TimePoc {
    */
   public static void main(String[] args) throws ParseException {
     
+    System.out.println(System.currentTimeMillis());
+    
+    if (true) {
+      return;
+    }
+    
     System.out.println(new Date(1372437208564L));
     System.out.println(new Date(1380194743444L));
     

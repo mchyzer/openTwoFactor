@@ -139,16 +139,16 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       userName = args[0];
     }
     
-    
-    
-    String secret = "XXXXXXXX";
+    String secret = "RPKFDMCU3NTNXEPD";
     System.out.println(secret);
     Base32 codec = new Base32();
     byte[] plainText = codec.decode(secret);
     
-    secret = new String(Hex.encodeHex(plainText));
+    String hexSecret = new String(Hex.encodeHex(plainText));
     
-    System.out.println(secret);
+    System.out.println(hexSecret);
+    
+    printPasswordsForSecret(secret, null, null, null, false);
     
     //printPasswordsForUser(userName);
     

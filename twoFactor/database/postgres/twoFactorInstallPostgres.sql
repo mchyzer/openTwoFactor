@@ -148,7 +148,7 @@ CREATE TABLE TWO_FACTOR_IP_ADDRESS
 (
   UUID                   varchar(40 ),
   IP_ADDRESS             varchar(45 )      NOT NULL,
-  DOMAIN_NAME            varchar(80 ),
+  DOMAIN_NAME            varchar(200 ),
   LOOKED_UP_DOMAIN_NAME  varchar(1 )       NOT NULL,
   DELETED_ON      INTEGER,
   VERSION_NUMBER         INTEGER                NOT NULL,

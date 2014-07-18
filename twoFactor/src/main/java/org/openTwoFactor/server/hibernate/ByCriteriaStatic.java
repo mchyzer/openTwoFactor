@@ -16,7 +16,6 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
-import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.databasePerf.TfDatabasePerfLog;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
@@ -253,7 +252,7 @@ public class ByCriteriaStatic {
     } finally {
       if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
         TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms criterion: " 
-            + TwoFactorServerUtils.toStringForLog(criterions) + ", resultType: " + returnType 
+            + TwoFactorServerUtils.toStringForLog(this.criterions) + ", resultType: " + returnType 
             + ", result: " + TwoFactorServerUtils.toStringForLog(result));
       }
       
@@ -385,7 +384,7 @@ public class ByCriteriaStatic {
     } finally {
       if (TfDatabasePerfLog.LOG.isDebugEnabled()) {
         TfDatabasePerfLog.dbPerfLog(((System.nanoTime()-start)/1000000L) + "ms criterion: " 
-            + TwoFactorServerUtils.toStringForLog(criterions) + ", resultType: " + returnType + ", rows: " + TwoFactorServerUtils.length(result));
+            + TwoFactorServerUtils.toStringForLog(this.criterions) + ", resultType: " + returnType + ", rows: " + TwoFactorServerUtils.length(result));
       }
       
     }
