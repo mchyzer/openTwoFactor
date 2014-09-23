@@ -468,6 +468,12 @@ public class TfRestLogic {
           new TwoFactorPassResult() :
           checkPassword(twoFactorPassUnencrypted, twoFactorUser, secret, phonePassword);
 
+      {
+        //log if we went to Duo or not if we are even configured to try
+        Class<? extends TwoFactorCheckPass> checkPassClass = twoFactorPassResult.getTwoFactorCheckPassImplementation();
+        trafficLogMap.put("checkPassImpl", checkPassClass == null ? null : checkPassClass.getSimpleName());
+      }          
+      
       //if phone pass, expire it
       if (twoFactorPassResult.isPhonePass()) {
         twoFactorUser.setDatePhoneCodeSent(null);

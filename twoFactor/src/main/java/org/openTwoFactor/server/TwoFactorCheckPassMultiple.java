@@ -56,6 +56,8 @@ public class TwoFactorCheckPassMultiple implements TwoFactorCheckPass {
     failoverConfig.setTimeoutSeconds(TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.checkPass.multiple.timeoutSeconds", 10));
     failoverConfig.setConnectionNames(classNamesArray);
     failoverConfig.setFailoverStrategy(FailoverStrategy.activeStandby);
+    failoverConfig.setAffinitySeconds(-1);
+    failoverConfig.setMinutesToKeepErrors(-1);
     FailoverClient.initFailoverClient(failoverConfig);
     return failoverConfig;
   }

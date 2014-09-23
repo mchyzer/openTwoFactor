@@ -217,6 +217,22 @@ public class DuoCommands {
   }
   
   /**
+   * 
+   */
+  public static void loadTestCheckToken() {
+    JSONObject jsonObject = retrieveDuoUserBySomeId("mchyzer");
+    String userId = jsonObject.getString("user_id");
+    verifyDuoCode(userId, "000010");
+    long now = System.nanoTime();
+    for (int i=0;i<10;i++) {
+      verifyDuoCode(userId, "00000" + i);
+    }
+    long nanos = System.nanoTime() - now;
+    System.out.println("Took " + ((nanos/1000000L)/10) + "ms per call");
+  }
+  
+  
+  /**
    * @param args
    */
   public static void main(String[] args) {
@@ -255,6 +271,11 @@ public class DuoCommands {
 //  //return;
 //}
 
+    if (true) {
+      loadTestCheckToken();
+      return;
+    }
+    
     if (args.length == 1 && StringUtils.equals("migrateAllToDuo", args[0])) {
       migrateAllToDuo();
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
@@ -882,7 +903,11 @@ public class DuoCommands {
 
     signHttpAuth(request);
     
+    long now = System.nanoTime();
     String result = executeRequestRaw(request);
+    @SuppressWarnings("unused")
+    long nanos = System.nanoTime() - now;
+    //System.out.println("Took " + (nanos/1000000L) + "ms");
     
     //  {
     //    "response":{
