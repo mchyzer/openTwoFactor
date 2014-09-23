@@ -3,6 +3,8 @@
  */
 package org.openTwoFactor.server.util;
 
+import org.openTwoFactor.server.TwoFactorCheckPass;
+
 
 /**
  * bean that holds if pass is correct, and which index is the next hotp index if it changed
@@ -10,6 +12,27 @@ package org.openTwoFactor.server.util;
  *
  */
 public class TwoFactorPassResult {
+
+  /**
+   * message to log
+   */
+  private Class<? extends TwoFactorCheckPass> twoFactorCheckPassImplementation;
+  
+  /**
+   * message to log
+   * @return the logMessage
+   */
+  public Class<? extends TwoFactorCheckPass> getTwoFactorCheckPassImplementation() {
+    return this.twoFactorCheckPassImplementation;
+  }
+  
+  /**
+   * message to log
+   * @param twoFactorCheckPassImplementation1 the logMessage to set
+   */
+  public void setTwoFactorCheckPassImplementation(Class<? extends TwoFactorCheckPass> twoFactorCheckPassImplementation1) {
+    this.twoFactorCheckPassImplementation = twoFactorCheckPassImplementation1;
+  }
 
   /**
    * if this is a phone pass

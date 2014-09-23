@@ -17,6 +17,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
+import org.openTwoFactor.server.util.TfSourceUtils;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -49,7 +50,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       try {
         plainText = Hex.decodeHex(secret.toCharArray());
       } catch (DecoderException de) {
-        throw new RuntimeException("Bad hex");
+        throw new RuntimeException("Bad hex", de);
       }
     }
     
@@ -122,6 +123,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
   public static void printPasswordsForUser(String username) {
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), username);
+    System.out.println(twoFactorUser.getTwoFactorSecretUnencrypted());
     printPasswordsForSecret(twoFactorUser.getTwoFactorSecretUnencrypted(), 
         twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), null, false);
   }
@@ -132,25 +134,34 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    */
   public static void main(String[] args) {
 
-    @SuppressWarnings("unused")
-    String userName = "mchyzer";
+    if (true) {
+      
+      printPasswordsForSecret("05050505050505050505", 
+          null, null, null, true);
+      return;
+    }
     
+    @SuppressWarnings("unused")
+    String netId = "mchyzer";
+    
+    String userName = "10021368";
+    userName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), netId, true);
     if (args.length > 0) {
       userName = args[0];
     }
     
-    String secret = "RPKFDMCU3NTNXEPD";
-    System.out.println(secret);
-    Base32 codec = new Base32();
-    byte[] plainText = codec.decode(secret);
+//    String secret = "GMUP LNR7 EFSY HEYZ";
+//    System.out.println(secret);
+//    Base32 codec = new Base32();
+//    byte[] plainText = codec.decode(secret);
+//    
+//    String hexSecret = new String(Hex.encodeHex(plainText));
+//    
+//    System.out.println(hexSecret);
+//    
+//    printPasswordsForSecret(secret, null, null, null, false);
     
-    String hexSecret = new String(Hex.encodeHex(plainText));
-    
-    System.out.println(hexSecret);
-    
-    printPasswordsForSecret(secret, null, null, null, false);
-    
-    //printPasswordsForUser(userName);
+    printPasswordsForUser(userName);
     
    // printPasswordsForSecret("", null, null, null, true);
    // printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);

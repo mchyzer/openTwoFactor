@@ -78,6 +78,7 @@ import net.sf.json.JsonConfig;
 import net.sf.json.util.PropertyFilter;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.jexl2.Expression;
@@ -117,6 +118,46 @@ import edu.internet2.middleware.grouperClient.util.ExpirableCache;
  */
 @SuppressWarnings("unchecked")
 public class TwoFactorServerUtils {
+
+
+  /**
+   * @param theTwoFactorSecret
+   * @return the hex string formatted with spaces
+   */
+  public static String base32toHexFormatted(String theTwoFactorSecret) {
+    if (theTwoFactorSecret == null) {
+      return null;
+    }
+    String hexString = base32toHex(theTwoFactorSecret);
+    StringBuilder hexStringBuilder = new StringBuilder();
+    for (int i=0;i<hexString.length();i++) {
+      if (i!=0 && i%2 == 0) {
+        hexStringBuilder.append(' ');
+      }
+      hexStringBuilder.append(hexString.charAt(i));
+    }
+    return hexStringBuilder.toString();
+  }
+
+  /**
+   * @param theTwoFactorSecretBase32
+   * @return the hex string
+   */
+  public static String base32toHex(String theTwoFactorSecretBase32) {
+    if (theTwoFactorSecretBase32 == null) {
+      return null;
+    }
+    Base32 codec = new Base32();
+    byte[] plainText = codec.decode(theTwoFactorSecretBase32);
+    StringBuilder hexStringBuilder = new StringBuilder();
+    
+    for (int i=0;i<plainText.length;i++) {
+      hexStringBuilder.append(String.format("%02X", plainText[i]));
+    }
+    String hexString = hexStringBuilder.toString().toLowerCase();
+    return hexString;
+  }
+
 
   /**
    * get a logger, and auto-create log dirs if havent done yet

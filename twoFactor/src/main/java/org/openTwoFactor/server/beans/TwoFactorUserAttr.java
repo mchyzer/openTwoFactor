@@ -115,6 +115,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     token_index(TwoFactorUserAttrType.integer),
 
     /**
+     * keep track of duo user id
+     */
+    duo_user_id(TwoFactorUserAttrType.string),
+    
+    /**
      * phone to opt out 0
      */
     phone0(TwoFactorUserAttrType.string),

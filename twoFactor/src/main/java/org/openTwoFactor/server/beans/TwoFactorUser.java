@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
@@ -669,7 +668,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
   /**
    * @param theTwoFactorSecret
-   * @return
+   * @return the string
    */
   private static String formatSecret(String theTwoFactorSecret) {
     //strip whitespace
@@ -714,34 +713,8 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       return twoFactorSecretTemp;
     }
     String theTwoFactorSecret = this.getTwoFactorSecretTempUnencrypted();
-    return hexFormat(theTwoFactorSecret);
+    return TwoFactorServerUtils.base32toHexFormatted(theTwoFactorSecret);
   }
-
-  /**
-   * @param theTwoFactorSecret
-   * @return
-   */
-  private static String hexFormat(String theTwoFactorSecret) {
-    if (theTwoFactorSecret == null) {
-      return null;
-    }
-    Base32 codec = new Base32();
-    byte[] plainText = codec.decode(theTwoFactorSecret);
-    StringBuilder hexStringBuilder = new StringBuilder();
-    for (int i=0;i<plainText.length;i++) {
-      hexStringBuilder.append(Integer.toHexString(0xFF & plainText[i]));
-    }
-    String hexString = hexStringBuilder.toString();
-    hexStringBuilder = new StringBuilder();
-    for (int i=0;i<hexString.length();i++) {
-      if (i!=0 && i%2 == 0) {
-        hexStringBuilder.append(' ');
-      }
-      hexStringBuilder.append(hexString.charAt(i));
-    }
-    return hexStringBuilder.toString();
-  }
-
   
   /**
    * encrypted secret for two factor.  This could be null if the user has not opted in,
@@ -857,19 +830,19 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   
   /**
    * store this object and audit
-   * @param twoFactorDaoFactory 
+   * @param twoFactorDaoFactory1 
    * @return if changed
    */
-  public boolean store(final TwoFactorDaoFactory twoFactorDaoFactory) {
-    return this.storeHelper(twoFactorDaoFactory);
+  public boolean store(final TwoFactorDaoFactory twoFactorDaoFactory1) {
+    return this.storeHelper(twoFactorDaoFactory1);
   }
   
   /**
    * store this object and audit
-   * @param twoFactorDaoFactory 
+   * @param twoFactorDaoFactory1 
    * @return if changed
    */
-  private boolean storeHelper(final TwoFactorDaoFactory twoFactorDaoFactory) {
+  private boolean storeHelper(final TwoFactorDaoFactory twoFactorDaoFactory1) {
     
     if (StringUtils.isBlank(this.loginid)) {
       throw new RuntimeException("loginid is null");
@@ -890,7 +863,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
         boolean hadChange = false;
         
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorUser.this)) {
-          twoFactorDaoFactory.getTwoFactorUser().store(TwoFactorUser.this);
+          twoFactorDaoFactory1.getTwoFactorUser().store(TwoFactorUser.this);
         
           testInsertsAndUpdates++;
           hadChange = true;
@@ -918,7 +891,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
           fieldsForDelete.removeAll(newAttributes.keySet());
           
           for (String fieldForDelete : fieldsForDelete) {
-            oldAttributes.get(fieldForDelete).delete(twoFactorDaoFactory);
+            oldAttributes.get(fieldForDelete).delete(twoFactorDaoFactory1);
             oldAttributes.remove(fieldForDelete);
             hadChange = true;
           }
@@ -934,7 +907,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 //              hadChange = true;
 //            }
             //this will insert or update and keep track of state
-            boolean attrChanged = newFactorUserAttr.store(twoFactorDaoFactory);
+            boolean attrChanged = newFactorUserAttr.store(twoFactorDaoFactory1);
             hadChange = hadChange || attrChanged;
           }
         }
@@ -950,10 +923,10 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
   /**
    * delete this record
-   * @param twoFactorDaoFactory is the factor to use
+   * @param twoFactorDaoFactory1 is the factor to use
    */
   @Override
-  public void delete(final TwoFactorDaoFactory twoFactorDaoFactory) {
+  public void delete(final TwoFactorDaoFactory twoFactorDaoFactory1) {
     
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
       
@@ -962,17 +935,17 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
         for (TwoFactorUserAttr twoFactorUserAttr : TwoFactorServerUtils.nonNull(TwoFactorUser.this.getAttributes())) {
           
-          twoFactorUserAttr.delete(twoFactorDaoFactory);
+          twoFactorUserAttr.delete(twoFactorDaoFactory1);
           
         }
         
-        for (TwoFactorBrowser twoFactorBrowser : TwoFactorServerUtils.nonNull(TwoFactorBrowser.retrieveByUserUuid(twoFactorDaoFactory, TwoFactorUser.this.getUuid(), true))) {
+        for (TwoFactorBrowser twoFactorBrowser : TwoFactorServerUtils.nonNull(TwoFactorBrowser.retrieveByUserUuid(twoFactorDaoFactory1, TwoFactorUser.this.getUuid(), true))) {
           
-          twoFactorBrowser.delete(twoFactorDaoFactory);
+          twoFactorBrowser.delete(twoFactorDaoFactory1);
           
         }
         
-        twoFactorDaoFactory.getTwoFactorUser().delete(TwoFactorUser.this);
+        twoFactorDaoFactory1.getTwoFactorUser().delete(TwoFactorUser.this);
         testDeletes++;
         return null;
       }
@@ -1048,6 +1021,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     this.attribute(TwoFactorUserAttrName.phone0, true).setAttributeValueString(phone0);
   }
 
+
+  /**
+   * duo user id
+   * @return duo user id
+   */
+  public String getDuoUserId() {
+    return attributeValueString(TwoFactorUserAttrName.duo_user_id);
+  }
+
+  /**
+   * duo user id
+   * @param duoUserId
+   */
+  public void setDuoUserId(String duoUserId) {
+    this.attribute(TwoFactorUserAttrName.duo_user_id, true).setAttributeValueString(duoUserId);
+  }
 
   /**
    * if phone 0 is text
@@ -1273,67 +1262,67 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
   /**
    * user 0 of the colleague who can unlock this user
-   * @param twoFactorDaoFactory
+   * @param twoFactorDaoFactory1
    * @return user 0
    */
-  public TwoFactorUser colleagueUser0(TwoFactorDaoFactory twoFactorDaoFactory) {
+  public TwoFactorUser colleagueUser0(TwoFactorDaoFactory twoFactorDaoFactory1) {
     String userUuid = attributeValueString(TwoFactorUserAttrName.colleague_user_uuid0);
     if (StringUtils.isBlank(userUuid)) {
       return null;
     }
-    return twoFactorDaoFactory.getTwoFactorUser().retrieveByUuid(userUuid);
+    return twoFactorDaoFactory1.getTwoFactorUser().retrieveByUuid(userUuid);
   }
 
   /**
    * user 1 of the colleague who can unlock this user
-   * @param twoFactorDaoFactory
+   * @param twoFactorDaoFactory1
    * @return user 1
    */
-  public TwoFactorUser colleagueUser1(TwoFactorDaoFactory twoFactorDaoFactory) {
+  public TwoFactorUser colleagueUser1(TwoFactorDaoFactory twoFactorDaoFactory1) {
     String userUuid = attributeValueString(TwoFactorUserAttrName.colleague_user_uuid1);
     if (StringUtils.isBlank(userUuid)) {
       return null;
     }
-    return twoFactorDaoFactory.getTwoFactorUser().retrieveByUuid(userUuid);
+    return twoFactorDaoFactory1.getTwoFactorUser().retrieveByUuid(userUuid);
   }
 
   /**
    * user 2 of the colleague who can unlock this user
-   * @param twoFactorDaoFactory
+   * @param twoFactorDaoFactory1
    * @return user 2
    */
-  public TwoFactorUser colleagueUser2(TwoFactorDaoFactory twoFactorDaoFactory) {
+  public TwoFactorUser colleagueUser2(TwoFactorDaoFactory twoFactorDaoFactory1) {
     String userUuid = attributeValueString(TwoFactorUserAttrName.colleague_user_uuid2);
     if (StringUtils.isBlank(userUuid)) {
       return null;
     }
-    return twoFactorDaoFactory.getTwoFactorUser().retrieveByUuid(userUuid);
+    return twoFactorDaoFactory1.getTwoFactorUser().retrieveByUuid(userUuid);
   }
 
   /**
    * user 3 of the colleague who can unlock this user
-   * @param twoFactorDaoFactory
+   * @param twoFactorDaoFactory1
    * @return user 3
    */
-  public TwoFactorUser colleagueUser3(TwoFactorDaoFactory twoFactorDaoFactory) {
+  public TwoFactorUser colleagueUser3(TwoFactorDaoFactory twoFactorDaoFactory1) {
     String userUuid = attributeValueString(TwoFactorUserAttrName.colleague_user_uuid3);
     if (StringUtils.isBlank(userUuid)) {
       return null;
     }
-    return twoFactorDaoFactory.getTwoFactorUser().retrieveByUuid(userUuid);
+    return twoFactorDaoFactory1.getTwoFactorUser().retrieveByUuid(userUuid);
   }
 
   /**
    * user 4 of the colleague who can unlock this user
-   * @param twoFactorDaoFactory
+   * @param twoFactorDaoFactory1
    * @return user 4
    */
-  public TwoFactorUser colleagueUser4(TwoFactorDaoFactory twoFactorDaoFactory) {
+  public TwoFactorUser colleagueUser4(TwoFactorDaoFactory twoFactorDaoFactory1) {
     String userUuid = attributeValueString(TwoFactorUserAttrName.colleague_user_uuid4);
     if (StringUtils.isBlank(userUuid)) {
       return null;
     }
-    return twoFactorDaoFactory.getTwoFactorUser().retrieveByUuid(userUuid);
+    return twoFactorDaoFactory1.getTwoFactorUser().retrieveByUuid(userUuid);
   }
 
   /**
@@ -1485,7 +1474,20 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       return twoFactorSecret;
     }
     String theTwoFactorSecret = this.getTwoFactorSecretUnencrypted();
-    return hexFormat(theTwoFactorSecret);
+    return TwoFactorServerUtils.base32toHexFormatted(theTwoFactorSecret);
+  }
+
+  /**
+   * two factor secret hex
+   * @return the secret formatted
+   */
+  public String getTwoFactorSecretUnencryptedHex() {
+    String twoFactorSecret = this.getTwoFactorSecret();
+    if (twoFactorSecret == null) {
+      return twoFactorSecret;
+    }
+    String theTwoFactorSecret = this.getTwoFactorSecretUnencrypted();
+    return TwoFactorServerUtils.base32toHex(theTwoFactorSecret);
   }
 }
   

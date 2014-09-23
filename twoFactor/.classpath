@@ -8,6 +8,8 @@
 	<classpathentry kind="lib" path="lib/twoFactor/csrfguard.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/opencsv.jar"/>
 	<classpathentry kind="lib" path="lib/nonwebapp/jsp-api.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/duoclient.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/changebee.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/nonwebapp/servlet.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-logging.jar"/>

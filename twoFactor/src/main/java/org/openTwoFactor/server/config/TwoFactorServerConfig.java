@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
+import org.openTwoFactor.server.TwoFactorCheckPass;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.contact.TwoFactorContactInterface;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -76,6 +77,23 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
     return twoFactorContactInterface;
 
   }
+  
+  /**
+   * get the check pass implementation
+   * @return the check pass
+   */
+  public TwoFactorCheckPass twoFactorCheckPass() {
+    
+    String className = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.checkPassInterfaceImplementation");
+    @SuppressWarnings("unchecked")
+    Class<TwoFactorCheckPass> twoFactorCheckPassClass = TwoFactorServerUtils.forName(className);
+    TwoFactorCheckPass twoFactorCheckPass = TwoFactorServerUtils.newInstance(twoFactorCheckPassClass);
+    return twoFactorCheckPass;
+
+  }
+  
+  
+  
   
   /**
    * get the authorization implementation

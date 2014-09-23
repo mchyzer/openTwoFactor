@@ -10,12 +10,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
+import org.openTwoFactor.server.TwoFactorCheckPass;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
-import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
@@ -463,11 +463,10 @@ public class TfRestLogic {
       
       String secret = twoFactorUser.getTwoFactorSecretUnencrypted();
       String phonePassword = twoFactorUser.getPhoneCodeUnencryptedIfNotExpired();
+      
       TwoFactorPassResult twoFactorPassResult = StringUtils.isBlank(twoFactorPassUnencrypted) ?
           new TwoFactorPassResult() :
-          TwoFactorOath.twoFactorCheckPassword(
-          secret, twoFactorPassUnencrypted, twoFactorUser.getSequentialPassIndex(), 
-          twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), twoFactorUser.getTokenIndex(), phonePassword);
+          checkPassword(twoFactorPassUnencrypted, twoFactorUser, secret, phonePassword);
 
       //if phone pass, expire it
       if (twoFactorPassResult.isPhonePass()) {
@@ -780,6 +779,24 @@ public class TfRestLogic {
       trafficLogMap.put("logicTime", ((System.nanoTime() - start)/1000000) + "ms");
       TfRestLogicTrafficLog.wsRestTrafficLog(trafficLogMap);
     }
+  }
+
+  /**
+   * @param twoFactorPassUnencrypted
+   * @param twoFactorUser
+   * @param secret
+   * @param phonePassword
+   * @return the result
+   */
+  private static TwoFactorPassResult checkPassword(String twoFactorPassUnencrypted,
+      TwoFactorUser twoFactorUser, String secret, String phonePassword) {
+    
+    TwoFactorCheckPass twoFactorCheckPass = TwoFactorServerConfig.retrieveConfig().twoFactorCheckPass();
+    TwoFactorPassResult twoFactorPassResult = twoFactorCheckPass.twoFactorCheckPassword(
+        secret, twoFactorPassUnencrypted, twoFactorUser.getSequentialPassIndex(), 
+        twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), 
+        twoFactorUser.getTokenIndex(), phonePassword, twoFactorUser.getDuoUserId());
+    return twoFactorPassResult;
   }
 
   /** logger */
@@ -1194,10 +1211,14 @@ public class TfRestLogic {
       String phonePassword = twoFactorUser.getPhoneCodeUnencryptedIfNotExpired();
       TwoFactorPassResult twoFactorPassResult = StringUtils.isBlank(twoFactorPassUnencrypted) ?
           new TwoFactorPassResult() :
-          TwoFactorOath.twoFactorCheckPassword(
-          secret, twoFactorPassUnencrypted, twoFactorUser.getSequentialPassIndex(), 
-          twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), twoFactorUser.getTokenIndex(), phonePassword);
+          checkPassword(twoFactorPassUnencrypted, twoFactorUser, secret, phonePassword);
   
+      {
+        //log if we went to Duo or not if we are even configured to try
+        Class<? extends TwoFactorCheckPass> checkPassClass = twoFactorPassResult.getTwoFactorCheckPassImplementation();
+        trafficLogMap.put("checkPassImpl", checkPassClass == null ? null : checkPassClass.getSimpleName());
+      }          
+          
       //if phone pass, expire it
       if (twoFactorPassResult.isPhonePass()) {
         twoFactorUser.setDatePhoneCodeSent(null);
