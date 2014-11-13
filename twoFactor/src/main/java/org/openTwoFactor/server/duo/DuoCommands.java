@@ -271,20 +271,30 @@ public class DuoCommands {
 //  //return;
 //}
 
-    if (true) {
-      loadTestCheckToken();
-      return;
-    }
+//    if (true) {
+//      loadTestCheckToken();
+//      return;
+//    }
     
     if (args.length == 1 && StringUtils.equals("migrateAllToDuo", args[0])) {
       migrateAllToDuo();
+    } else if (args.length == 1 && StringUtils.equals("migrateAllTokensToDuo", args[0])) {
+      migrateAllTokensToDuo();
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
       boolean validCode = verifyDuoCode(args[1], args[2]);
       System.out.println("Valid code? " + validCode);
+    } else if (args.length == 1 && StringUtils.equals("deleteAllTokensFromDuo", args[0])) {
+      deleteAllTokensFromDuo();
+    } else if (args.length == 2 && StringUtils.equals("deleteTokensByUserFromDuo", args[0])) {
+      deleteDuoTokensBySomeId(args[1]);
+    } else if (args.length == 2 && StringUtils.equals("migrateTokensByUserToDuo", args[0])) {
+      migrateTokensBySomeId(args[1]);
     } else if (args.length == 2 && StringUtils.equals("deleteDuoToken", args[0])) {
       deleteDuoToken(args[1]);
     } else if (args.length == 1 && StringUtils.equals("deleteAllFromDuo", args[0])) {
       deleteAllFromDuo();
+    } else if (args.length == 2 && StringUtils.equals("migrateUserAndTokensToDuo", args[0])) {
+      migrateUserAndTokensBySomeId(args[0]);
     } else if (args.length == 2 && StringUtils.equals("viewUser", args[0])) {
       String userLookupId = args[1];
       JSONObject duoUser = retrieveDuoUserBySomeId(userLookupId);
@@ -293,14 +303,25 @@ public class DuoCommands {
       } else {
         System.out.println("User not found");
       }
+    } else if (args.length == 2 && StringUtils.equals("deleteUserAndTokens", args[0])) {
+      String userLookupId = args[1];
+      deleteDuoUserAndTokensBySomeId(userLookupId);
     } else if (args.length == 2 && StringUtils.equals("deleteUser", args[0])) {
       String userLookupId = args[1];
       deleteDuoUserBySomeId(userLookupId);
     } else {
       System.out.println("Enter arg: migrateAllToDuo to migrate all users to duo");
+      System.out.println("Enter arg: migrateAllTokensToDuo to migrate all users to duo");
+      System.out.println("Enter arg: deleteAllTokensFromDuo to delete all tokens from duo");
       System.out.println("Enter arg: deleteAllFromDuo to delete all data from duo");
       System.out.println("Enter arg: deleteDuoToken <tokenId> to delete a token");
       System.out.println("Enter arg: viewUser <someUserId> to view a user");
+      System.out.println("Enter arg: deleteUserAndTokens <someUserId> to delete a user and their tokens");
+      System.out.println("Enter arg: deleteTokensByUserFromDuo <someUserId> to delete tokens for a user");
+      System.out.println("Enter arg: migrateTokensByUserToDuo <someUserId> to migrate tokens for a user");
+      System.out.println("Enter arg: migrateUserAndTokensToDuo <someUserId> to migrate tokens for a user");
+      System.out.println("Enter arg: deleteUserAndTokens <someUserId> to delete a user and their tokens");
+      System.out.println("Enter arg: deleteUser <someUserId> to delete a user object");
       System.exit(1);
     }
     
@@ -308,23 +329,99 @@ public class DuoCommands {
 
   /**
    * 
+   * @param someId
+   */
+  private static void migrateTokensBySomeId(String someId) {
+    
+    String duoUserId = retrieveDuoUserIdBySomeId(someId);
+    
+    String tfUserId = retrieveTfUserUuidBySomeId(someId, true);
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), tfUserId);
+    
+    String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid());
+
+    try {
+      //setup HOTP token
+      setupOneTimeCodes(twoFactorUser, duoUserId, false);
+      setupHotpToken(twoFactorUser, duoUserId, false);
+      setupTotp(twoFactorUser, duoUserId, false, 30);
+      setupTotp(twoFactorUser, duoUserId, false, 60);
+      
+      System.out.println("Created tokens for: " + twoFactorUser.getLoginid() + ", " + netId);
+    } catch (Exception e) {
+      System.out.println("Error: " + twoFactorUser.getLoginid() + ", " + netId);
+      e.printStackTrace();
+    }
+
+  }
+  
+  /**
+   * 
+   * @param someId
+   */
+  public static void migrateUserAndTokensBySomeId(String someId) {
+    
+    migrateUserBySomeId(someId);
+    
+    migrateTokensBySomeId(someId);
+  }
+
+  /**
+   * 
+   * @param someId
+   */
+  private static void migrateUserBySomeId(String someId) {
+    
+    String userUuid = retrieveTfUserUuidBySomeId(someId, true);
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
+
+    if (!twoFactorUser.isOptedIn()) {
+      return;
+    }
+    
+    String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid());
+
+    if (StringUtils.isBlank(netId)) {
+      System.out.println("Cant find netId for user: " + someId);
+      return;
+    }
+
+    JSONObject duoUser = retrieveDuoUserByIdOrUsername(netId, false);
+
+    if (duoUser == null) {
+      duoUser = createDuoUserByUsername(TwoFactorDaoFactory.getFactory(), twoFactorUser, netId);
+      
+    } else {
+      System.out.println("User: " + netId + ", already exists");
+    }
+
+  }
+  
+  /**
+   * 
    */
   private static void migrateAllToDuo() {
+    //lets get all the opted in users
+    for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
+        TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
+      migrateUserBySomeId(twoFactorUserView.getUuid());
+    }
+    
+    migrateAllTokensToDuo();
+  }
+
+  /**
+   * migrate all tokens to duo
+   */
+  private static void migrateAllTokensToDuo() {
     //lets get all the opted in users
     for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
         TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
       
       String loginid = twoFactorUserView.getLoginid();
       
-      //  //TODO take this out
-      //  if (!StringUtils.equals(loginid, "10021368")) {
-      //    continue;
-      //  }
-      
-      String userUuid = twoFactorUserView.getUuid();
-      
-      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
-
       String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), loginid);
       
       if (StringUtils.isBlank(netId)) {
@@ -332,34 +429,13 @@ public class DuoCommands {
         continue;
       }
 
-      JSONObject duoUser = retrieveDuoUserByIdOrUsername(netId, false);
+      String duoUserId = retrieveDuoUserIdBySomeId(netId);
 
-      String userId = null;
-
-      if (duoUser == null) {
-        duoUser = createDuoUserByUsername(TwoFactorDaoFactory.getFactory(), twoFactorUser, netId);
-      }
-
-      userId = duoUser.getString("user_id");
-      
-      //System.out.println(loginid + ", " + userId);
-
-      // doesnt work since codes cant be 6 digits
-      //setupOneTimeCodes(twoFactorUser, sequentialPassIndexGivenToUser, userId);                
-      
-      try {
-        //setup HOTP token
-        setupOneTimeCodes(twoFactorUser, userId, false);
-        setupHotpToken(twoFactorUser, userId, false);
-        setupTotp(twoFactorUser, userId, false, 30);
-        setupTotp(twoFactorUser, userId, false, 60);
-        
-        System.out.println("Created: " + netId);
-      } catch (Exception e) {
-        System.out.println("Error: " + netId);
-        e.printStackTrace();
+      if (!StringUtils.isBlank(duoUserId)) {
+        migrateTokensBySomeId(duoUserId);
       }
     }
+
   }
 
   /**
@@ -368,7 +444,7 @@ public class DuoCommands {
    * @param userId
    * @param resetCodesIfExists
    */
-  private static void setupOneTimeCodes(TwoFactorUser twoFactorUser,
+  public static void setupOneTimeCodes(TwoFactorUser twoFactorUser,
      String userId, boolean resetCodesIfExists) {
     
     Long sequentialPassIndexGivenToUser = twoFactorUser.getSeqPassIndexGivenToUser();
@@ -380,8 +456,10 @@ public class DuoCommands {
     //      .propertyValueInt("twoFactorServer.hotpSecretsShownOnScreen", 20);
     //  sequentialPassIndex = 1 + (sequentialPassIndexGivenToUser - numberOfOneTimePassesShownOnScreen);
     //}
-    
-    String tokenSerial = twoFactorUser.getLoginid() + "__hotp__500000";
+
+    String institutionEnvironmentPrefix = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("duo.tokenInstitutionEnvironmentString");
+
+    String tokenSerial = institutionEnvironmentPrefix + "__" + twoFactorUser.getLoginid() + "__hotp__500000";
     String tokenType = "h6";
     
     JSONObject tokenJsonObject = retrieveDuoTokenBySerial(tokenType, tokenSerial);
@@ -465,7 +543,9 @@ public class DuoCommands {
       tokenIndex = 0L;
     }
 
-    String tokenSerial = twoFactorUser.getLoginid() + "__hotp__0";
+    String institutionEnvironmentPrefix = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("duo.tokenInstitutionEnvironmentString");
+    
+    String tokenSerial = institutionEnvironmentPrefix + "__" + twoFactorUser.getLoginid() + "__hotp__0";
     String tokenType = "h6";
     
     JSONObject tokenJsonObject = retrieveDuoTokenBySerial(tokenType, tokenSerial);
@@ -473,6 +553,9 @@ public class DuoCommands {
     String tokenId = tokenJsonObject == null ? null : tokenJsonObject.getString("token_id");
     
     if (!resetCodesIfExists && !StringUtils.isBlank(tokenId)) {
+      
+      System.out.println("Token exists: " + tokenSerial);
+      
       return;
     }
     
@@ -548,7 +631,9 @@ public class DuoCommands {
       throw new RuntimeException("Period must be 30 or 60");
     }
     
-    String tokenSerial = twoFactorUser.getLoginid() + "__totp__" + periodSeconds;
+    String institutionEnvironmentPrefix = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("duo.tokenInstitutionEnvironmentString");
+
+    String tokenSerial = institutionEnvironmentPrefix + "__" + twoFactorUser.getLoginid() + "__totp__" + periodSeconds;
     String tokenType = "t6";
     
     JSONObject tokenJsonObject = retrieveDuoTokenBySerial(tokenType, tokenSerial);
@@ -722,6 +807,56 @@ public class DuoCommands {
     return null;
   }
 
+  /**
+   * retrieve duo tokens by user
+   * @param userId
+   * @return the json object
+   */
+  public static JSONArray retrieveDuoTokensByUserId(String userId) {
+    
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("Why is userId blank?");
+    }
+    
+    //lookup the token
+    //  GET /admin/v1/users/[user_id]/tokens
+    Http request = httpAdmin("GET", "/admin/v1/users/" + userId + "/tokens");
+       
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+    
+    //    {
+    //      "stat": "OK",
+    //      "response": [{
+    //        "type": "d1",
+    //        "serial": "0",
+    //        "token_id": "DHEKH0JJIYC1LX3AZWO4"
+    //      },
+    //      {
+    //        "type": "d1",
+    //        "serial": "7",
+    //        "token_id": "DHUNT3ZVS3ACF8AEV2WG",
+    //        "totp_step": null
+    //      }]
+    //    }
+        
+    //or
+    
+    //{"response": [], "stat": "OK"}
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    JSONArray responseArray = (JSONArray)jsonObject.get("response");
+    
+    return responseArray;
+    
+  }
+
 
   /**
    * note, this doesnt work since our system assumes 6 digit codes
@@ -803,6 +938,63 @@ public class DuoCommands {
     return null;
   }
     
+  /**
+   * delete duo user and tokens
+   * @param userId 
+   */
+  public static void deleteDuoUserAndTokensByUserId(String userId) {
+    
+    deleteDuoTokensByUserId(userId);
+    deleteDuoUser(userId);
+  }
+
+  /**
+   * delete duo user and tokens
+   * @param someId is a userId or loginId or subjectId or whatever 
+   */
+  public static void deleteDuoUserAndTokensBySomeId(String someId) {
+   
+    String duoUserId = retrieveDuoUserIdBySomeId(someId);
+    
+    deleteDuoUserAndTokensByUserId(duoUserId);
+
+  }
+    
+  /**
+   * delete duo tokens
+   * @param someId is a userId or loginId or subjectId or whatever 
+   */
+  public static void deleteDuoTokensBySomeId(String someId) {
+   
+    String duoUserId = retrieveDuoUserIdBySomeId(someId);
+    
+    deleteDuoTokensByUserId(duoUserId);
+
+  }
+    
+  /**
+   * delete duo tokens
+   * @param userId is a userId or loginId or subjectId or whatever 
+   */
+  public static void deleteDuoTokensByUserId(String userId) {
+   
+    JSONArray tokenArray = retrieveDuoTokensByUserId(userId);
+    
+    if (tokenArray != null) {
+      for (int i=0;i<tokenArray.size();i++) {
+        JSONObject token = (JSONObject)tokenArray.get(i);
+        
+          // {
+          //      "serial": "0",
+          //      "token_id": "DHIZ34ALBA2445ND4AI2",
+          //      "type": "d1",
+          //      "totp_step": null
+          // }
+        String tokenId = token.getString("token_id");
+        deleteDuoToken(tokenId);
+      }
+    }
+  }
     
   /**
    * delete duo user
@@ -1008,7 +1200,55 @@ public class DuoCommands {
     
     //we have a twoFactorUser, and a netId, use that to get the user and user_id
     String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid(), true);
-    return retrieveDuoUserByIdOrUsername(netId, false).getString("user_id");
+    JSONObject duoUserJsonObject = retrieveDuoUserByIdOrUsername(netId, false);
+    
+    //not there?
+    if (duoUserJsonObject == null) {
+      return null;
+    }
+    
+    return duoUserJsonObject.getString("user_id");
+  }
+  
+  /**
+   * 
+   * @param someId
+   * @param exceptionIfNotFound 
+   * @return the duo user id
+   */
+  public static String retrieveTfUserUuidBySomeId(String someId, boolean exceptionIfNotFound) {
+    //lets see if it is a userUuid
+    TwoFactorUser twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByUuid(someId);
+
+    if (twoFactorUser == null) {
+      JSONObject userJsonObject = retrieveDuoUserByIdOrUsername(someId, false);
+      if (userJsonObject != null) {
+        String username = userJsonObject.getString("username");
+        someId = username;
+      }
+    }
+
+    if (twoFactorUser == null) {
+      //try by id
+      twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(someId);
+    }
+
+    if (twoFactorUser == null) {
+      //try by netId
+      String theId = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), someId, true);
+      if (!StringUtils.isBlank(theId)) {
+        twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(theId);
+      }
+    }
+    
+    if (twoFactorUser == null) {
+      if (exceptionIfNotFound) {
+        throw new RuntimeException("Cant find user id in TF: " + someId);
+      }
+      return null;
+    }
+
+    return twoFactorUser.getUuid();
   }
   
   /**
@@ -1255,6 +1495,14 @@ public class DuoCommands {
       }
     }
     
+    deleteAllTokensFromDuo();
+  }
+
+  /**
+   * 
+   */
+  private static void deleteAllTokensFromDuo() {
+  
     {
       JSONArray allTokens = retrieveAllTokensFromDuo();
       

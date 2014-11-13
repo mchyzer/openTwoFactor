@@ -32,6 +32,7 @@ import org.openTwoFactor.server.beans.TwoFactorReportType;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
@@ -693,6 +694,8 @@ public class UiMainAdmin extends UiServiceLogicBase {
     
     final TwoFactorUser[] twoFactorUserGettingOptedOut = new TwoFactorUser[1];
 
+    String duoUserId = UiMain.duoRegisterUsers() ? DuoCommands.retrieveDuoUserIdBySomeId(loggedInUser) : null;
+
     AdminSubmitView adminSubmitView = (AdminSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -752,6 +755,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
  
         twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
         twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+        
+        twoFactorUserGettingOptedOut[0].setDuoUserId(null);
+        
         
         if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
           
@@ -862,7 +868,11 @@ public class UiMainAdmin extends UiServiceLogicBase {
       //non fatal, just log this
       LOG.error("Error sending email to: " + userEmailColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
     }
-    
+
+    if (UiMain.duoRegisterUsers() && !StringUtils.isBlank(duoUserId)) { 
+      //delete from duo
+      DuoCommands.deleteDuoUserAndTokensBySomeId(userIdOperatingOn);
+    }
     
     return adminSubmitView;
     

@@ -41,6 +41,7 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dojo.DojoComboDataResponse;
 import org.openTwoFactor.server.dojo.DojoComboDataResponseItem;
+import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
@@ -489,7 +490,7 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent) {
     
-    return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+    boolean result = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
@@ -573,6 +574,17 @@ public class UiMain extends UiServiceLogicBase {
         return true;
       }
     });
+    
+    //change codes in duo
+    if (duoRegisterUsers()) {
+      
+      String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid());
+      
+      DuoCommands.setupOneTimeCodes(twoFactorRequestContainer.getTwoFactorUserLoggedIn(), duoUserId, true);
+      
+    }
+
+    return result;
   }
   
   
@@ -1734,10 +1746,23 @@ public class UiMain extends UiServiceLogicBase {
         LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
       }
     }    
+
+    //opt in to duo
+    if (duoRegisterUsers()) {
+      DuoCommands.migrateUserAndTokensBySomeId(loggedInUser);
+    }
     
     return result;
   }
 
+  /**
+   * if we are integrating with duo to register users
+   * @return true or false
+   */
+  public static boolean duoRegisterUsers() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", false);
+  }
+  
   /**
    * optout of two factor
    * @param twoFactorDaoFactory
@@ -1750,6 +1775,8 @@ public class UiMain extends UiServiceLogicBase {
   public void optoutLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final Source subjectSource) {
+
+    String duoUserId = UiMain.duoRegisterUsers() ? DuoCommands.retrieveDuoUserIdBySomeId(loggedInUser) : null;
     
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
@@ -1764,6 +1791,9 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         twoFactorUser.setTwoFactorSecretTemp(null);
+        
+        twoFactorUser.setDuoUserId(null);
+        
         String resultMessage = null;
         
         if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
@@ -1852,7 +1882,10 @@ public class UiMain extends UiServiceLogicBase {
       LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
     }
 
-    
+    if (UiMain.duoRegisterUsers() && !StringUtils.isBlank(duoUserId)) { 
+      //delete from duo
+      DuoCommands.deleteDuoUserAndTokensByUserId(duoUserId);
+    }
   }
 
 
