@@ -21,6 +21,22 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 public class TwoFactorRequestContainer {
   
   /**
+   * two factor duo push container
+   */
+  private TwoFactorDuoPushContainer twoFactorDuoPushContainer;
+  
+  /**
+   * two factor duo push container
+   * @return the twoFactorDuoPushContainer
+   */
+  public TwoFactorDuoPushContainer getTwoFactorDuoPushContainer() {
+    if (this.twoFactorDuoPushContainer == null) {
+      this.twoFactorDuoPushContainer = new TwoFactorDuoPushContainer();
+    }
+    return this.twoFactorDuoPushContainer;
+  }
+
+  /**
    * two factor view report container
    */
   private TwoFactorViewReportContainer twoFactorViewReportContainer;

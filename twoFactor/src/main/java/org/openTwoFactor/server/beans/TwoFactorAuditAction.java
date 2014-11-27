@@ -149,6 +149,104 @@ public enum TwoFactorAuditAction {
   },
   
   /**
+   * enable push for web
+   */
+  DUO_ENABLE_PUSH_FOR_WEB {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoEnablePushForWeb";
+    }
+    
+  },
+  
+  /**
+   * disable push for web
+   */
+  DUO_DISABLE_PUSH_FOR_WEB {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoDisablePushForWeb";
+    }
+    
+  },
+
+  /**
+   * enable duo push
+   */
+  DUO_ENABLE_PUSH {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoPushEnable";
+    }
+    
+  },
+  
+  /**
+   * disable duo push
+   */
+  DUO_DISABLE_PUSH {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoPushDisable";
+    }
+    
+  },
+  
+  /**
+   * successful test of duo push
+   */
+  DUO_ENABLE_PUSH_TEST_SUCCESS {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoPushEnableTestSuccess";
+    }
+    
+  },
+
+  /**
+   * unsuccessful test of duo push
+   */
+  DUO_ENABLE_PUSH_TEST_FAILURE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsDuoPushEnableTestFailure";
+    }
+    
+  },
+
+  
+  
+  /**
    * view profile
    */
   VIEW_PROFILE {

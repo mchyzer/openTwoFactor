@@ -97,7 +97,13 @@
             onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
           </form>
           &nbsp;
-
+          <c:if test="${twoFactorRequestContainer.twoFactorDuoPushContainer.duoEnabled}">
+            <form action="../../twoFactorUi/app/UiMain.duoPush" method="get" style="display: inline">
+              <input value="${textContainer.textEscapeDouble['buttonDuoPush']}" class="tfBlueButton"
+              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+            </form>
+            &nbsp;
+          </c:if>
           <c:choose>
             <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.trustedBrowserCount > 0}">
               <form action="../../twoFactorUi/app/UiMain.untrustBrowsers" method="get" style="display: inline">

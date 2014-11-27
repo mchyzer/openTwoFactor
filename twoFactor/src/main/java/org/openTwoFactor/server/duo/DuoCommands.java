@@ -307,8 +307,8 @@ public class DuoCommands {
       deleteDuoUserBySomeId(userLookupId);
     } else if (args.length == 2 && StringUtils.equals("enrollUserInDuoPush", args[0])) {
       String userLookupId = args[1];
-      JSONObject jsonObject = enrollUserInPushBySomeId(userLookupId);
-      System.out.println(jsonObject.getString("activation_barcode"));
+      String barcode = enrollUserInPushBySomeId(userLookupId);
+      System.out.println(barcode);
       
     } else if (args.length == 2 && StringUtils.equals("migratePhonesToDuo", args[0])) {
       String userLookupId = args[1];
@@ -406,9 +406,9 @@ public class DuoCommands {
   /**
    * 
    * @param someId
-   * @return json object
+   * @return url of barcode
    */
-  private static JSONObject enrollUserInPushBySomeId(String someId) {
+  public static String enrollUserInPushBySomeId(String someId) {
     
     String userUuid = retrieveTfUserUuidBySomeId(someId, true);
     
@@ -489,8 +489,6 @@ public class DuoCommands {
     //   }
     // }
 
-    System.out.println(result);
-    
     JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
  
     if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
@@ -499,7 +497,7 @@ public class DuoCommands {
 
     jsonObject = (JSONObject)jsonObject.get("response");
 
-    return jsonObject;
+    return jsonObject.getString("activation_barcode");
 
     
   }
@@ -756,6 +754,98 @@ public class DuoCommands {
     }
     return null;
   }
+
+  /**
+   * get phone by id
+   * @param duoUser
+   * @param phoneId
+   * @return the phone Id or null if none
+   */
+  public static JSONObject duoPhoneById(JSONObject duoUser, String phoneId) {
+    //see if there is a phone
+    //  "phones": [{
+    //    "phone_id": "DPFZRS9FB0D46QFTM899",
+    //    "number": "+15555550100",
+    //    "extension": "",
+    //    "name": "", 
+    //    "postdelay": null,
+    //    "predelay": null,
+    //    "type": "Mobile",
+    //    "capabilities": [
+    //      "sms",
+    //      "phone",
+    //      "push"
+    //    ],
+    //    "platform": "Apple iOS",
+    //    "activated": false,
+    //    "sms_passcodes_sent": false
+    //  }],
+    
+    JSONArray phones = (JSONArray)duoUser.get("phones");
+    
+    if (phones == null || phones.size() == 0) {
+      return null;
+    }
+    
+    for (int i=0;i<phones.size();i++) {
+      
+      JSONObject phone = phones.getJSONObject(i);
+      if (StringUtils.equals(phoneId, phone.getString("phone_id"))) {
+        return phone;
+      }
+      
+    }
+    return null;
+  }
+
+  /**
+   * see if enrolled in push
+   * @param duoUser
+   * @return enrolled in push
+   */
+  public static boolean enrolledInPush(JSONObject duoUser) {
+    //see if there is a phone
+    //  "phones": [{
+    //    "phone_id": "DPFZRS9FB0D46QFTM899",
+    //    "number": "+15555550100",
+    //    "extension": "",
+    //    "name": "", 
+    //    "postdelay": null,
+    //    "predelay": null,
+    //    "type": "Mobile",
+    //    "capabilities": [
+    //      "sms",
+    //      "phone",
+    //      "push"
+    //    ],
+    //    "platform": "Apple iOS",
+    //    "activated": false,
+    //    "sms_passcodes_sent": false
+    //  }],
+
+    String pushPhoneId = duoPushPhoneId(duoUser);
+    
+    if (StringUtils.isBlank(pushPhoneId)) {
+      return false;
+    }
+    
+    JSONObject pushPhone = duoPhoneById(duoUser, pushPhoneId);
+    
+    //see if there is a push capability
+    if (pushPhone.has("capabilities")) {
+      JSONArray capabilities = pushPhone.getJSONArray("capabilities");
+      if (capabilities != null) {
+        for (int i=0;i<capabilities.size();i++) {
+          String capability = capabilities.getString(i);
+          if (StringUtils.equals(capability, "push")) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * sync up phones from open two factor to duo
    * @param someId
@@ -1368,9 +1458,8 @@ public class DuoCommands {
   
   /**
    * @param phoneId
-   * @return json object
    */
-  private static JSONObject deleteDuoPhone(String phoneId) {
+  public static void deleteDuoPhone(String phoneId) {
     
     //lets delete
     //DELETE /admin/v1/phones/[token_id]
@@ -1387,7 +1476,7 @@ public class DuoCommands {
     if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
       throw new RuntimeException("Bad response from Duo: " + result);
     }
-    return jsonObject;
+
   }
   
   /**
@@ -1760,7 +1849,6 @@ public class DuoCommands {
     request.addParam("factor", "push");
     request.addParam("async", "1");
     request.addParam("device", duoPushPhoneId);
-    
 
     signHttpAuth(request);
     
