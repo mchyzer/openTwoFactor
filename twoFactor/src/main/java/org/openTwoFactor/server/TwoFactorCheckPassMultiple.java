@@ -73,7 +73,7 @@ public class TwoFactorCheckPassMultiple implements TwoFactorCheckPass {
     TwoFactorCheckPass twoFactorCheckPass = TwoFactorServerUtils.newInstance(theClass);
     return twoFactorCheckPass;
   }
-  
+
   /**
    * @see org.openTwoFactor.server.TwoFactorCheckPass#twoFactorCheckPassword(java.lang.String, java.lang.String, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.String, java.lang.String)
    */
@@ -84,7 +84,19 @@ public class TwoFactorCheckPassMultiple implements TwoFactorCheckPass {
 
     init();
     
-    TwoFactorPassResult twoFactorPassResult = FailoverClient.failoverLogic(TwoFactorCheckPassMultiple.class.getSimpleName(), new FailoverLogic<TwoFactorPassResult>() {
+    TwoFactorPassResult twoFactorPassResult = null;
+
+    //try totp since clock might be wrong at duo...
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+        "twoFactorServer.checkPass.multiple.tryDbFirst", true)) {
+      twoFactorPassResult = new TwoFactorCheckPassDb().twoFactorCheckPassword(secretString, password, sequentialPassIndexAvailable, lastTotp30TimestampUsed, lastTotp60TimestampUsed, tokenIndexAvailable, phonePass, duoUserId);
+      resetHotpOnLocal(twoFactorPassResult);
+      if (twoFactorPassResult.isPasswordCorrect()) {
+        return twoFactorPassResult;
+      }
+    }
+    
+    twoFactorPassResult = FailoverClient.failoverLogic(TwoFactorCheckPassMultiple.class.getSimpleName(), new FailoverLogic<TwoFactorPassResult>() {
 
       /**
        * 
@@ -100,23 +112,29 @@ public class TwoFactorCheckPassMultiple implements TwoFactorCheckPass {
       
     });
     
-    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
-        "twoFactorServer.checkPass.multiple.useHotpOnDbIfMultiple", false)) {
-
-      //if DB is used with Duo, then dont use HOTP since Duo needs to increment index
-      //note: could be bad since timeout could still update index
-      if (TwoFactorCheckPassDb.class.equals(twoFactorPassResult.getTwoFactorCheckPassImplementation())) {
-        if (twoFactorPassResult.getNextHotpIndex() != null || twoFactorPassResult.getNextTokenIndex() != null) {
-          twoFactorPassResult.setNextHotpIndex(null);
-          twoFactorPassResult.setNextTokenIndex(null);
-          twoFactorPassResult.setPasswordCorrect(false);
-        }
-      }
-      
+    //if DB is used with Duo, then dont use HOTP since Duo needs to increment index
+    //note: could be bad since timeout could still update index
+    if (TwoFactorCheckPassDb.class.equals(twoFactorPassResult.getTwoFactorCheckPassImplementation())) {
+      resetHotpOnLocal(twoFactorPassResult);
     }
     
     return twoFactorPassResult;
     
+  }
+
+  /**
+   * @param twoFactorPassResult
+   */
+  private void resetHotpOnLocal(TwoFactorPassResult twoFactorPassResult) {
+    boolean useHotpOnDbIfMultiple = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+        "twoFactorServer.checkPass.multiple.useHotpOnDbIfMultiple", false);
+    if (!useHotpOnDbIfMultiple) {
+      if (twoFactorPassResult.getNextHotpIndex() != null || twoFactorPassResult.getNextTokenIndex() != null) {
+        twoFactorPassResult.setNextHotpIndex(null);
+        twoFactorPassResult.setNextTokenIndex(null);
+        twoFactorPassResult.setPasswordCorrect(false);
+      }
+    }
   }
 
 }

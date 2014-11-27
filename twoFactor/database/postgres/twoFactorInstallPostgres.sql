@@ -460,7 +460,10 @@ CREATE OR REPLACE VIEW two_factor_user_v
    DATE_INVITED_COLLEAGUES_DATE,
    phone_code_encrypted,   
    date_phone_code_sent,
-   date_phone_code_sent_date
+   date_phone_code_sent_date,
+   DUO_USER_ID,
+   DUO_PUSH_TRANSACTION_ID,
+   DUO_PUSH_BY_DEFAULT
 )
 AS
    SELECT tfu.loginid,
@@ -650,7 +653,22 @@ AS
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_phone_code_sent')
-             AS date_phone_code_sent_date
+             AS date_phone_code_sent_date,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_user_id')
+             AS duo_user_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_transaction_id')
+             AS duo_push_transaction_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
+             AS duo_push_by_default
      FROM two_factor_user tfu;
 COMMENT ON view TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
 
@@ -722,6 +740,11 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.date_phone_code_sent IS 'millis since 1970 t
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'date value for when the phone code was sent';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_USER_ID IS 'keep track of duo user id';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_TRANSACTION_ID IS 'millis since 1970 __ browser id __ duo tx id for push';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_BY_DEFAULT IS 'if should push when testing an authn that requires authn';
 
   
   

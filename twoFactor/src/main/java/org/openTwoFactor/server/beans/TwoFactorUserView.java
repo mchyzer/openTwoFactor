@@ -18,6 +18,72 @@ import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 public class TwoFactorUserView extends TwoFactorHibernateBeanBase {
 
   /**
+   * user id in duo
+   */
+  private String duoUserId;
+  
+  /**
+   * millis since 1970 __ sbrowser id __ duo tx id for push
+   */
+  private String duoPushTransactionId;
+  
+  /**
+   * if should push when testing an authn that requires authn
+   */
+  private Boolean duoPushByDefault;
+  
+  /**
+   * user id in duo
+   * @return the duoUserId
+   */
+  public String getDuoUserId() {
+    return this.duoUserId;
+  }
+
+  
+  /**
+   * user id in duo
+   * @param duoUserId1 the duoUserId to set
+   */
+  public void setDuoUserId(String duoUserId1) {
+    this.duoUserId = duoUserId1;
+  }
+
+  
+  /**
+   * millis since 1970 __ sbrowser id __ duo tx id for push
+   * @return the duoPushTransactionId
+   */
+  public String getDuoPushTransactionId() {
+    return this.duoPushTransactionId;
+  }
+
+  
+  /**
+   * millis since 1970 __ sbrowser id __ duo tx id for push
+   * @param duoPushTransactionId1 the duoPushTransactionId to set
+   */
+  public void setDuoPushTransactionId(String duoPushTransactionId1) {
+    this.duoPushTransactionId = duoPushTransactionId1;
+  }
+  
+  /**
+   * if should push when testing an authn that requires authn
+   * @return the duoPushByFefault
+   */
+  public Boolean getDuoPushByDefault() {
+    return this.duoPushByDefault;
+  }
+  
+  /**
+   * if should push when testing an authn that requires authn
+   * @param duoPushByDefault1 the duoPushByFefault to set
+   */
+  public void setDuoPushByDefault(Boolean duoPushByDefault1) {
+    this.duoPushByDefault = duoPushByDefault1;
+  }
+
+  /**
    * login id of first friend
    */
   private String colleagueLoginid0;

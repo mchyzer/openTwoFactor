@@ -18,6 +18,7 @@ import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
@@ -161,7 +162,17 @@ public class UiMainPublic extends UiServiceLogicBase {
         
         //store code and when sent
         String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
-        secretCode = StringUtils.leftPad(secretCode, 6, '0');
+        
+        //make this since 9 since thats what duo is
+        secretCode = StringUtils.leftPad(secretCode, 9, '0');
+
+        //maybe going from duo
+        //opt in to duo
+        if (UiMain.duoRegisterUsers()) {
+
+          secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
+          
+        }
         
         twoFactorUser.setPhoneCodeUnencrypted(secretCode);
         twoFactorUser.setDatePhoneCodeSent(System.currentTimeMillis());

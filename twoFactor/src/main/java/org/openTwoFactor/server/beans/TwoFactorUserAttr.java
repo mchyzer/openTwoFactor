@@ -120,6 +120,16 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     duo_user_id(TwoFactorUserAttrType.string),
     
     /**
+     * millis since 1970 __ sbrowser id __ duo tx id for push
+     */
+    duo_push_transaction_id(TwoFactorUserAttrType.string),
+    
+    /**
+     * if should push when testing an authn that requires authn
+     */
+    duo_push_by_default(TwoFactorUserAttrType.booleanType),
+    
+    /**
      * phone to opt out 0
      */
     phone0(TwoFactorUserAttrType.string),
@@ -526,7 +536,7 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     }
 
     if (this.getAttributeValueString() != null && this.getAttributeValueString().length() > 390) {
-      throw new RuntimeException("attributeValue is too long(90): '" + this.getAttributeValueString() + "'");
+      throw new RuntimeException("attributeValue is too long(390): '" + this.getAttributeValueString() + "'");
     }
     
     return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 

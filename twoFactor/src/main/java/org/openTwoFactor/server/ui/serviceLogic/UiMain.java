@@ -93,6 +93,8 @@ public class UiMain extends UiServiceLogicBase {
    * @param httpServletRequest
    * @param httpServletResponse
    * @param allowInactives 
+   * @param source 
+   * @param isAdmin 
    */
   public static void personPickerHelper(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, boolean allowInactives, Source source, boolean isAdmin) {
     //{
@@ -278,6 +280,7 @@ public class UiMain extends UiServiceLogicBase {
   
   /**
    * see if too many users, and this user has never opted in and set a message if so
+   * @param subjectSource 
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer
    * @param loggedInUser
@@ -993,7 +996,7 @@ public class UiMain extends UiServiceLogicBase {
 
   /**
    * generate qr code file
-   * @return the file
+   * @param qrImageFile 
    */
   private void qrCodeFile(File qrImageFile) {
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
@@ -1041,7 +1044,7 @@ public class UiMain extends UiServiceLogicBase {
 
   /**
    * generate qr code file
-   * @return the file
+   * @param qrImageFile 
    */
   private void qrCodeSecretFile(File qrImageFile) {
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
@@ -1119,6 +1122,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param userAgent 
    * @param userIdOperatingOn 
    * @param subjectSource
+   * @param userCheckedCheckbox 
    */
   public void optOutColleagueLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
@@ -1134,7 +1138,7 @@ public class UiMain extends UiServiceLogicBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
         
-        boolean success = false;
+        boolean innerSuccess = false;
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
         
         twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
@@ -1189,11 +1193,10 @@ public class UiMain extends UiServiceLogicBase {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendWarnNotOptedIn"));
           return false;
-        } else {
-          
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendSuccess"));
-          success = true;
         }
+          
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendSuccess"));
+        innerSuccess = true;
         
         twoFactorUserGettingOptedOut[0].setTwoFactorSecret(null);
         
@@ -1216,7 +1219,7 @@ public class UiMain extends UiServiceLogicBase {
             TextContainer.retrieveFromRequest().getText().get("helpFriendAuditDescriptionForFriendPrefix")
             + " " + twoFactorUserUsingApp[0].getName() +  " (" + twoFactorUserUsingApp[0].getLoginid() + ")", null);
 
-        return success;
+        return innerSuccess;
       }
     });
 
@@ -1333,6 +1336,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
    * @param loggedInUser
+   * @param subjectSource 
    */
   public void helpColleagueLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
@@ -1749,7 +1753,10 @@ public class UiMain extends UiServiceLogicBase {
 
     //opt in to duo
     if (duoRegisterUsers()) {
+
       DuoCommands.migrateUserAndTokensBySomeId(loggedInUser);
+      //sync up phones
+      DuoCommands.migratePhonesToDuoBySomeId(loggedInUser);
     }
     
     return result;
@@ -2748,6 +2755,18 @@ public class UiMain extends UiServiceLogicBase {
       
     }
     
+    //change phones in duo
+    if (duoRegisterUsers()) {
+      
+      String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid());
+      
+      //if user is registered, edit phone
+      if (!StringUtils.isBlank(duoUserId)) {
+        DuoCommands.migratePhonesToDuoBySomeId(duoUserId);
+      }
+      
+    }
+    
     return result;
     
   }
@@ -2818,6 +2837,7 @@ public class UiMain extends UiServiceLogicBase {
 
   /**
    * validate a friend lookup
+   * @param loggedInSubject 
    * @param subjectSource to look up the friend
    * @param friendLookup 
    * @param errorMessage
@@ -2841,8 +2861,6 @@ public class UiMain extends UiServiceLogicBase {
       return errorMessageIfSelf;
       
     }
-    
-    
     return null;
   }
 

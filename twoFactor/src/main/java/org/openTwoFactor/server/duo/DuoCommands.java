@@ -5,16 +5,12 @@
 package org.openTwoFactor.server.duo;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashSet;
-import java.util.Set;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
-import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang.StringUtils;
-import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -281,7 +277,7 @@ public class DuoCommands {
     } else if (args.length == 1 && StringUtils.equals("migrateAllTokensToDuo", args[0])) {
       migrateAllTokensToDuo();
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
-      boolean validCode = verifyDuoCode(args[1], args[2]);
+      boolean validCode = verifyDuoCodeBySomeId(args[1], args[2]);
       System.out.println("Valid code? " + validCode);
     } else if (args.length == 1 && StringUtils.equals("deleteAllTokensFromDuo", args[0])) {
       deleteAllTokensFromDuo();
@@ -309,7 +305,41 @@ public class DuoCommands {
     } else if (args.length == 2 && StringUtils.equals("deleteUser", args[0])) {
       String userLookupId = args[1];
       deleteDuoUserBySomeId(userLookupId);
+    } else if (args.length == 2 && StringUtils.equals("enrollUserInDuoPush", args[0])) {
+      String userLookupId = args[1];
+      JSONObject jsonObject = enrollUserInPushBySomeId(userLookupId);
+      System.out.println(jsonObject.getString("activation_barcode"));
+      
+    } else if (args.length == 2 && StringUtils.equals("migratePhonesToDuo", args[0])) {
+      String userLookupId = args[1];
+      migratePhonesToDuoBySomeId(userLookupId, true);
+
+    } else if (args.length == 2 && StringUtils.equals("duoBypassCode", args[0])) {
+      String userLookupId = args[1];
+      String code = duoBypassCodeBySomeId(userLookupId);
+      System.out.println(code);
+
+    } else if (args.length == 2 && StringUtils.equals("duoInitiatePush", args[0])) {
+      String userLookupId = args[1];
+      String txid = duoInitiatePushBySomeId(userLookupId, true);
+      System.out.println(txid);
+
+    } else if (args.length == 2 && StringUtils.equals("duoPushSuccess", args[0])) {
+      String txId = args[1];
+      boolean allowed = duoPushSuccess(txId);
+      System.out.println("Allowed? " + allowed);
+
+    } else if (args.length == 3 && StringUtils.equals("duoPushByDefault", args[0])) {
+      String userId = args[1];
+      boolean allowed = TwoFactorServerUtils.booleanValue(args[2]);
+
+      duoPushByDefaultForSomeId(userId, allowed);
+
+    } else if (args.length == 1 && StringUtils.equals("syncDuoUserIds", args[0])) {
+      syncDuoUserIds();
+      
     } else {
+
       System.out.println("Enter arg: migrateAllToDuo to migrate all users to duo");
       System.out.println("Enter arg: migrateAllTokensToDuo to migrate all users to duo");
       System.out.println("Enter arg: deleteAllTokensFromDuo to delete all tokens from duo");
@@ -322,6 +352,12 @@ public class DuoCommands {
       System.out.println("Enter arg: migrateUserAndTokensToDuo <someUserId> to migrate tokens for a user");
       System.out.println("Enter arg: deleteUserAndTokens <someUserId> to delete a user and their tokens");
       System.out.println("Enter arg: deleteUser <someUserId> to delete a user object");
+      System.out.println("Enter arg: enrollUserInDuoPush <someUserId> to enroll a user in push");
+      System.out.println("Enter arg: migratePhonesToDuo <someUserId> to migrate phones to duo");
+      System.out.println("Enter arg: duoInitiatePush <someUserId> to initiate push to phone");
+      System.out.println("Enter arg: duoPushByDefault <someUserId> true|false to set default push flag");
+      System.out.println("Enter arg: syncDuoUserIds to sync all duo user ids");
+      
       System.exit(1);
     }
     
@@ -366,7 +402,522 @@ public class DuoCommands {
     
     migrateTokensBySomeId(someId);
   }
+  
+  /**
+   * 
+   * @param someId
+   * @return json object
+   */
+  private static JSONObject enrollUserInPushBySomeId(String someId) {
+    
+    String userUuid = retrieveTfUserUuidBySomeId(someId, true);
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
 
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("User is not enrolled in twostep! " + twoFactorUser.getLoginid());
+    }
+    
+    String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid());
+
+    if (StringUtils.isBlank(netId)) {
+      throw new RuntimeException("Cant find netId for user: " + someId);
+    }
+
+    JSONObject duoUser = retrieveDuoUserByIdOrUsername(netId, false);
+
+    //  boolean userNeedsDelete = false;
+    
+    if (duoUser == null) {
+      //userNeedsDelete = true;
+      //we need to delete this user and re-enroll
+      
+      //deleteDuoUserAndTokensBySomeId(someId);
+      
+      throw new RuntimeException("Cant find duo user: " + netId);
+    }
+
+    //    //create user
+    //    Http request = httpAuth("POST", "/auth/v2/enroll");
+    //    request.addParam("username", netId);
+    //    
+    //    signHttpAuth(request);
+    //    
+    //    String result = executeRequestRaw(request);
+    //        
+    //    System.out.println(result);
+    //    
+    //    //  {
+    //    //    "stat": "OK",
+    //    //    "response": {
+    //    //      "activation_barcode": "https://api-eval.duosecurity.com/frame/qr?value=8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA",
+    //    //      "activation_code": "duo://8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA",
+    //    //      "expiration": 1357020061,
+    //    //      "user_id": "DU94SWSN4ADHHJHF2HXT",
+    //    //      "username": "49c6c3097adb386048c84354d82ea63d"
+    //    //    }
+    //    //  }
+    
+    //if they have a push phone, lets delete it and start over
+    String duoPushPhoneId = duoPushPhoneId(duoUser);
+    
+    if (!StringUtils.isBlank(duoPushPhoneId)) {
+      
+      deleteDuoPhone(duoPushPhoneId);
+      
+    }
+    
+    JSONObject jsonPhone = createDuoPhone("phone_push", null, true);
+    String phoneId = jsonPhone.getString("phone_id");
+      
+    String userId = duoUser.getString("user_id");
+
+    associateUserWithPhone(userId, phoneId);
+
+    //generate an activation code
+    // POST /admin/v1/phones/[phone_id]/activation_url
+    Http request = httpAdmin("POST", "/admin/v1/phones/" + phoneId + "/activation_url");
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+    
+    // {
+    //   "stat": "OK",
+    //   "response": {
+    //     "activation_barcode": "https://api-abcdef.duosecurity.com/frame/qr?value=duo%3A%2F%2Factivation-code",
+    //     "valid_secs": 3600
+    //   }
+    // }
+
+    System.out.println(result);
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+ 
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+
+    jsonObject = (JSONObject)jsonObject.get("response");
+
+    return jsonObject;
+
+    
+  }
+  
+  /**
+   * @param someId
+   * @return the response object
+   */
+  public static String duoBypassCodeBySomeId(String someId) {
+
+    //user id or netId or whatever
+    if (StringUtils.isBlank(someId)) {
+      throw new RuntimeException("someId is required!");
+    }
+
+    String userId = retrieveDuoUserIdBySomeId(someId);
+    
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("userId is required!");
+    }
+    
+    int phoneCodeLastsMinutes = TwoFactorServerConfig.retrieveConfig()
+        .propertyValueInt("twoFactorServer.phoneCodeLastsMinutes", 10);
+
+    //cant be 0
+    if (phoneCodeLastsMinutes == 0) {
+      phoneCodeLastsMinutes = 1;
+    }
+    
+    //  POST /admin/v1/users/[user_id]/bypass_codes
+    //  count Optional  Number of new bypass codes to create. At most 10 codes (the default) can be created at a time. Codes will be generated randomly.
+    //  codes Optional  CSV string of codes to use. Mutually exclusive with count.
+    //  valid_secs  Optional  The number of seconds generated bypass codes should be valid for. If 0 (the default) the codes will never expire.
+    //  reuse_count Optional  The number of times generated bypass codes can be used. If 0, the codes will have an infinite reuse_count. Default: 1.
+
+    Http request = httpAdmin("POST", "/admin/v1/users/" + userId + "/bypass_codes");
+    request.addParam("count", "1");
+    request.addParam("valid_secs", Integer.toString(phoneCodeLastsMinutes + 60));
+ 
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+        
+    //  EXAMPLE RESPONSE
+    //  {
+    //    "stat": "OK",
+    //    "response": [
+    //      "407176182",
+    //      "016931781",
+    //      "338390347",
+    //      "537828175",
+    //      "006165274",
+    //      "438680449",
+    //      "877647224",
+    //      "196167433",
+    //      "719424708",
+    //      "727559878"
+    //    ]
+    //  }
+    //
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    JSONArray codes = (JSONArray)jsonObject.get("response");
+
+    if (codes.size() != 1) {
+      throw new RuntimeException("Why is codes size not 1??? " + codes.size());
+    }
+    
+    return codes.getString(0);
+  }
+
+  
+  /**
+   * @param phoneId
+   * @param number if not null, this is the phone number
+   * @param mobile
+   * @return the response object
+   */
+  public static JSONObject editDuoPhone(String phoneId, String number, boolean mobile) {
+
+    //phone id
+    if (StringUtils.isBlank(phoneId)) {
+      throw new RuntimeException("phoneId is required!");
+    }
+        
+    //edit phone
+    Http request = httpAdmin("POST", "/admin/v1/phones/" + phoneId);
+    request.addParam("type", mobile ? "mobile" : "landline");
+ 
+    if (mobile) {
+      request.addParam("platform", "generic smartphone");
+    } else {
+      request.addParam("platform", "unknown");
+    }
+    
+    if (!StringUtils.isBlank(number)) {
+      request.addParam("number", number);
+    } else {
+      request.addParam("number", null);
+    }
+    
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+        
+    //  {
+    //    "stat": "OK",
+    //    "response": {
+    //      "phone_id": "DPFZRS9FB0D46QFTM899",
+    //      "number": "+15555550100",
+    //      "name": "",
+    //      "extension": "",
+    //      "postdelay": null,
+    //      "predelay": null,
+    //      "type": "Mobile",
+    //      "capabilities": [
+    //        "sms",
+    //        "phone",
+    //        "push"
+    //      ],
+    //      "platform": "Apple iOS",
+    //      "activated": false,
+    //      "sms_passcodes_sent": false,
+    //      "users": [{
+    //        "user_id": "DUJZ2U4L80HT45MQ4EOQ",
+    //        "username": "jsmith",
+    //        "realname": "Joe Smith",
+    //        "email": "jsmith@example.com",
+    //        "status": "active",
+    //        "last_login": 1343921403,
+    //        "notes": ""
+    //      }]
+    //    }
+    //  }
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    jsonObject = (JSONObject)jsonObject.get("response");
+    
+    return jsonObject;
+  }
+  
+  /**
+   * @param name is name of phone, e.g. phone_push, phone_0, phone_1, phone_2
+   * @param number if not null, this is the phone number
+   * @param mobile
+   * @return the response object
+   */
+  public static JSONObject createDuoPhone(String name, String number, boolean mobile) {
+    //create phone
+    Http request = httpAdmin("POST", "/admin/v1/phones");
+    request.addParam("name", name);
+    request.addParam("type", mobile ? "mobile" : "landline");
+    if (mobile) {
+      request.addParam("platform", "generic smartphone");
+    }
+    
+    if (!StringUtils.isBlank(number)) {
+      request.addParam("number", number);
+    }
+    
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+        
+    //  {
+    //    "stat": "OK",
+    //    "response": {
+    //      "phone_id": "DPFZRS9FB0D46QFTM899",
+    //      "number": "+15555550100",
+    //      "name": "",
+    //      "extension": "",
+    //      "postdelay": null,
+    //      "predelay": null,
+    //      "type": "Mobile",
+    //      "capabilities": [
+    //        "sms",
+    //        "phone",
+    //        "push"
+    //      ],
+    //      "platform": "Apple iOS",
+    //      "activated": false,
+    //      "sms_passcodes_sent": false,
+    //      "users": [{
+    //        "user_id": "DUJZ2U4L80HT45MQ4EOQ",
+    //        "username": "jsmith",
+    //        "realname": "Joe Smith",
+    //        "email": "jsmith@example.com",
+    //        "status": "active",
+    //        "last_login": 1343921403,
+    //        "notes": ""
+    //      }]
+    //    }
+    //  }
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    jsonObject = (JSONObject)jsonObject.get("response");
+    
+    return jsonObject;
+  }
+  
+  /**
+   * 
+   * @param duoUser
+   * @return the phone Id or null if none
+   */
+  public static String duoPushPhoneId(JSONObject duoUser) {
+    //see if there is a phone
+    //  "phones": [{
+    //    "phone_id": "DPFZRS9FB0D46QFTM899",
+    //    "number": "+15555550100",
+    //    "extension": "",
+    //    "name": "", 
+    //    "postdelay": null,
+    //    "predelay": null,
+    //    "type": "Mobile",
+    //    "capabilities": [
+    //      "sms",
+    //      "phone",
+    //      "push"
+    //    ],
+    //    "platform": "Apple iOS",
+    //    "activated": false,
+    //    "sms_passcodes_sent": false
+    //  }],
+    
+    JSONArray phones = (JSONArray)duoUser.get("phones");
+    
+    if (phones == null || phones.size() == 0) {
+      return null;
+    }
+    
+    for (int i=0;i<phones.size();i++) {
+      
+      JSONObject phone = phones.getJSONObject(i);
+      if (StringUtils.equals("phone_push", phone.getString("name"))) {
+        return phone.getString("phone_id");
+      }
+      
+    }
+    return null;
+  }
+  /**
+   * sync up phones from open two factor to duo
+   * @param someId
+   */
+  public static void migratePhonesToDuoBySomeId(String someId) {
+    migratePhonesToDuoBySomeId(someId, false);
+  }
+  
+  /**
+   * sync up phones from open two factor to duo
+   * @param someId
+   * @param printResults if sys out print results
+   */
+  public static void migratePhonesToDuoBySomeId(String someId, boolean printResults) {
+
+    //get two factor object
+    String userUuid = retrieveTfUserUuidBySomeId(someId, true);
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
+
+    if (!twoFactorUser.isOptedIn()) {
+      return;
+    }
+
+    //get the duo user
+    JSONObject duoUser = retrieveDuoUserBySomeId(someId);
+    
+    if (duoUser == null) {
+      throw new RuntimeException("Cant find duo user for someId: " + someId);
+    }
+    
+    for (int i=0;i<3;i++) {
+      
+      String phoneNumber = null;
+      boolean isText = false;
+      
+      //uh... translate to a loopable value
+      if (i==0) {
+        
+        phoneNumber = twoFactorUser.getPhone0();
+        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText0(), false);
+        
+      } else if (i==1) {
+
+        phoneNumber = twoFactorUser.getPhone1();
+        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText1(), false);
+        
+      } else if (i==2) {
+        
+        phoneNumber = twoFactorUser.getPhone2();
+        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText2(), false);
+
+      }
+
+      //get the phone from duo
+      JSONObject duoPhone = duoPhoneByIndex(duoUser, i);
+      
+      //if they both arent there, thats good
+      if (duoPhone == null && StringUtils.isBlank(phoneNumber)) {
+        if (printResults) {
+          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was in sync");
+        }
+        continue;
+      }
+      
+      //if there is no open two factor, but is a duo, then delete
+      String phoneId = duoPhone == null ? null : duoPhone.getString("phone_id");
+      if (duoPhone != null && StringUtils.isBlank(phoneNumber)) {
+        if (printResults) {
+          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " does not exist in open two factor and will be removed from Duo");
+        }
+        deleteDuoPhone(phoneId);
+        continue;
+      }
+      
+      //if there is no duo, then create
+      if (duoPhone == null && !StringUtils.isBlank(phoneNumber)) {
+        if (printResults) {
+          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " did not exist in duo and will be created: " + phoneNumber + ", mobile? " + isText);
+        }
+        duoPhone = createDuoPhone("phone " + (i+1), phoneNumber, isText);
+        phoneId = duoPhone.getString("phone_id");
+        associateUserWithPhone(duoUser.getString("user_id"), phoneId);
+        continue;
+      }
+      
+      //if both, make sure ok
+      if (duoPhone != null && !StringUtils.isBlank(phoneNumber)) {
+        
+        boolean duoIsMobile = StringUtils.equalsIgnoreCase(duoPhone.getString("type"), "mobile"); 
+
+        //note, this will likely always get updated since duo stores as +11234567890 and open two factor is 123-456-7890
+        String duoNumber = TwoFactorServerUtils.trimToEmpty(duoPhone.getString("number")).replaceAll("[^\\d]", "");
+        if (duoNumber.startsWith("1")) {
+          duoNumber = duoNumber.substring(1);
+        }
+        
+        phoneNumber = TwoFactorServerUtils.trimToEmpty(phoneNumber).replaceAll("[^\\d]", "");
+        if (phoneNumber.startsWith("1")) {
+          phoneNumber = phoneNumber.substring(1);
+        }
+        
+        //phone number and if mobile needs to match
+        if (!StringUtils.equals(duoNumber, phoneNumber)
+            || (duoIsMobile != isText)) {
+        
+          if (printResults) {
+            System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was out of sync, changing number to: " + phoneNumber + ", mobile? " + isText);
+          }
+
+          editDuoPhone(phoneId, phoneNumber, isText);
+          
+        }
+        continue;
+      }
+      
+    }
+    
+  }
+  
+  /**
+   * @param index is the index of the phone, 0, 1, 2
+   * @param duoUser
+   * @return the phone Id or null if none
+   */
+  public static JSONObject duoPhoneByIndex(JSONObject duoUser, int index) {
+    //see if there is a phone
+    //  "phones": [{
+    //    "phone_id": "DPFZRS9FB0D46QFTM899",
+    //    "number": "+15555550100",
+    //    "extension": "",
+    //    "name": "", 
+    //    "postdelay": null,
+    //    "predelay": null,
+    //    "type": "Mobile",
+    //    "capabilities": [
+    //      "sms",
+    //      "phone",
+    //      "push"
+    //    ],
+    //    "platform": "Apple iOS",
+    //    "activated": false,
+    //    "sms_passcodes_sent": false
+    //  }],
+    
+    JSONArray phones = (JSONArray)duoUser.get("phones");
+    
+    if (phones == null || phones.size() == 0) {
+      return null;
+    }
+    
+    for (int i=0;i<phones.size();i++) {
+      
+      JSONObject phone = phones.getJSONObject(i);
+      if (StringUtils.equals("phone " + (index+1), phone.getString("name"))) {
+        return phone;
+      }
+      
+    }
+    return null;
+  }
+  
   /**
    * 
    * @param someId
@@ -398,15 +949,47 @@ public class DuoCommands {
     }
 
   }
+
+  /**
+   * 
+   */
+  private static void syncDuoUserIds() {
+
+    //lets get all the opted in users
+    for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
+        TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
+      
+      String twoFactorDuoUserId = twoFactorUserView.getDuoUserId();
+      
+      String duoUserId = retrieveDuoUserIdBySomeId(twoFactorUserView.getLoginid(), false);
+      
+      if (!StringUtils.equals(twoFactorDuoUserId, duoUserId)) {
+        System.out.println("Updating user: " + twoFactorUserView.getLoginid() + " duo user id: " + duoUserId);
+        TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), twoFactorUserView.getUuid());
+        twoFactorUser.setDuoUserId(duoUserId);
+        twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+      } else {
+        System.out.println("User duo id ok: " + twoFactorUserView.getLoginid() + " duo user id: " + duoUserId);
+        
+      }
+      
+    }
+  }
   
   /**
    * 
    */
   private static void migrateAllToDuo() {
+
     //lets get all the opted in users
     for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
         TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
       migrateUserBySomeId(twoFactorUserView.getUuid());
+    }
+    
+    for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
+        TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
+      migratePhonesToDuoBySomeId(twoFactorUserView.getUuid(), true);
     }
     
     migrateAllTokensToDuo();
@@ -432,7 +1015,14 @@ public class DuoCommands {
       String duoUserId = retrieveDuoUserIdBySomeId(netId);
 
       if (!StringUtils.isBlank(duoUserId)) {
-        migrateTokensBySomeId(duoUserId);
+        try {
+          migrateTokensBySomeId(netId);
+        } catch (Exception e) {
+          
+          System.out.println("Problem with user: " + duoUserId);
+          e.printStackTrace();
+          
+        }
       }
     }
 
@@ -721,6 +1311,38 @@ public class DuoCommands {
   }
 
   /**
+   * @param userId
+   * @param phoneId
+   */
+  private static void associateUserWithPhone(String userId, String phoneId) {
+    
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("userId is null");
+    }
+    
+    if (StringUtils.isBlank(phoneId)) {
+      throw new RuntimeException("phoneId is null");
+    }
+    
+    //associate token with user
+    //  POST /admin/v1/users/[user_id]/phones
+    //  phone_id
+    Http request = httpAdmin("POST", "/admin/v1/users/" + userId + "/phones");
+    request.addParam("phone_id", phoneId);
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+    
+    // {"response": "", "stat": "OK"}
+
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+ 
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+  }
+  
+  /**
    * @param tokenId
    * @return json object
    */
@@ -729,6 +1351,30 @@ public class DuoCommands {
     //lets delete
     //DELETE /admin/v1/tokens/[token_id]
     Http request = httpAdmin("DELETE", "/admin/v1/tokens/" + tokenId);
+    
+    signHttpAdmin(request);
+    
+    String result = executeRequestRaw(request);
+    
+    // {"response": "", "stat": "OK"}
+
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+    
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    return jsonObject;
+  }
+  
+  /**
+   * @param phoneId
+   * @return json object
+   */
+  private static JSONObject deleteDuoPhone(String phoneId) {
+    
+    //lets delete
+    //DELETE /admin/v1/phones/[token_id]
+    Http request = httpAdmin("DELETE", "/admin/v1/phones/" + phoneId);
     
     signHttpAdmin(request);
     
@@ -855,67 +1501,6 @@ public class DuoCommands {
     
     return responseArray;
     
-  }
-
-
-  /**
-   * note, this doesnt work since our system assumes 6 digit codes
-   * @param twoFactorUser
-   * @param userId
-   */
-  private static void setupOneTimeCodesDoesntWork(TwoFactorUser twoFactorUser,
-     String userId) {
-    
-    Long sequentialPassIndexGivenToUser = twoFactorUser.getSeqPassIndexGivenToUser();
-    
-    Set<String> oneTimeCodes = new HashSet<String>();
-    
-    String phoneCodeNotExpired = twoFactorUser.getPhoneCodeUnencryptedIfNotExpired();
-    if (!StringUtils.isBlank(phoneCodeNotExpired)) {
-      oneTimeCodes.add(phoneCodeNotExpired);
-    }
-    
-    TwoFactorLogicInterface twoFactorLogicInterface = TwoFactorServerConfig.retrieveConfig().twoFactorLogic();
-    
-    Base32 base32 = new Base32();
-    byte[] secret = base32.decode(twoFactorUser.getTwoFactorSecretUnencrypted());
-    
-    Long sequentialPassIndex = twoFactorUser.getSequentialPassIndex();
-
-    //if (sequentialPassIndex == null && sequentialPassIndexGivenToUser != null) {
-    //  int numberOfOneTimePassesShownOnScreen = TwoFactorServerConfig.retrieveConfig()
-    //      .propertyValueInt("twoFactorServer.hotpSecretsShownOnScreen", 20);
-    //  sequentialPassIndex = 1 + (sequentialPassIndexGivenToUser - numberOfOneTimePassesShownOnScreen);
-    //}
-    
-    if (sequentialPassIndex != null && sequentialPassIndexGivenToUser != null) {
-      
-      for (int i = sequentialPassIndex.intValue(); i < sequentialPassIndexGivenToUser.intValue(); i++) {
-        String oneTimePass = Integer.toString(twoFactorLogicInterface.hotpPassword(secret, i));
-        oneTimePass = StringUtils.leftPad(oneTimePass, 6, '0');
-        oneTimeCodes.add(oneTimePass);
-      }
-    }
-
-    if (TwoFactorServerUtils.length(oneTimeCodes) > 0) {
-      // /admin/v1/users/[user_id]/bypass_codes
-      Http request = httpAdmin("POST", "/admin/v1/users/" + userId + "/bypass_codes");
-      
-      request.addParam("codes", TwoFactorServerUtils.join(oneTimeCodes.iterator(), ','));
-      
-      signHttpAdmin(request);
-      
-      String result = executeRequestRaw(request);
-      
-      System.out.println(result);
-      
-      //  {"code": 40002, "message": "Invalid request parameters", "message_detail": "codes", "stat": "FAIL"}
-      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
- 
-      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
-        throw new RuntimeException("Bad response from Duo: " + result);
-      }
-    }
   }
   
   /**
@@ -1132,6 +1717,132 @@ public class DuoCommands {
     return StringUtils.equals("allow", resultString);
     
   }
+
+  /**
+   * initiate a push
+   * @param someId
+   * @param exceptionIfNotPushable
+   * @return tx id
+   */
+  public static String duoInitiatePushBySomeId(String someId, boolean exceptionIfNotPushable) {
+
+    String userId = retrieveDuoUserIdBySomeId(someId);
+    return duoInitiatePush(userId, exceptionIfNotPushable);
+
+  }
+  
+  /**
+   * initiate a push
+   * @param userId
+   * @param exceptionIfNotPushable 
+   * @return tx id
+   */
+  public static String duoInitiatePush(String userId, boolean exceptionIfNotPushable) {
+    
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("userId is required");
+    }
+    
+    JSONObject duoUser = retrieveDuoUserByIdOrUsername(userId, true);
+
+    String duoPushPhoneId = duoPushPhoneId(duoUser);
+    
+    if (StringUtils.isBlank(duoPushPhoneId)) {
+      if (exceptionIfNotPushable) {
+        throw new RuntimeException("User is not pushable: " + (duoUser == null ? userId : duoUser.getString("username")));
+      }
+      return null;
+    }
+    
+    Http request = httpAuth("POST", "/auth/v2/auth");
+        
+    request.addParam("user_id", userId);
+    request.addParam("factor", "push");
+    request.addParam("async", "1");
+    request.addParam("device", duoPushPhoneId);
+    
+
+    signHttpAuth(request);
+    
+    String result = executeRequestRaw(request);
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    jsonObject = (JSONObject)jsonObject.get("response");
+
+    String txid = jsonObject.getString("txid");
+    
+    return txid;
+    
+  }
+
+  /**
+   * set the push by default flag 
+   * @param someId
+   * @param pushByDefault
+   */
+  public static void duoPushByDefaultForSomeId(String someId, boolean pushByDefault) {
+    
+    String tfUserId = retrieveTfUserUuidBySomeId(someId, true);
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), tfUserId);
+    twoFactorUser.setDuoPushByDefault(pushByDefault);
+    twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+        
+  }
+  
+  /**
+   * check on a push
+   * @param txId 
+   * @return if success
+   */
+  public static boolean duoPushSuccess(String txId) {
+    
+    if (StringUtils.isBlank(txId)) {
+      throw new RuntimeException("txId is required");
+    }
+    
+    //  txid  Required  The transaction ID of the authentication attempt, as returned by the /auth endpoint.
+    //  result  One of the following values:
+    //  Value Meaning
+    //  allow Authentication succeeded. Your application should grant access to the user.
+    //  deny  Authentication denied. Your application should deny access.
+    //  waiting
+    
+    Http request = httpAuth("GET", "/auth/v2/auth_status");
+        
+    request.addParam("txid", txId);
+    
+
+    signHttpAuth(request);
+    
+    String result = executeRequestRaw(request);
+        
+    //  {
+    //    "stat": "OK",
+    //    "response": {
+    //      "result": "waiting",
+    //      "status": "pushed",
+    //      "status_msg": "Pushed a login request to your phone..."
+    //    }
+    //  }
+    
+    JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+
+    if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+      throw new RuntimeException("Bad response from Duo: " + result);
+    }
+    
+    jsonObject = (JSONObject)jsonObject.get("response");
+
+    String resultField = jsonObject.getString("result");
+    
+    return StringUtils.equals(resultField, "allow");
+    
+  }
   
   /**
    * 
@@ -1140,11 +1851,14 @@ public class DuoCommands {
    */
   public static JSONObject retrieveDuoUserBySomeId(String someId) {
     //lets see if it is a userUuid
-    TwoFactorUser twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByUuid(someId);
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(),someId);
     
     if (twoFactorUser == null) {
       //try by id
       twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(someId);
+      if (twoFactorUser != null) {
+        twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), twoFactorUser.getUuid());
+      }
     }
     
     if (twoFactorUser == null) {
@@ -1152,6 +1866,9 @@ public class DuoCommands {
       String theId = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), someId, true);
       if (!StringUtils.isBlank(theId)) {
         twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(theId);
+        if (twoFactorUser != null) {
+          twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), twoFactorUser.getUuid());
+        }
       }
     }
     
@@ -1164,19 +1881,32 @@ public class DuoCommands {
     String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid(), true);
     return retrieveDuoUserByIdOrUsername(netId, false);
   }
-  
+
   /**
    * 
    * @param someId
    * @return the duo user id
    */
   public static String retrieveDuoUserIdBySomeId(String someId) {
+    return retrieveDuoUserIdBySomeId(someId, true);
+  }
+
+  /**
+   * 
+   * @param someId
+   * @param trustDbId
+   * @return the duo user id
+   */
+  public static String retrieveDuoUserIdBySomeId(String someId, boolean trustDbId) {
     //lets see if it is a userUuid
-    TwoFactorUser twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByUuid(someId);
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), someId);
     
     if (twoFactorUser == null) {
       //try by id
       twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(someId);
+      if (twoFactorUser != null) {
+        twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), twoFactorUser.getUuid());
+      }
     }
     
     if (twoFactorUser == null) {
@@ -1184,6 +1914,9 @@ public class DuoCommands {
       String theId = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), someId, true);
       if (!StringUtils.isBlank(theId)) {
         twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(theId);
+        if (twoFactorUser != null) {
+          twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), twoFactorUser.getUuid());
+        }
       }
     }
     
@@ -1194,7 +1927,7 @@ public class DuoCommands {
 
     String duoUserId = twoFactorUser.getDuoUserId();
     
-    if (!StringUtils.isBlank(duoUserId)) {
+    if (trustDbId && !StringUtils.isBlank(duoUserId)) {
       return duoUserId;
     }
     
@@ -1207,7 +1940,18 @@ public class DuoCommands {
       return null;
     }
     
-    return duoUserJsonObject.getString("user_id");
+    duoUserId = duoUserJsonObject.getString("user_id");
+    
+    if (!StringUtils.isBlank(duoUserId) && !StringUtils.equals(duoUserId, twoFactorUser.getDuoUserId())) {
+      twoFactorUser.setDuoUserId(duoUserId);
+      try {
+        twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    
+    return duoUserId;
   }
   
   /**
@@ -1218,7 +1962,7 @@ public class DuoCommands {
    */
   public static String retrieveTfUserUuidBySomeId(String someId, boolean exceptionIfNotFound) {
     //lets see if it is a userUuid
-    TwoFactorUser twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByUuid(someId);
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), someId);
 
     if (twoFactorUser == null) {
       JSONObject userJsonObject = retrieveDuoUserByIdOrUsername(someId, false);
@@ -1230,14 +1974,14 @@ public class DuoCommands {
 
     if (twoFactorUser == null) {
       //try by id
-      twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(someId);
+      twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), someId);
     }
 
     if (twoFactorUser == null) {
       //try by netId
       String theId = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), someId, true);
       if (!StringUtils.isBlank(theId)) {
-        twoFactorUser = TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveByLoginid(theId);
+        twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), theId);
       }
     }
     
@@ -1303,12 +2047,19 @@ public class DuoCommands {
     // {"code": 40401, "message": "Resource not found", "stat": "FAIL"}
     
     JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
-
+    
+    if (jsonObject.has("code") && jsonObject.getInt("code") == 40401) {
+      return null;
+    }
+    
     if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
       throw new RuntimeException("Bad response from Duo: " + result + ", " + theId);
     }
-    
-    JSONArray responseArray = (JSONArray)jsonObject.get("response");
+    Object response = jsonObject.get("response");
+    if (response instanceof JSONObject) {
+      return (JSONObject)response;
+    }
+    JSONArray responseArray = (JSONArray)response;
     if (responseArray.size() > 0) {
       if (responseArray.size() > 1) {
         throw new RuntimeException("Why more than 1 user found? " + responseArray.size() + ", " + result);

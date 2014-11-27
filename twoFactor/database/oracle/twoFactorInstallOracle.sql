@@ -566,7 +566,10 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    DATE_INVITED_COLLEAGUES_DATE,
    PHONE_CODE_ENCRYPTED,
    DATE_PHONE_CODE_SENT,
-   DATE_PHONE_CODE_SENT_DATE
+   DATE_PHONE_CODE_SENT_DATE,
+   DUO_USER_ID,
+   DUO_PUSH_TRANSACTION_ID,
+   DUO_PUSH_BY_DEFAULT
 )
 AS
    SELECT tfu.loginid,
@@ -755,8 +758,23 @@ AS
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_phone_code_sent')
-             AS date_phone_code_sent_date
-     FROM two_factor_user tfu;
+             AS date_phone_code_sent_date,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_user_id')
+             AS duo_user_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_transaction_id')
+             AS duo_push_transaction_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
+             AS duo_push_by_default
+        FROM two_factor_user tfu;
 COMMENT ON TABLE TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.LOGINID IS 'loginid that the user used to login to the system';
@@ -825,13 +843,12 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_CODE_ENCRYPTED IS 'six digit phone cod
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DATE_PHONE_CODE_SENT IS 'millis since 1970 that the phone code was sent';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_USER_ID IS 'keep track of duo user id';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_TRANSACTION_ID IS 'millis since 1970 __ browser id __ duo tx id for push';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_BY_DEFAULT IS 'if should push when testing an authn that requires authn';
 
-
-  
-  
-  
   
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_AUDIT_V

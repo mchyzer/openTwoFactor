@@ -310,7 +310,10 @@ CREATE or replace
    COLLEAGUE_LOGINID4,
    EMAIL0,
    DATE_INVITED_COLLEAGUES,
-   DATE_INVITED_COLLEAGUES_DATE
+   DATE_INVITED_COLLEAGUES_DATE,
+   DUO_USER_ID,
+   DUO_PUSH_TRANSACTION_ID,
+   DUO_PUSH_BY_DEFAULT
  )
     AS
 (   SELECT tfu.loginid, tfu.uuid,
@@ -478,7 +481,22 @@ CREATE or replace
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_invited_colleagues')
-             AS date_invited_colleagues_date    
+             AS date_invited_colleagues_date,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_user_id')
+             AS duo_user_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_transaction_id')
+             AS duo_push_transaction_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
+             AS duo_push_by_default    
  FROM two_factor_user tfu);
 
 

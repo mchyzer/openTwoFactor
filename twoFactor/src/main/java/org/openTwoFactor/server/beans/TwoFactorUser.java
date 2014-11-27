@@ -1039,6 +1039,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   * millis since 1970 __ browser id __ duo tx id for push
+   * @return browser id __ duo tx id for push 
+   */
+  public String getDuoPushTransactionId() {
+    return attributeValueString(TwoFactorUserAttrName.duo_push_transaction_id);
+  }
+
+  /**
+   * millis since 1970 __ browser id __ duo tx id for push
+   * @param duoPushTransactionId
+   */
+  public void setDuoPushTransactionId(String duoPushTransactionId) {
+    this.attribute(TwoFactorUserAttrName.duo_push_transaction_id, true).setAttributeValueString(duoPushTransactionId);
+  }
+
+  /**
    * if phone 0 is text
    * @return phone0
    */
@@ -1054,6 +1070,21 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     this.attribute(TwoFactorUserAttrName.phone_is_text0, true).setAttributeValueBoolean(phoneIsText0);
   }
 
+  /**
+   * duo push by default
+   * @return push by default
+   */
+  public Boolean getDuoPushByDefault() {
+    return attributeValueBoolean(TwoFactorUserAttrName.duo_push_by_default);
+  }
+
+  /**
+   * if push by default
+   * @param duoPushByDefault
+   */
+  public void setDuoPushByDefault(Boolean duoPushByDefault) {
+    this.attribute(TwoFactorUserAttrName.duo_push_by_default, true).setAttributeValueBoolean(duoPushByDefault);
+  }
 
   /**
    * if phone 0 is voice
@@ -1208,7 +1239,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
    */
   public String getPhoneCodeUnencryptedIfNotExpired() {
     int phoneCodeLastsMinutes = TwoFactorServerConfig.retrieveConfig()
-    .propertyValueInt("twoFactorServer.phoneCodeLastsMinutes", 10);
+        .propertyValueInt("twoFactorServer.phoneCodeLastsMinutes", 10);
     String phoneCodeUnencrypted = this.getPhoneCodeUnencrypted();
     if (!StringUtils.isBlank(phoneCodeUnencrypted)) {
       Long datePhoneCodeSent = this.getDatePhoneCodeSent();

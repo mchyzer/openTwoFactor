@@ -54,6 +54,10 @@
     <property name="sequentialPassIndex" column="sequential_pass_index" />
     <property name="twoFactorSecretAbbr" column="two_factor_secret_abbr" />
     <property name="twoFactorSecretTempAbbr" column="two_factor_secret_temp_abbr" />
-    
+
+    <property name="duoUserId" column="duo_user_id" />
+    <property name="duoPushTransactionId" column="duo_push_transaction_id" />
+    <property name="duoPushByDefault" column="duo_push_by_default" type="true_false" />
+
   </class>
 </hibernate-mapping>
