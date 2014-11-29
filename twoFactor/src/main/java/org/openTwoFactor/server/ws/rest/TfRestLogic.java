@@ -17,10 +17,12 @@ import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
+import org.openTwoFactor.server.duo.DuoLog;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
+import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -187,6 +189,8 @@ public class TfRestLogic {
       
       trafficLogMap.put("originalUsername", tfCheckPasswordRequest.getOriginalUsername());
       trafficLogMap.put("username", username);
+      
+      DuoLog.assignUsername(StringUtils.defaultIfEmpty(tfCheckPasswordRequest.getOriginalUsername(), username));
       
       String twoFactorPassUnencrypted = tfCheckPasswordRequest.getTwoFactorPass();
 
@@ -601,52 +605,131 @@ public class TfRestLogic {
   
       }
 
-      if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
-        if (!twoFactorPassResult.isPasswordCorrect()) {
+      boolean requireReauth = tfCheckPasswordRequest.getRequireReauth() != null 
+          && tfCheckPasswordRequest.getRequireReauth() && serviceProviderRequiresTwoFactor;
 
-          boolean duoRegisterUsers = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", true);
-          boolean duoPushByDefaultEnabled = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.pushByDefaultEnabled", true);
+      //if not good so far
+      if (twoFactorUser.isOptedIn() && (!browserPreviouslyTrusted || requireReauth) && (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) 
+          || !twoFactorPassResult.isPasswordCorrect())) {
+        
+        //check duo
+        boolean duoRegisterUsers = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", true);
+        boolean duoPushByDefaultEnabled = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.pushByDefaultEnabled", true);
 
-          String browserId = StringUtils.defaultIfEmpty(tfCheckPasswordResponse.getChangeUserBrowserUuid(), cookieUserUuid);
+        String browserId = StringUtils.defaultIfEmpty(tfCheckPasswordResponse.getChangeUserBrowserUuid(), cookieUserUuid);
 
-          String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
+        String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
 
-          //clear it out
+        //clear it out - dont clear it out since subsequent requests should ignore push
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duoDeletePushTransactionId", true)) {
           if (!StringUtils.isBlank(timestampBrowserTxId)) {
             //clear it out
             twoFactorUser.setDuoPushTransactionId(null);
             twoFactorUser.store(twoFactorDaoFactory);
           }
           
-          if (!StringUtils.isBlank(browserId) && duoRegisterUsers && duoPushByDefaultEnabled && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
-              && !StringUtils.isBlank(timestampBrowserTxId)) {
-            try {
-              
-              String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
-              if (TwoFactorServerUtils.length(pieces) == 3) {
-                String timestampString = pieces[0];
-                long timestampLong = TwoFactorServerUtils.longValue(timestampString);
-                String browserIdFromDb = pieces[1];
-                String txId = pieces[2];
-                
-                if (!StringUtils.equals(browserId, browserIdFromDb)) {
-                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push not valid browser id mismatch", null);
-                  trafficLogMap.put("duoPushNotValidBrowserIdMismatch", true);
-                  
+        }
+        
+        if (!StringUtils.isBlank(browserId) && duoRegisterUsers && duoPushByDefaultEnabled 
+            && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
+            && !StringUtils.isBlank(timestampBrowserTxId) && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+          try {
+            
+            String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
+            boolean alreadyUsed = TwoFactorServerUtils.length(pieces) == 4;
+
+            boolean needsPush = true;
+            
+            if (TwoFactorServerUtils.length(pieces) != 3 && !alreadyUsed) {
+
+              //clear it out
+              if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                twoFactorUser.setDuoPushTransactionId(null);
+                twoFactorUser.store(twoFactorDaoFactory);
+              }
+
+            } else {
+              String browserIdFromDb = pieces[1];
+
+              if (!StringUtils.equals(browserId, browserIdFromDb)) {
+                TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push not valid browser id mismatch", null);
+                trafficLogMap.put("duoPushNotValidBrowserIdMismatch", true);
+
+                //clear it out
+                if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                  twoFactorUser.setDuoPushTransactionId(null);
+                  twoFactorUser.store(twoFactorDaoFactory);
+                }
+
+              } else {
+
+                if (alreadyUsed) {
+                  //see if used recently enough...
+
+                  //  # after the push transaction id is used, it can be used again for this many seconds
+                  //  # note, this is only used if duoDeletePushTransactionId is false
+                  //  duoTransactionIdLastsAfterFirstUseSeconds = 3
+                  String timestampString = pieces[3];
+                  long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+                  int duoTransactionIdLastsAfterFirstUseSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("duoTransactionIdLastsAfterFirstUseSeconds", 3);
+                  if (((System.currentTimeMillis() - timestampLong) / 1000) < duoTransactionIdLastsAfterFirstUseSeconds) {
+                    TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "successful duo push active", null);
+                    trafficLogMap.put("duoPushSuccessActive", duoTransactionIdLastsAfterFirstUseSeconds);
+
+                    tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
+                    tfCheckPasswordResponse.setErrorMessage(null);
+                    tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
+                    tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.CORRECT_PASSWORD.name());
+                    tfCheckPasswordResponse.setTwoFactorUserAllowed(true);
+
+                    trafficLogMap.put("userAllowed", true);
+                    trafficLogMap.put("success", true);
+                    trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.CORRECT_PASSWORD.name());
+                    trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_TWO_FACTOR.name());
+
+                    return tfCheckPasswordResponse;
+                  }
+
+                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push already used timed out", null);
+                  trafficLogMap.put("duoPushAlreadyUsedTimedOut", duoTransactionIdLastsAfterFirstUseSeconds);
+
+                  //clear it out
+                  if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                    twoFactorUser.setDuoPushTransactionId(null);
+                    twoFactorUser.store(twoFactorDaoFactory);
+                  }
+
                 } else {
                   
+                  //if not already used
+                  String timestampString = pieces[0];
+
+                  long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+                  String txId = pieces[2];
+
                   int pushLastsForSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("duo.pushLastsForSeconds", 60);
+                  
+                  //push timed out
                   if (((System.currentTimeMillis() - timestampLong) / 1000) > pushLastsForSeconds) {
                     TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push timed out", null);
                     trafficLogMap.put("duoPushTimedOutAfterSeconds", pushLastsForSeconds);
                     
+                    //clear it out
+                    if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                      twoFactorUser.setDuoPushTransactionId(null);
+                      twoFactorUser.store(twoFactorDaoFactory);
+                    }
                   } else {
-                    
+
                     //see if valid
                     boolean validPush = DuoCommands.duoPushSuccess(txId);
                     
                     if (validPush) {
 
+                      //store this timestamp as when it was used
+                      twoFactorUser.setDuoPushTransactionId(timestampBrowserTxId + "__" + System.currentTimeMillis());
+                      twoFactorUser.store(twoFactorDaoFactory);
+                      
                       TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push valid", null);
                       trafficLogMap.put("duoPushValid", pushLastsForSeconds);
 
@@ -666,14 +749,22 @@ public class TfRestLogic {
                     }
                     TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push invalid", null);
                     trafficLogMap.put("duoPushInvalid", pushLastsForSeconds);
-                      
+                    
+                    //dontpush again, this one might be valid at some point
+                    needsPush = false;
                   }
-                  
+
                 }
                 
-              }
+              }                  
               
-              String txId = DuoCommands.duoInitiatePushBySomeId(twoFactorUser.getUuid(), false);
+            }
+            
+            if (needsPush) {
+              String message = TextContainer.retrieveFromRequest().getText().get("duoPushWebPrompt");
+              
+              String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
+                  twoFactorUser.getDuoPushPhoneId(), message);
               if (!StringUtils.isBlank(txId)) {
                 trafficLogMap.put("duoPush", true);
                 TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
@@ -681,14 +772,19 @@ public class TfRestLogic {
                 twoFactorUser.setDuoPushTransactionId(duoTxId);
                 twoFactorUser.store(twoFactorDaoFactory);
               }
-            } catch (Exception e) {
-              LOG.error("Cant push for user: " + twoFactorUser.getLoginid(), e);
-              trafficLogMap.put("duoPushError", true);
-              TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push error", null);
             }
+          } catch (Exception e) {
+            LOG.error("Cant push for user: " + twoFactorUser.getLoginid(), e);
+            trafficLogMap.put("duoPushError", true);
+            TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push error", null);
           }
+        }
+        
+      }
+      
+      if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
+        if (!twoFactorPassResult.isPasswordCorrect()) {
 
-          
           trafficLogMap.put("passwordCorrect", false);
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "password not correct", null);
           tfCheckPasswordResponse.setTwoFactorPasswordCorrect(false);
@@ -738,11 +834,7 @@ public class TfRestLogic {
 
         return tfCheckPasswordResponse;
       }
-  
-      boolean requireReauth = tfCheckPasswordRequest.getRequireReauth() != null 
-          && tfCheckPasswordRequest.getRequireReauth() && serviceProviderRequiresTwoFactor;
-  
-      
+        
       if (requireReauth) {
         TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "require reauthentication", null);
       }
@@ -817,28 +909,6 @@ public class TfRestLogic {
         tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
         tfCheckPasswordResponse.setTwoFactorUserAllowed(false);
 
-        boolean duoRegisterUsers = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", true);
-        boolean duoPushByDefaultEnabled = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.pushByDefaultEnabled", true);
-
-        String browserId = StringUtils.defaultIfEmpty(tfCheckPasswordResponse.getChangeUserBrowserUuid(), cookieUserUuid);
-        
-        if (!StringUtils.isBlank(browserId) && duoRegisterUsers && duoPushByDefaultEnabled && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)) {
-          try {
-            String txId = DuoCommands.duoInitiatePushBySomeId(twoFactorUser.getUuid(), false);
-            if (!StringUtils.isBlank(txId)) {
-              trafficLogMap.put("duoPush", true);
-              TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
-              String duoTxId = System.currentTimeMillis() + "__" + browserId + "__" + txId;
-              twoFactorUser.setDuoPushTransactionId(duoTxId);
-              twoFactorUser.store(twoFactorDaoFactory);
-            }
-          } catch (Exception e) {
-            LOG.error("Cant push for user: " + twoFactorUser.getLoginid(), e);
-            trafficLogMap.put("duoPushError", true);
-            TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push error", null);
-          }
-        }
-        
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
 
         trafficLogMap.put("userAllowed", false);
@@ -884,6 +954,8 @@ public class TfRestLogic {
       return tfCheckPasswordResponse;
 
     } finally {
+      DuoLog.assignUsername(null);
+
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getClientSourceIpAddress())) {
         trafficLogMap.put("wsClientIp", tfCheckPasswordRequest.getClientSourceIpAddress());
       }

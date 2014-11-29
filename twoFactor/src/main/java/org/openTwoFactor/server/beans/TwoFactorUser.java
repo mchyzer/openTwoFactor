@@ -1040,6 +1040,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
   /**
    * millis since 1970 __ browser id __ duo tx id for push
+   * the 4th entry separated by two underscores is if the push has already successfully been used and when
    * @return browser id __ duo tx id for push 
    */
   public String getDuoPushTransactionId() {
@@ -1047,7 +1048,24 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   * duo push phone id
+   * @param duoPushPhoneId
+   */
+  public void setDuoPushPhoneId(String duoPushPhoneId) {
+    this.attribute(TwoFactorUserAttrName.duo_push_phone_id, true).setAttributeValueString(duoPushPhoneId);
+  }
+
+  /**
+   * duo push phone id
+   * @return duo push phone id
+   */
+  public String getDuoPushPhoneId() {
+    return attributeValueString(TwoFactorUserAttrName.duo_push_phone_id);
+  }
+
+  /**
    * millis since 1970 __ browser id __ duo tx id for push
+   * the 4th entry separated by two underscores is if the push has already successfully been used and when
    * @param duoPushTransactionId
    */
   public void setDuoPushTransactionId(String duoPushTransactionId) {

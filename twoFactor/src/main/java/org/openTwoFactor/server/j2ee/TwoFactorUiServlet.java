@@ -19,6 +19,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.daemon.DaemonController;
+import org.openTwoFactor.server.duo.DuoLog;
 import org.openTwoFactor.server.exceptions.TfAjaxException;
 import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
@@ -146,11 +147,6 @@ public class TwoFactorUiServlet extends HttpServlet {
       
       Class logicClass = TwoFactorServerUtils.forName(className);
 
-      boolean realmUnprotectedUi = false;
-      boolean realmPublicUi = false;
-      boolean realmUi = false;
-      boolean realmAdminUi = false;
-      
       //lets check security
       //    /twoFactorMchyzer/twoFactorUi/app/UiMain.userAudits
       {
@@ -164,19 +160,15 @@ public class TwoFactorUiServlet extends HttpServlet {
         //lets check
         if (StringUtils.equals(servlet, "twoFactorUnprotectedUi")) {
           ok = UiMainUnprotected.class.equals(logicClass);
-          realmUnprotectedUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorPublicUi")) {
           ok = UiMainPublic.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
-          realmPublicUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorUi")) {
           ok = UiMain.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
-          realmUi = true;
         }
         if (StringUtils.equals(servlet, "twoFactorAdminUi")) {
           ok = UiMainAdmin.class.equals(logicClass) || UiMainUnprotected.class.equals(logicClass);
-          realmAdminUi = true;
         }
         if (!ok) {
           throw new RuntimeException("The servlet does not match the logic class: " + servlet + ", " + logicClass.getSimpleName());
@@ -209,6 +201,11 @@ public class TwoFactorUiServlet extends HttpServlet {
       String methodName = null;
       
       try {
+        
+        String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest(true, false);
+
+        DuoLog.assignUsername(loggedInUser);
+        
         methodName = TwoFactorServerUtils.prefixOrSuffix(classAndMethodName, ".", false);
 
         callMethod(request, response, logicClass, methodName);
@@ -219,6 +216,8 @@ public class TwoFactorUiServlet extends HttpServlet {
         String error = "Problem calling reflection from URL: " + className + "." + methodName + "\n\n" + ExceptionUtils.getFullStackTrace(re);
         LOG.error(error);
         TwoFactorServerUtils.printToScreen("Problem with request", null, true, true);
+      } finally {
+        DuoLog.assignUsername(null);
       }
     } else {
       String error = "Error: cant find logic to execute: " + request.getRequestURI();

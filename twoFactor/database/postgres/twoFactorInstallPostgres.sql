@@ -463,6 +463,7 @@ CREATE OR REPLACE VIEW two_factor_user_v
    date_phone_code_sent_date,
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
+   DUO_PUSH_PHONE_ID,
    DUO_PUSH_BY_DEFAULT
 )
 AS
@@ -667,6 +668,11 @@ AS
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_phone_id')
+             AS duo_push_phone_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
              AS duo_push_by_default
      FROM two_factor_user tfu;
@@ -743,6 +749,8 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.EMAIL0 IS 'date value for when the phone cod
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_USER_ID IS 'keep track of duo user id';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_TRANSACTION_ID IS 'millis since 1970 __ browser id __ duo tx id for push';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_PHONE_ID IS 'duo push phone id';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_BY_DEFAULT IS 'if should push when testing an authn that requires authn';
 

@@ -646,12 +646,14 @@ public class UiMain extends UiServiceLogicBase {
     
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
 
-    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()) {
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()
+        || StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
       return false;
     }
 
-    String txId = DuoCommands.duoInitiatePushBySomeId(twoFactorUser.getUuid(), false);
+    String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(), 
+        twoFactorUser.getDuoPushPhoneId(), null);
     
     if (StringUtils.isBlank(txId)) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
@@ -745,6 +747,9 @@ public class UiMain extends UiServiceLogicBase {
     
     String phoneId = DuoCommands.duoPushPhoneId(duoUser);
     
+    twoFactorUser.setDuoPushPhoneId(null);
+    twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+
     DuoCommands.deleteDuoPhone(phoneId);
 
     TwoFactorAudit.createAndStore(twoFactorDaoFactory, 

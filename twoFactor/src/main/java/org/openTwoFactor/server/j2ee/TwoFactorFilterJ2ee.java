@@ -141,7 +141,6 @@ public class TwoFactorFilterJ2ee implements Filter {
     return retrieveUserIdFromRequest(true);
   }
 
-  
   /**
    * retrieve the user principal (who is authenticated) from the (threadlocal)
    * request object
@@ -149,6 +148,17 @@ public class TwoFactorFilterJ2ee implements Filter {
    * @return the user principal name
    */
   public static String retrieveUserIdFromRequest(boolean fromUi) {
+    return retrieveUserIdFromRequest(fromUi, true);
+  }
+  
+  /**
+   * retrieve the user principal (who is authenticated) from the (threadlocal)
+   * request object
+   * @param fromUi if this is from the UI
+   * @param exceptionIfNoUser 
+   * @return the user principal name
+   */
+  public static String retrieveUserIdFromRequest(boolean fromUi, boolean exceptionIfNoUser) {
 
     HttpServletRequest httpServletRequest = retrieveHttpServletRequest();
     
@@ -177,7 +187,6 @@ public class TwoFactorFilterJ2ee implements Filter {
           httpSession.removeAttribute("twoFactorActAsUserId");
         }
         
-        
       }
       HttpSession httpSession = httpServletRequest.getSession(false);
       
@@ -191,8 +200,10 @@ public class TwoFactorFilterJ2ee implements Filter {
       }
     }
     
-    TwoFactorServerUtils.assertion(TwoFactorServerUtils.isNotBlank(principalName),
+    if (exceptionIfNoUser) {
+      TwoFactorServerUtils.assertion(TwoFactorServerUtils.isNotBlank(principalName),
         "There is no user logged in, make sure the container requires authentication");
+    }
     return principalName;
   }
 

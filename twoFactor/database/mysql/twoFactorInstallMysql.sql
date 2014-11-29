@@ -313,6 +313,7 @@ CREATE or replace
    DATE_INVITED_COLLEAGUES_DATE,
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
+   DUO_PUSH_PHONE_ID,
    DUO_PUSH_BY_DEFAULT
  )
     AS
@@ -492,6 +493,11 @@ CREATE or replace
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_transaction_id')
              AS duo_push_transaction_id,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'duo_push_phone_id')
+             AS duo_push_phone_id,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID

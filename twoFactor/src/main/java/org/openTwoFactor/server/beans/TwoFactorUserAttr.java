@@ -118,9 +118,15 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
      * keep track of duo user id
      */
     duo_user_id(TwoFactorUserAttrType.string),
+
+    /**
+     * duo push phone id
+     */
+    duo_push_phone_id(TwoFactorUserAttrType.string),
     
     /**
      * millis since 1970 __ sbrowser id __ duo tx id for push
+     * the 4th entry separated by two underscores is if the push has already successfully been used and when
      */
     duo_push_transaction_id(TwoFactorUserAttrType.string),
     
