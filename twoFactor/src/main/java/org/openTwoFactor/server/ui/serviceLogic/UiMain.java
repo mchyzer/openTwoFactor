@@ -2227,9 +2227,8 @@ public class UiMain extends UiServiceLogicBase {
     //opt in to duo
     if (duoRegisterUsers()) {
 
-      DuoCommands.migrateUserAndTokensBySomeId(loggedInUser);
-      //sync up phones
-      DuoCommands.migratePhonesToDuoBySomeId(loggedInUser);
+      DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false);
+
     }
     
     return result;
@@ -2364,7 +2363,7 @@ public class UiMain extends UiServiceLogicBase {
 
     if (UiMain.duoRegisterUsers() && !StringUtils.isBlank(duoUserId)) { 
       //delete from duo
-      DuoCommands.deleteDuoUserAndTokensByUserId(duoUserId);
+      DuoCommands.deleteDuoUserAndPhonesAndTokensByUserId(duoUserId);
     }
   }
 
@@ -3235,7 +3234,7 @@ public class UiMain extends UiServiceLogicBase {
       
       //if user is registered, edit phone
       if (!StringUtils.isBlank(duoUserId)) {
-        DuoCommands.migratePhonesToDuoBySomeId(duoUserId);
+        DuoCommands.migratePhonesToDuoBySomeId(duoUserId, false);
       }
       
     }

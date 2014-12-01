@@ -871,7 +871,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     if (UiMain.duoRegisterUsers() && !StringUtils.isBlank(duoUserId)) { 
       //delete from duo
-      DuoCommands.deleteDuoUserAndTokensBySomeId(userIdOperatingOn);
+      DuoCommands.deleteDuoUserAndPhonesAndTokensBySomeId(userIdOperatingOn);
     }
     
     return adminSubmitView;

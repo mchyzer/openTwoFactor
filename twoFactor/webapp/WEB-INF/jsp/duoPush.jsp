@@ -60,6 +60,27 @@
                 type="submit" />
             </form>
 
+          </c:when>
+          <c:otherwise>
+            ${textContainer.text['duoPushNotEnrolledText']}
+    
+            <br /><br />
+            <form action="../../twoFactorUi/app/UiMain.duoPushEnroll" method="post" style="display: inline; font-size: smaller">
+              <input value="${textContainer.textEscapeDouble['buttonDuoPushEnroll']}" class="tfLinkButton"
+                type="submit" />
+            </form>
+    
+    
+          </c:otherwise>
+        </c:choose>
+      
+      </c:otherwise>
+    </c:choose>
+    
+    <c:choose>
+      <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling 
+        || twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
+
             <br /><br />
             <c:choose>
               <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.pushForWeb}">
@@ -80,27 +101,10 @@
                 </form>
               </c:otherwise>
             </c:choose>
-            
-          </c:when>
-          <c:otherwise>
-            ${textContainer.text['duoPushNotEnrolledText']}
-    
-            <br /><br />
-            <form action="../../twoFactorUi/app/UiMain.duoPushEnroll" method="post" style="display: inline; font-size: smaller">
-              <input value="${textContainer.textEscapeDouble['buttonDuoPushEnroll']}" class="tfLinkButton"
-                type="submit" />
-            </form>
-    
-    
-          </c:otherwise>
-        </c:choose>
-      
-      </c:otherwise>
-    </c:choose>
-    
+        </c:when>
+      </c:choose>    
 
-    <br /><br />
-    <br /><br />
+
     <br /><br />
     <br /><br />
 
