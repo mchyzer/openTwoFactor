@@ -3234,7 +3234,7 @@ public class UiMain extends UiServiceLogicBase {
       
       //if user is registered, edit phone
       if (!StringUtils.isBlank(duoUserId)) {
-        DuoCommands.migratePhonesToDuoBySomeId(duoUserId, false);
+        DuoCommands.migratePhonesToDuoBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid(), false);
       }
       
     }
