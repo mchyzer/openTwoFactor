@@ -1,16 +1,20 @@
-/* Formatted on 4/7/2014 5:28:42 PM (QP5 v5.163.1008.3004) */
+/* Formatted on 12/8/2014 1:01:16 PM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_REPORT_DATA_V
 (
    LOGINID,
    REPORT_NAME_SYSTEM
 )
 AS
-   SELECT DISTINCT m.char_penn_id AS loginid, A.PENN_PAY_ORG AS report_name_system
+   SELECT DISTINCT
+          m.char_penn_id AS loginid, A.PENN_PAY_ORG AS report_name_system
      FROM COMADMIN.MEMBER m,
           comadmin.affiliation a,
           DIRADMIN.DIR_DETAIL_AFFILIATION_V t,
-          diradmin.dir_detail_name_v n
+          diradmin.dir_detail_name_v n,
+          PCDADMIN.TWO_FACTOR_PERSON_V tfpv
     WHERE     t.penn_id = m.penn_id
+          AND m.char_penn_id = tfpv.char_PENN_ID
+          AND tfpv.ACTIVE = 'T'
           AND m.penn_id = a.penn_id
           AND m.penn_id = n.penn_id
           AND a.active_code = 'A'
