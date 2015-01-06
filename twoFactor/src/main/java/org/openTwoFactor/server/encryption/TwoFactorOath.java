@@ -27,6 +27,7 @@ public class TwoFactorOath {
 
   /**
    * @param args
+   * @throws Exception 
    */
   public static void main(String[] args) throws Exception {
 
@@ -216,8 +217,12 @@ public class TwoFactorOath {
 
     if (onePasswordMatcher.matches()) {
       password = onePasswordMatcher.group(1);
-      passwordInt = Integer.parseInt(password);
-      
+      try {
+        passwordInt = Integer.parseInt(password);
+      } catch (Exception e) {
+        LOG.warn("Error validating input: " + password, e);
+        //ignore
+      }
       //try phone password
       if (!StringUtils.isBlank(phonePass)) {
         try {
@@ -228,7 +233,7 @@ public class TwoFactorOath {
             return twoFactorPassResult;
           }
         } catch (Exception e) {
-          LOG.error("Error with phone pass: '" + phonePass + "'" );
+          LOG.warn("Error with phone pass: '" + phonePass + "'", e );
         }
       }
       
@@ -370,17 +375,27 @@ public class TwoFactorOath {
           Matcher matcher = otpTwoPasswordPattern.matcher(password);
           
           if (matcher.matches()) {
-            secrets[0] = Integer.parseInt(matcher.group(1));
-            secrets[1] = Integer.parseInt(matcher.group(2));
-            foundPasswords = true;
+            try {
+              secrets[0] = Integer.parseInt(matcher.group(1));
+              secrets[1] = Integer.parseInt(matcher.group(2));
+              foundPasswords = true;
+            } catch (Exception e) {
+              LOG.warn("Error parsing pass: " + password, e);
+            }              
+              
+              
           } else {
           
             matcher = otpTwoPasswordTogetherPattern.matcher(password);
             
             if (matcher.matches()) {
-              secrets[0] = Integer.parseInt(matcher.group(1));
-              secrets[1] = Integer.parseInt(matcher.group(2));
-              foundPasswords = true;
+              try {
+                secrets[0] = Integer.parseInt(matcher.group(1));
+                secrets[1] = Integer.parseInt(matcher.group(2));
+                foundPasswords = true;
+              } catch (Exception e) {
+                LOG.warn("Error parsing pass: " + password, e);
+              }
             }
           }
           
@@ -390,18 +405,26 @@ public class TwoFactorOath {
           matcher = otpThreePasswordPattern.matcher(password);
           
           if (matcher.matches()) {
-            secrets[0] = Integer.parseInt(matcher.group(1));
-            secrets[1] = Integer.parseInt(matcher.group(2));
-            secrets[2] = Integer.parseInt(matcher.group(3));
-            foundPasswords = true;
-          } else {
-            matcher = otpThreePasswordTogetherPattern.matcher(password);
-            
-            if (matcher.matches()) {
+            try {
               secrets[0] = Integer.parseInt(matcher.group(1));
               secrets[1] = Integer.parseInt(matcher.group(2));
               secrets[2] = Integer.parseInt(matcher.group(3));
               foundPasswords = true;
+            } catch (Exception e) {
+              LOG.warn("Error parsing pass: " + password, e);
+            }
+          } else {
+            matcher = otpThreePasswordTogetherPattern.matcher(password);
+            
+            if (matcher.matches()) {
+              try {
+                secrets[0] = Integer.parseInt(matcher.group(1));
+                secrets[1] = Integer.parseInt(matcher.group(2));
+                secrets[2] = Integer.parseInt(matcher.group(3));
+                foundPasswords = true;
+              } catch (Exception e) {
+                LOG.warn("Error parsing pass: " + password, e);
+              }
             } 
           }
           
