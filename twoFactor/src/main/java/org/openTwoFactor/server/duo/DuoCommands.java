@@ -13,6 +13,7 @@ import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -539,6 +540,9 @@ public class DuoCommands {
       debugMap.put("barcode", StringUtils.abbreviate(barcode, 20));
 
       return barcode;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -641,6 +645,9 @@ public class DuoCommands {
       debugMap.put("code", StringUtils.repeat("*", TwoFactorServerUtils.stringLength(code)));
       
       return code;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -733,6 +740,9 @@ public class DuoCommands {
       jsonObject = (JSONObject)jsonObject.get("response");
       
       return jsonObject;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -814,6 +824,9 @@ public class DuoCommands {
       jsonObject = (JSONObject)jsonObject.get("response");
       
       return jsonObject;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1327,6 +1340,9 @@ public class DuoCommands {
 
         debugMap.put("tokenId", tokenId);
 
+      } catch (RuntimeException re) {
+        debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+        throw re;
       } finally {
         DuoLog.duoLog(debugMap, startTime);
       }
@@ -1430,6 +1446,9 @@ public class DuoCommands {
 
       debugMap.put("returnedTokenId", tokenId);
 
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1529,6 +1548,9 @@ public class DuoCommands {
       tokenId = jsonObject.getString("token_id");
       debugMap.put("tokenId", tokenId);
 
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1570,6 +1592,9 @@ public class DuoCommands {
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
       }
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1618,6 +1643,9 @@ public class DuoCommands {
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
       }
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1659,6 +1687,9 @@ public class DuoCommands {
       }
       return jsonObject;
       
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1696,6 +1727,9 @@ public class DuoCommands {
 
         throw new RuntimeException("Bad response from Duo: " + result);
       }
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1775,6 +1809,9 @@ public class DuoCommands {
         return (JSONObject)responseArray.get(0);
       }
       return null;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1841,6 +1878,9 @@ public class DuoCommands {
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
       
       return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -1963,6 +2003,9 @@ public class DuoCommands {
       
       return jsonObject.getString("response");
   
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2088,6 +2131,9 @@ public class DuoCommands {
       debugMap.put("allowed", allowed);
       return allowed;
     
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2203,7 +2249,9 @@ public class DuoCommands {
       debugMap.put("txid", txid);
 
       return txid;
-      
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2288,6 +2336,9 @@ public class DuoCommands {
       boolean allowed = StringUtils.equals(resultField, "allow");
       debugMap.put("allowed", allowed);
       return allowed;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2555,6 +2606,9 @@ public class DuoCommands {
         debugMap.put("returnedUsername", duoUser.getString("username"));
       }
       return duoUser;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2640,6 +2694,9 @@ public class DuoCommands {
       }
   
       return jsonObject;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2702,6 +2759,9 @@ public class DuoCommands {
       
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
       return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2756,6 +2816,9 @@ public class DuoCommands {
       
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
       return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -2907,6 +2970,9 @@ public class DuoCommands {
       }
       return duoPhone;
 
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
@@ -3053,6 +3119,9 @@ public class DuoCommands {
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
       
       return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
