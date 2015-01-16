@@ -28,7 +28,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.message.HeaderGroup;
-
+import org.apache.http.params.HttpConnectionParams;
 import org.json.JSONObject;
 
 public class Http {
@@ -53,6 +53,12 @@ public class Http {
 
         params = new ArrayList<NameValuePair>();
         proxy = null;
+    }
+
+    private Integer timeoutMillis = null;
+
+    public void setTimeoutMillis(int theTimeoutMillis) {
+      this.timeoutMillis = theTimeoutMillis;
     }
 
     public Object executeRequest() throws Exception {
@@ -95,6 +101,14 @@ public class Http {
         if (proxy != null) {
             httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY,
                                                 proxy);
+        }
+
+        if (this.timeoutMillis != null) {
+
+          HttpConnectionParams.setConnectionTimeout(httpclient.getParams(), this.timeoutMillis);
+
+          HttpConnectionParams.setSoTimeout(httpclient.getParams(), this.timeoutMillis);
+
         }
 
         // finish and execute request
