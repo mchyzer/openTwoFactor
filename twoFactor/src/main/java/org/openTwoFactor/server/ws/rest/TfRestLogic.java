@@ -730,8 +730,22 @@ public class TfRestLogic {
                     } else {
   
                       //see if valid
-                      boolean validPush = DuoCommands.duoPushSuccess(txId);
+                      boolean validPush = false;
                       
+                      try {
+                        Integer timeoutMillis = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutMillis", 3000);
+                        if (timeoutMillis == -1) {
+                          timeoutMillis = null;
+                        }
+                        validPush = DuoCommands.duoPushSuccess(txId, timeoutMillis);
+                      } catch (RuntimeException re) {
+                        //if its a timeout, then validPush is false, else rethrow
+                        if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+                          validPush = false;
+                        } else {
+                          throw re;
+                        }
+                      }
                       if (validPush) {
   
                         //store this timestamp as when it was used
@@ -775,8 +789,24 @@ public class TfRestLogic {
             if (needsPush) {
               String message = TextContainer.retrieveFromRequest().getText().get("duoPushWebPrompt");
               
-              String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
-                  twoFactorUser.getDuoPushPhoneId(), message);
+              String txId = null;
+              
+              try {
+                Integer timeoutMillis = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutMillis", 3000);
+                if (timeoutMillis == -1) {
+                  timeoutMillis = null;
+                }
+                txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
+                    twoFactorUser.getDuoPushPhoneId(), message, timeoutMillis);
+              } catch (RuntimeException re) {
+                //if its a timeout, then no tx id, else rethrow
+                if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+                  txId = null;
+                } else {
+                  throw re;
+                }
+              }
+
               if (!StringUtils.isBlank(txId)) {
                 trafficLogMap.put("duoPush", true);
                 TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);

@@ -653,7 +653,7 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(), 
-        twoFactorUser.getDuoPushPhoneId(), null);
+        twoFactorUser.getDuoPushPhoneId(), null, null);
     
     if (StringUtils.isBlank(txId)) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
@@ -664,7 +664,7 @@ public class UiMain extends UiServiceLogicBase {
     
       TwoFactorServerUtils.sleep(1000);
 
-      if (DuoCommands.duoPushSuccess(txId)) {
+      if (DuoCommands.duoPushSuccess(txId, null)) {
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushTestSuccess"));
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 

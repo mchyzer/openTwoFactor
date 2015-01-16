@@ -39,7 +39,6 @@ public class DuoCommands {
     String domain = TwoFactorServerConfig.retrieveConfig().propertyValueString("duo.adminDomainName");
     
     Http request = new Http(method, domain, path);
-    
     return request;
   }
 
@@ -54,7 +53,6 @@ public class DuoCommands {
     String domain = TwoFactorServerConfig.retrieveConfig().propertyValueString("duo.authDomainName");
     
     Http request = new Http(method, domain, path);
-    
     return request;
   }
   
@@ -324,12 +322,12 @@ public class DuoCommands {
     } else if ((args.length == 2 || args.length == 3) && StringUtils.equals("duoInitiatePush", args[0])) {
       String userLookupId = args[1];
       String message = args.length == 2 ? null : args[2];
-      String txid = duoInitiatePushBySomeId(userLookupId, true, message);
+      String txid = duoInitiatePushBySomeId(userLookupId, true, message, null);
       System.out.println(txid);
 
     } else if (args.length == 2 && StringUtils.equals("duoPushSuccess", args[0])) {
       String txId = args[1];
-      boolean allowed = duoPushSuccess(txId);
+      boolean allowed = duoPushSuccess(txId, null);
       System.out.println("Allowed? " + allowed);
 
     } else if (args.length == 3 && StringUtils.equals("duoPushByDefault", args[0])) {
@@ -2102,12 +2100,14 @@ public class DuoCommands {
    * @param someId
    * @param exceptionIfNotPushable
    * @param message
+   * @param timeoutMillis
+   * 
    * @return tx id
    */
-  private static String duoInitiatePushBySomeId(String someId, boolean exceptionIfNotPushable, String message) {
+  private static String duoInitiatePushBySomeId(String someId, boolean exceptionIfNotPushable, String message, Integer timeoutMillis) {
 
     String userId = retrieveDuoUserIdBySomeId(someId);
-    return duoInitiatePush(userId, exceptionIfNotPushable, message);
+    return duoInitiatePush(userId, exceptionIfNotPushable, message, timeoutMillis);
 
   }
   
@@ -2116,16 +2116,28 @@ public class DuoCommands {
    * @param userId
    * @param exceptionIfNotPushable 
    * @param message shown before "Request", default is Login
+   * @param timeoutMillis
    * @return tx id
    */
-  private static String duoInitiatePush(String userId, boolean exceptionIfNotPushable, String message) {
+  private static String duoInitiatePush(String userId, boolean exceptionIfNotPushable, String message, Integer timeoutMillis) {
 
     if (StringUtils.isBlank(userId)) {
       throw new RuntimeException("userId is required");
     }
 
-    JSONObject duoUser = retrieveDuoUserByIdOrUsername(userId, true);
+    long start = System.nanoTime();
+    
+    JSONObject duoUser = retrieveDuoUserByIdOrUsername(userId, true, timeoutMillis);
 
+    long millisElapsed = (System.nanoTime() - start) / 1000000;
+    
+    if (timeoutMillis != null) {
+      timeoutMillis = timeoutMillis - (int)millisElapsed;
+      if (timeoutMillis < 0) {
+        timeoutMillis = 1;
+      }
+    }
+    
     String duoPushPhoneId = duoPushPhoneId(duoUser);
 
     if (StringUtils.isBlank(duoPushPhoneId)) {
@@ -2135,17 +2147,19 @@ public class DuoCommands {
       return null;
     }
     
-    return duoInitiatePushByPhoneId(userId, duoPushPhoneId, message);
+    return duoInitiatePushByPhoneId(userId, duoPushPhoneId, message, timeoutMillis);
     
   }
 
   /**
+   * @param duoUserId 
    * @param duoPushPhoneId
    * @param message
+   * @param timeoutMillis throws runtime httpclient exception if timeout, or null for none
    * @return tx id
    */
   public static String duoInitiatePushByPhoneId(String duoUserId, String duoPushPhoneId,
-      String message) {
+      String message, Integer timeoutMillis) {
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
     debugMap.put("method", "duoInitiatePushByPhoneId");
@@ -2156,7 +2170,11 @@ public class DuoCommands {
       String path = "/auth/v2/auth";
       debugMap.put("POST", path);
       Http request = httpAuth("POST", path);
-          
+
+      if (timeoutMillis != null) {
+        request.setTimeoutMillis(timeoutMillis);
+      }
+      
       request.addParam("user_id", duoUserId);
       request.addParam("factor", "push");
       request.addParam("async", "1");
@@ -2208,9 +2226,10 @@ public class DuoCommands {
   /**
    * check on a push
    * @param txId 
+   * @param timeoutMillis
    * @return if success
    */
-  public static boolean duoPushSuccess(String txId) {
+  public static boolean duoPushSuccess(String txId, Integer timeoutMillis) {
     
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
@@ -2235,6 +2254,10 @@ public class DuoCommands {
       debugMap.put("GET", path);
       Http request = httpAuth("GET", path);
           
+      if (timeoutMillis != null) {
+        request.setTimeoutMillis(timeoutMillis);
+      }
+
       request.addParam("txid", txId);
   
       signHttpAuth(request);
@@ -2421,7 +2444,7 @@ public class DuoCommands {
 
     return twoFactorUser.getUuid();
   }
-  
+
   /**
    * retrieve duo user
    * @param theId 
@@ -2429,6 +2452,17 @@ public class DuoCommands {
    * @return the json object
    */
   public static JSONObject retrieveDuoUserByIdOrUsername(String theId, boolean isDuoUuid) {
+    return retrieveDuoUserByIdOrUsername(theId, isDuoUuid, null);
+  }
+
+  /**
+   * retrieve duo user
+   * @param theId 
+   * @param isDuoUuid true if id, false if username
+   * @param timeoutMillis null if no timeout
+   * @return the json object
+   */
+  public static JSONObject retrieveDuoUserByIdOrUsername(String theId, boolean isDuoUuid, Integer timeoutMillis) {
     
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
@@ -2449,6 +2483,11 @@ public class DuoCommands {
       String path = "/admin/v1/users" + (isDuoUuid ? ("/" + theId) : "");
       debugMap.put("GET", path);
       Http request = httpAdmin("GET", path);
+      
+      if (timeoutMillis != null) {
+        request.setTimeoutMillis(timeoutMillis);
+      }
+      
       if (!isDuoUuid) {
         request.addParam("username", theId);
       }
