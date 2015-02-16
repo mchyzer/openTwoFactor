@@ -46,13 +46,13 @@
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-digester.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/morphString.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-httpclient.jar"/>
-	<classpathentry kind="lib" path="lib/twoFactor/httpclient-4.2.3.jar"/>
-	<classpathentry kind="lib" path="lib/twoFactor/httpcore-4.2.2.jar" sourcepath="C:/Users/mchyzer/.m2/repository/org/apache/httpcomponents/httpcore/4.2.2/httpcore-4.2.2-sources.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/ojdbc6_g.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/twilio-java-sdk-3.3.15.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/twilioDeps.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/mchange-commons-java.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/commons-validator.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/proxyWrapper.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/okhttp-2.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/okio-1.0.0.jar"/>
 	<classpathentry kind="output" path="webapp/WEB-INF/classes"/>
 </classpath>

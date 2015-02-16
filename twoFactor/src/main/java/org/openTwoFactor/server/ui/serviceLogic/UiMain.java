@@ -63,6 +63,8 @@ import org.openTwoFactor.server.ui.beans.TwoFactorReportStat;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorViewReportContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
+import org.openTwoFactor.server.util.TwoFactorCallable;
+import org.openTwoFactor.server.util.TwoFactorFuture;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -833,6 +835,18 @@ public class UiMain extends UiServiceLogicBase {
         TwoFactorAuditAction.DUO_ENABLE_PUSH, ipAddress, 
         userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
 
+    //if we are enrolling for the first time, default to on
+    if (twoFactorUser.getDuoPushByDefault() == null) {
+
+      twoFactorUser.setDuoPushByDefault(true);
+      twoFactorUser.store(twoFactorDaoFactory);
+      
+      TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+          TwoFactorAuditAction.DUO_ENABLE_PUSH_FOR_WEB, ipAddress, 
+          userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+      
+    }
+    
     //init again since not enrolled
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
 
@@ -2560,7 +2574,7 @@ public class UiMain extends UiServiceLogicBase {
     
     List<TwoFactorReport> twoFactorReports = TwoFactorReport.retrieveAll(twoFactorDaoFactory);
     
-    Map<String, TwoFactorReport> twoFactorReportMap = new HashMap<String, TwoFactorReport>();
+    final Map<String, TwoFactorReport> twoFactorReportMap = new HashMap<String, TwoFactorReport>();
     
     for (TwoFactorReport twoFactorReport : twoFactorReports) {
       twoFactorReportMap.put(twoFactorReport.getUuid(), twoFactorReport);
@@ -2590,7 +2604,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorReportStat.setTwoFactorReport(twoFactorReport);
         twoFactorViewReportContainer.setMainReportStat(twoFactorReportStat);
         
-        Map<String, TwoFactorReportRollup> allRollups = TwoFactorReportRollup.retrieveAllRollups(twoFactorDaoFactory);
+        final Map<String, TwoFactorReportRollup> allRollups = TwoFactorReportRollup.retrieveAllRollups(twoFactorDaoFactory);
 
         Set<String> usersNotOptedIn = new TreeSet<String>();
         
@@ -2600,18 +2614,64 @@ public class UiMain extends UiServiceLogicBase {
         
         if (twoFactorReport.getReportTypeEnum() == TwoFactorReportType.rollup) {
           
-          
           List<TwoFactorReportRollup> childRollups = TwoFactorReportRollup.retrieveChildRollups(allRollups, twoFactorReport.getUuid());
           if (TwoFactorServerUtils.length(childRollups) > 0) {
             List<TwoFactorReportStat> childReportStats = new ArrayList<TwoFactorReportStat>();
             twoFactorViewReportContainer.setChildReportStats(childReportStats);
+
+            long startTime = System.currentTimeMillis();
+            
+            boolean useThreads = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorReportsUseThreads", true);
+            int reportThreadPoolSize = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorReportThreadPoolSize", 10);
+            int twoFactorReportMaxSubreportsSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorReportMaxSubreportsSeconds", 120);
+            //see when threads are done processing
+            List<TwoFactorFuture> futures = new ArrayList<TwoFactorFuture>();
+
+            //if there were thread problems, run those again
+            List<TwoFactorCallable> callablesWithProblems = new ArrayList<TwoFactorCallable>();
+
             for (TwoFactorReportRollup twoFactorReportRollup : childRollups) {
+
+              final TwoFactorReportStat theTwoFactorReportStat =  new TwoFactorReportStat();
               TwoFactorReport theTwoFactorReport = twoFactorReportMap.get(twoFactorReportRollup.getChildReportUuid());
-              TwoFactorReportStat theTwoFactorReportStat =  new TwoFactorReportStat();
               theTwoFactorReportStat.setTwoFactorReport(theTwoFactorReport);
-              theTwoFactorReportStat.calculateStats(twoFactorDaoFactory, twoFactorReportMap, allRollups, null, subjectSource);
               childReportStats.add(theTwoFactorReportStat);
+
+              //dont take more than 2 minutes
+              
+              if (twoFactorReportMaxSubreportsSeconds != -1 && System.currentTimeMillis() - startTime > (twoFactorReportMaxSubreportsSeconds * 1000)) {
+                
+                theTwoFactorReportStat.setTotal(-1);
+                theTwoFactorReportStat.setTotalNotOptedIn(-1);
+                
+              } else {
+                
+                TwoFactorCallable<Void> grouperCallable = new TwoFactorCallable<Void>("subreport calculate stats: " + twoFactorReportStat.getTwoFactorReport().getReportNameSystem()) {
+
+                  @Override
+                  public Void callLogic() {
+                    theTwoFactorReportStat.calculateStats(twoFactorDaoFactory, twoFactorReportMap, allRollups, null, subjectSource);
+                    return null;
+                  }
+
+                };
+                if (!useThreads || reportThreadPoolSize == 1 || reportThreadPoolSize == 0) {
+                  grouperCallable.callLogic();
+                } else {
+                  TwoFactorFuture<Void> future = TwoFactorServerUtils.executorServiceSubmit(TwoFactorServerUtils.retrieveExecutorService(), grouperCallable);
+                  futures.add(future);
+                  
+                  TwoFactorFuture.waitForJob(futures, reportThreadPoolSize, callablesWithProblems);
+                }
+
+                
+              }
+
             }
+            
+            //wait for the rest
+            TwoFactorFuture.waitForJob(futures, 0, callablesWithProblems);
+
           }          
         }
 

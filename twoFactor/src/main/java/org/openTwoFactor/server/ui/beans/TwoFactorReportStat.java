@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.openTwoFactor.server.beans.TwoFactorReport;
 import org.openTwoFactor.server.beans.TwoFactorReportRollup;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -30,6 +31,7 @@ public class TwoFactorReportStat {
    * @param allReports 
    * @param allRollups 
    * @param subjectStringsNotOptedIn not null to get the strings
+   * @param subjectSource
    */
   public void calculateStats(TwoFactorDaoFactory twoFactorDaoFactory, Map<String, TwoFactorReport> allReports,
       Map<String, TwoFactorReportRollup> allRollups, Set<String> subjectStringsNotOptedIn, Source subjectSource) {
@@ -60,10 +62,15 @@ public class TwoFactorReportStat {
       
       List<String> loginidsNotOptedIn = twoFactorDaoFactory.getTwoFactorReportData().retrieveUsersNotOptedInPageByReportSystemNames(reportNameSystems);
       if (TwoFactorServerUtils.length(loginidsNotOptedIn) > 0) {
-        Map<String, Subject> subjectMap = TfSourceUtils.retrieveSubjectsByIdsOrIdentifiers(subjectSource, loginidsNotOptedIn, true);
-        for (String loginid : TwoFactorServerUtils.nonNull(subjectMap).keySet()) {
-          Subject subject = subjectMap.get(loginid);
-          subjectStringsNotOptedIn.add(TfSourceUtils.subjectDescription(subject, loginid));
+        int maxLoginidsResolveForReport = TwoFactorServerConfig.retrieveConfig().propertyValueInt("maxLoginidsResolveForReport", 10000);
+        if (TwoFactorServerUtils.length(loginidsNotOptedIn) < maxLoginidsResolveForReport) {
+          Map<String, Subject> subjectMap = TfSourceUtils.retrieveSubjectsByIdsOrIdentifiers(subjectSource, loginidsNotOptedIn, true);
+          for (String loginid : TwoFactorServerUtils.nonNull(subjectMap).keySet()) {
+            Subject subject = subjectMap.get(loginid);
+            subjectStringsNotOptedIn.add(TfSourceUtils.subjectDescription(subject, loginid));
+          }
+        } else {
+          subjectStringsNotOptedIn.addAll(loginidsNotOptedIn);
         }
       }
     }

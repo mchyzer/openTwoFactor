@@ -63,7 +63,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     System.out.println("HOTP (printed)");
-    for (int i=-20;i<50;i++) {
+    for (int i=-2000;i<5050;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -75,7 +75,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     System.out.println("\nHOTP (token)");
-    for (int i=-20;i<50;i++) {
+    for (int i=-2000;i<5000;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -90,7 +90,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     currentTimeMillis = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
 
-    for (int i=-20;i<20;i++) {
+    for (int i=-2000;i<2000;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -103,7 +103,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     System.out.println("\nTOTP 30");
     
-    for (int i=-20;i<20;i++) {
+    for (int i=-2000;i<2000;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -136,8 +136,9 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 
     if (true) {
       
-      printPasswordsForSecret("05050505050505050505", 
-          null, null, null, true);
+      String secret = "RYCOURGMWY37OXZKHUOUOTA7GYTZWO5L";
+      printPasswordsForSecret(secret, 
+          null, null, null, false);
       return;
     }
     

@@ -60,8 +60,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -119,6 +121,17 @@ import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 @SuppressWarnings("unchecked")
 public class TwoFactorServerUtils {
 
+  /**
+   * 
+   * @param theExecutorService
+   * @param callable
+   * @return the future
+   */
+  public static TwoFactorFuture executorServiceSubmit(ExecutorService theExecutorService, Callable callable) {
+    Future future = theExecutorService.submit(callable);
+    TwoFactorFuture grouperFuture = new TwoFactorFuture(future, callable);
+    return grouperFuture;
+  }
 
   /**
    * @param theTwoFactorSecret

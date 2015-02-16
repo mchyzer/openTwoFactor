@@ -733,11 +733,11 @@ public class TfRestLogic {
                       boolean validPush = false;
                       
                       try {
-                        Integer timeoutMillis = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutMillis", 3000);
-                        if (timeoutMillis == -1) {
-                          timeoutMillis = null;
+                        Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutSeconds", 3);
+                        if (timeoutSeconds == -1) {
+                          timeoutSeconds = null;
                         }
-                        validPush = DuoCommands.duoPushSuccess(txId, timeoutMillis);
+                        validPush = DuoCommands.duoPushSuccess(txId, timeoutSeconds);
                       } catch (RuntimeException re) {
                         //if its a timeout, then validPush is false, else rethrow
                         if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
@@ -792,12 +792,12 @@ public class TfRestLogic {
               String txId = null;
               
               try {
-                Integer timeoutMillis = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutMillis", 3000);
-                if (timeoutMillis == -1) {
-                  timeoutMillis = null;
+                Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutSeconds", 3);
+                if (timeoutSeconds == -1) {
+                  timeoutSeconds = null;
                 }
                 txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
-                    twoFactorUser.getDuoPushPhoneId(), message, timeoutMillis);
+                    twoFactorUser.getDuoPushPhoneId(), message, timeoutSeconds);
               } catch (RuntimeException re) {
                 //if its a timeout, then no tx id, else rethrow
                 if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
