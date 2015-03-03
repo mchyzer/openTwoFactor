@@ -20,30 +20,26 @@
     <div class="clearboth"></div> 
   </div> 
   <br />
-  <b>${textContainer.text['duoPushSubheader']}</b>
+  <b>${textContainer.text[twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling ? 'duoPushSubheaderEnroll' : 'duoPushSubheader' ]}</b>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
-  ${textContainer.text['duoPushExplanation']}
-  <br /><br />
+  
     <c:choose>
       <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling}">
 
-        ${textContainer.text['duoPushEnrollInstructions']}
-
-        <br /><br /><br />
+        ${textContainer.text['duoPushEnrollInstructionsStart']}
 
         <img src="${twoFactorRequestContainer.twoFactorDuoPushContainer.barcodeUrl}" />
 
-        <br /><br /><br />
-        <form action="../../twoFactorUi/app/UiMain.duoPushTest" method="post" style="display: inline; font-size: smaller">
-          <input value="${textContainer.textEscapeDouble['buttonDuoPushTest']}" class="tfLinkButton"
-            type="submit" />
-        </form>
+        ${textContainer.text['duoPushEnrollInstructionsEnd']}
       
       </c:when>
       <c:otherwise>
       
+        ${textContainer.text['duoPushExplanation']}
+        <br /><br />
+  
         <c:choose>
           <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
             ${textContainer.text['duoPushEnrolledText']}
@@ -64,13 +60,15 @@
           <c:otherwise>
             ${textContainer.text['duoPushNotEnrolledText']}
     
+            ${textContainer.text['duoPushExplanationInstall']}
+    
             <br /><br />
+            
             <form action="../../twoFactorUi/app/UiMain.duoPushEnroll" method="post" style="display: inline; font-size: smaller">
               <input value="${textContainer.textEscapeDouble['buttonDuoPushEnroll']}" class="tfLinkButton"
                 type="submit" />
             </form>
-    
-    
+
           </c:otherwise>
         </c:choose>
       

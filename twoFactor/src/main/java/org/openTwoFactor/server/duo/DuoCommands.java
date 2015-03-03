@@ -77,8 +77,8 @@ public class DuoCommands {
     
     String domain = TwoFactorServerConfig.retrieveConfig().propertyValueString("duo.authDomainName");
     
-    Http request = (timeoutSeconds != null && timeoutSeconds > 0) ? new Http(method, domain, path) 
-      : new Http(method, domain, path, timeoutSeconds);
+    Http request = (timeoutSeconds != null && timeoutSeconds > 0) ? new Http(method, domain, path, timeoutSeconds) 
+      : new Http(method, domain, path);
     return request;
   }
   
