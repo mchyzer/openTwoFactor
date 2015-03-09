@@ -83,20 +83,29 @@
             <c:choose>
               <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.pushForWeb}">
                 ${textContainer.text['duoPushEnrolledInPushForWeb']}
-                <br /><br />
-                <form action="../../twoFactorUi/app/UiMain.duoPushUnenrollWeb" method="post" style="display: inline; font-size: smaller">
-                  <input value="${textContainer.textEscapeDouble['buttonDuoPushUnenrollWeb']}" class="tfLinkButton"
-                    type="submit" />
-                </form>
+                
+                <c:if test="${twoFactorRequestContainer.twoFactorDuoPushContainer.allowUsersToControlDuoWeb}">
+                
+                  <br /><br />
+                  <form action="../../twoFactorUi/app/UiMain.duoPushUnenrollWeb" method="post" style="display: inline; font-size: smaller">
+                    <input value="${textContainer.textEscapeDouble['buttonDuoPushUnenrollWeb']}" class="tfLinkButton"
+                      type="submit" />
+                  </form>
+                  
+                </c:if>                
                 
               </c:when>
               <c:otherwise>
                 ${textContainer.text['duoPushNotEnrolledInPushForWeb']}
-                <br /><br />
-                <form action="../../twoFactorUi/app/UiMain.duoPushEnrollWeb" method="post" style="display: inline; font-size: smaller">
-                  <input value="${textContainer.textEscapeDouble['buttonDuoPushEnrollWeb']}" class="tfLinkButton"
-                    type="submit" />
-                </form>
+                
+                <c:if test="${twoFactorRequestContainer.twoFactorDuoPushContainer.allowUsersToControlDuoWeb}">
+                  <br /><br />
+                  <form action="../../twoFactorUi/app/UiMain.duoPushEnrollWeb" method="post" style="display: inline; font-size: smaller">
+                    <input value="${textContainer.textEscapeDouble['buttonDuoPushEnrollWeb']}" class="tfLinkButton"
+                      type="submit" />
+                  </form>
+                </c:if>
+                
               </c:otherwise>
             </c:choose>
         </c:when>

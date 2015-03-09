@@ -25,6 +25,15 @@ public class TwoFactorDuoPushContainer {
     boolean duoRegisterUsers = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", true);
     return duoRegisterUsers;
   }
+
+  /**
+   * if duo web option enabled
+   * @return if duo web option enabled
+   */
+  public boolean isAllowUsersToControlDuoWeb() {
+    boolean allowUsersToControlDuoWeb = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.allowUsersToControlDuoWeb", true);
+    return allowUsersToControlDuoWeb;
+  }
   
   /**
    * duo user

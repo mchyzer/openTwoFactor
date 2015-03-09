@@ -5,6 +5,7 @@ body,table,td {
 
 a {
   text-decoration: underline;
+  color: blue;
 }
 
 .tfBlueButton {
