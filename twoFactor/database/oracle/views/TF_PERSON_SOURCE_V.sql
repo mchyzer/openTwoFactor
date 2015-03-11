@@ -1,4 +1,4 @@
-/* Formatted on 7/26/2013 1:03:36 AM (QP5 v5.163.1008.3004) */
+/* Formatted on 3/11/2015 12:35:32 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 (
    PENN_ID,
@@ -12,8 +12,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 AS
    SELECT char_penn_id AS penn_id,
           kerberos_principal AS pennname,
-          description_penn as description,
-          search_description_penn as search_description,
+          description_penn AS description,
+          search_description_penn AS search_description,
           NVL (PENNKEY_VIEW_PREF_NAME, kerberos_principal) AS name,
           ADMIN_VIEW_PREF_EMAIL_ADDRESS AS email,
           CASE
@@ -26,6 +26,7 @@ AS
      /* (select 'T' from authzadm.PROJECT_TF_ACTIVE_USERS_V ptauv where ptauv.penn_id = cpv.penn_id) as active */
      FROM pcdadmin.computed_person_v cpv
     WHERE kerberos_principal IS NOT NULL;
+
 COMMENT ON TABLE TF_PERSON_SOURCE_V IS 'person source to lookup and search for subjects in the two factor project for non admin users';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.PENN_ID IS 'numeric penn_id';
@@ -41,3 +42,7 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_V.NAME IS 'name of user';
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.EMAIL IS 'email of user';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.ACTIVE IS 'T if active, F if not';
+
+
+
+GRANT SELECT ON TF_PERSON_SOURCE_V TO TWO_FACTOR_ADMIN WITH GRANT OPTION;
