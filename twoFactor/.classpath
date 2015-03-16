@@ -10,7 +10,6 @@
 	<classpathentry kind="lib" path="lib/nonwebapp/jsp-api.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/duoclient.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/changebee.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/nonwebapp/servlet.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/commons-logging.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/twoFactor/log4j.jar"/>
@@ -54,5 +53,8 @@
 	<classpathentry kind="lib" path="lib/twoFactor/proxyWrapper.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/okhttp-2.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/twoFactor/okio-1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/httpclient-4.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/twoFactor/httpcore-4.2.2.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java8"/>
 	<classpathentry kind="output" path="webapp/WEB-INF/classes"/>
 </classpath>

@@ -92,4 +92,19 @@ public class TwoFactorTwilio implements TwoFactorContactInterface {
     
   }
 
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    
+    String userText = "Your verification code is: 1, 2, 3, 4, 5, 6.  " +
+      "Again, your verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
+      "verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
+      "verification code is: 1, 2, 3, 4, 5, 6.  ";
+    
+    new TwoFactorTwilio().voice("215 880 9847", userText);
+    
+  }
+
 }

@@ -134,7 +134,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    */
   public static void main(String[] args) {
 
-    if (true) {
+    if (false) {
       
       String secret = "RYCOURGMWY37OXZKHUOUOTA7GYTZWO5L";
       printPasswordsForSecret(secret, 
@@ -143,7 +143,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     @SuppressWarnings("unused")
-    String netId = "mchyzer";
+    String netId = "msirota";
     
     String userName = "10021368";
     userName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), netId, true);

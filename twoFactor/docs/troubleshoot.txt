@@ -1,0 +1,11 @@
+Remove old logs:
+clusterRun twoFactorWs "rm /opt/appserv/tomcat/apps/twoFactorWs/logs/*2014*"
+
+Search for timestamp for user on all nodes
+clusterRun twoFactorWs "grep '2015-03-15 08:58' /opt/appserv/tomcat/apps/twoFactorWs/logs/twoFactorWsTraffic.log* | grep jbreen"
+
+Search for timestamp in apache
+clusterRun twoFactorWs "grep '15/Mar/2015:08:58' /var/log/httpd/access_log | grep twoFactorWs"
+
+
+ 

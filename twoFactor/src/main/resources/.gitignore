@@ -12,3 +12,5 @@
 /sources.mysql.xml
 /twoFactor.server.properties
 /twoFactor.server.local.properties
+/twoFactor.server.local.properties.dev
+/twoFactor.hibernate.properties.dev

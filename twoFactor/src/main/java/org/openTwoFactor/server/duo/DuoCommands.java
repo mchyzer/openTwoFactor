@@ -302,6 +302,8 @@ public class DuoCommands {
       migrateAllToDuo();
     } else if (args.length == 1 && StringUtils.equals("migrateAllTokensToDuo", args[0])) {
       migrateAllTokensToDuo();
+    } else if (args.length == 1 && StringUtils.equals("migrateAllPhonesToDuo", args[0])) {
+      migrateAllPhonesToDuo();
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
       boolean validCode = verifyDuoCodeBySomeId(args[1], args[2]);
       System.out.println("Valid code? " + validCode);
@@ -1015,101 +1017,106 @@ public class DuoCommands {
     
     for (int i=0;i<3;i++) {
       
-      String phoneNumber = null;
-      boolean isText = false;
-      
-      //uh... translate to a loopable value
-      if (i==0) {
+      try {
+        String phoneNumber = null;
+        boolean isText = false;
         
-        phoneNumber = twoFactorUser.getPhone0();
-        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText0(), false);
-        
-      } else if (i==1) {
-
-        phoneNumber = twoFactorUser.getPhone1();
-        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText1(), false);
-        
-      } else if (i==2) {
-        
-        phoneNumber = twoFactorUser.getPhone2();
-        isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText2(), false);
-
-      }
-
-      //get the phone from duo
-      JSONObject duoPhone = duoPhoneByIndex(duoUser, i);
-      
-      //if they both arent there, thats good
-      if (duoPhone == null && StringUtils.isBlank(phoneNumber)) {
-        if (printResults) {
-          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was in sync");
-        }
-        continue;
-      }
-      
-      //if there is no open two factor, but is a duo, then delete
-      String phoneId = duoPhone == null ? null : duoPhone.getString("phone_id");
-      if (duoPhone != null && StringUtils.isBlank(phoneNumber)) {
-        if (printResults) {
-          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " does not exist in open two factor and will be removed from Duo");
-        }
-        deleteDuoPhone(phoneId);
-        continue;
-      }
-
-      //if there is no duo, then create
-      if (duoPhone == null && !StringUtils.isBlank(phoneNumber)) {
-        
-        //see if we can look it up by number
-        duoPhone = duoPhoneByIdOrNumber(phoneNumber, false);
-        
-        if (duoPhone != null) {
-          //found the phone, but not associated with user yet
-          associateUserWithPhone(duoUser.getString("user_id"), duoPhone.getString("phone_id"));
-        }
-      }
-
-      //if there is no duo, then create
-      if (duoPhone == null && !StringUtils.isBlank(phoneNumber)) {
-        if (printResults) {
-          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " did not exist in duo and will be created: " + phoneNumber + ", mobile? " + isText);
-        }
-        duoPhone = createDuoPhone("phone " + (i+1), phoneNumber, isText);
-        phoneId = duoPhone.getString("phone_id");
-        associateUserWithPhone(duoUser.getString("user_id"), phoneId);
-        continue;
-      }
-      
-      //if both, make sure ok
-      if (duoPhone != null && !StringUtils.isBlank(phoneNumber)) {
-        
-        boolean duoIsMobile = StringUtils.equalsIgnoreCase(duoPhone.getString("type"), "mobile"); 
-
-        //note, this will likely always get updated since duo stores as +11234567890 and open two factor is 123-456-7890
-        String duoNumber = TwoFactorServerUtils.trimToEmpty(duoPhone.getString("number")).replaceAll("[^\\d]", "");
-        if (duoNumber.startsWith("1")) {
-          duoNumber = duoNumber.substring(1);
-        }
-        
-        phoneNumber = TwoFactorServerUtils.trimToEmpty(phoneNumber).replaceAll("[^\\d]", "");
-        if (phoneNumber.startsWith("1")) {
-          phoneNumber = phoneNumber.substring(1);
-        }
-        
-        //phone number and if mobile needs to match
-        if (!StringUtils.equals(duoNumber, phoneNumber)
-            || (duoIsMobile != isText)) {
-        
-          if (printResults) {
-            System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was out of sync, changing number to: " + phoneNumber + ", mobile? " + isText);
-          }
-
-          editDuoPhone(phoneId, phoneNumber, isText);
+        //uh... translate to a loopable value
+        if (i==0) {
           
+          phoneNumber = twoFactorUser.getPhone0();
+          isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText0(), false);
+          
+        } else if (i==1) {
+  
+          phoneNumber = twoFactorUser.getPhone1();
+          isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText1(), false);
+          
+        } else if (i==2) {
+          
+          phoneNumber = twoFactorUser.getPhone2();
+          isText = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getPhoneIsText2(), false);
+  
         }
-        continue;
+  
+        //get the phone from duo
+        JSONObject duoPhone = duoPhoneByIndex(duoUser, i);
+        
+        //if they both arent there, thats good
+        if (duoPhone == null && StringUtils.isBlank(phoneNumber)) {
+          if (printResults) {
+            System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was in sync");
+          }
+          continue;
+        }
+        
+        //if there is no open two factor, but is a duo, then delete
+        String phoneId = duoPhone == null ? null : duoPhone.getString("phone_id");
+        if (duoPhone != null && StringUtils.isBlank(phoneNumber)) {
+          if (printResults) {
+            System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " does not exist in open two factor and will be removed from Duo");
+          }
+          deleteDuoPhone(phoneId);
+          continue;
+        }
+  
+        //if there is no duo, then create
+        if (duoPhone == null && !StringUtils.isBlank(phoneNumber)) {
+          
+          //see if we can look it up by number
+          duoPhone = duoPhoneByIdOrNumber(phoneNumber, false);
+          
+          if (duoPhone != null) {
+            //found the phone, but not associated with user yet
+            associateUserWithPhone(duoUser.getString("user_id"), duoPhone.getString("phone_id"));
+          }
+        }
+  
+        //if there is no duo, then create
+        if (duoPhone == null && !StringUtils.isBlank(phoneNumber)) {
+          if (printResults) {
+            System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " did not exist in duo and will be created: " + phoneNumber + ", mobile? " + isText);
+          }
+          duoPhone = createDuoPhone("phone " + (i+1), phoneNumber, isText);
+          phoneId = duoPhone.getString("phone_id");
+          associateUserWithPhone(duoUser.getString("user_id"), phoneId);
+          continue;
+        }
+        
+        //if both, make sure ok
+        if (duoPhone != null && !StringUtils.isBlank(phoneNumber)) {
+          
+          boolean duoIsMobile = StringUtils.equalsIgnoreCase(duoPhone.getString("type"), "mobile"); 
+  
+          //note, this will likely always get updated since duo stores as +11234567890 and open two factor is 123-456-7890
+          String duoNumber = TwoFactorServerUtils.trimToEmpty(duoPhone.getString("number")).replaceAll("[^\\d]", "");
+          if (duoNumber.startsWith("1")) {
+            duoNumber = duoNumber.substring(1);
+          }
+          
+          phoneNumber = TwoFactorServerUtils.trimToEmpty(phoneNumber).replaceAll("[^\\d]", "");
+          if (phoneNumber.startsWith("1")) {
+            phoneNumber = phoneNumber.substring(1);
+          }
+          
+          //phone number and if mobile needs to match
+          if (!StringUtils.equals(duoNumber, phoneNumber)
+              || (duoIsMobile != isText)) {
+          
+            if (printResults) {
+              System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was out of sync, changing number to: " + phoneNumber + ", mobile? " + isText);
+            }
+  
+            editDuoPhone(phoneId, phoneNumber, isText);
+            
+          }
+          continue;
+        }
+      } catch (Exception e) {
+        //catch this so it doesnt fail
+        System.out.println("Error with user: " + twoFactorUser.getLoginid());
+        e.printStackTrace();
       }
-      
     }
     
   }
@@ -1225,12 +1232,21 @@ public class DuoCommands {
       migrateUserBySomeId(twoFactorUserView.getUuid());
     }
     
+    migrateAllPhonesToDuo();
+    
+    migrateAllTokensToDuo();
+  }
+
+  /**
+   * 
+   */
+  private static void migrateAllPhonesToDuo() {
+    
     for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
         TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
       migratePhonesToDuoBySomeId(twoFactorUserView.getUuid(), true);
     }
     
-    migrateAllTokensToDuo();
   }
 
   /**
@@ -1386,7 +1402,7 @@ public class DuoCommands {
      String userId, boolean resetCodesIfExists) {
     
     Long tokenIndex = twoFactorUser.getTokenIndex();
-    if (tokenIndex == 0) {
+    if (tokenIndex == null || tokenIndex == 0) {
       tokenIndex = 0L;
     }
 
