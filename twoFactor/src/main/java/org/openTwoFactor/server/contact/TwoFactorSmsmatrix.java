@@ -33,7 +33,7 @@ public class TwoFactorSmsmatrix implements TwoFactorContactInterface {
       "verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
       "verification code is: 1, 2, 3, 4, 5, 6.  ";
     
-    new TwoFactorSmsmatrix().voice("215 880 9847", userText);
+    new TwoFactorSmsmatrix().text("215 880 9847", userText);
     
   }
   
