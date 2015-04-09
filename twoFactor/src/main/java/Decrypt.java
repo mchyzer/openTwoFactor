@@ -17,7 +17,7 @@ public class Decrypt {
    */
   public static void main(String[] args) {
     if (args.length != 1) {
-      throw new RuntimeException("Pass in loginid and current encrypted pass");
+      throw new RuntimeException("Pass in loginid");
     }
     String loginid = args[0];
     

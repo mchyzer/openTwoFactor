@@ -772,6 +772,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
         twoFactorUserGettingOptedOut[0].setTwoFactorSecret(null);
         
         twoFactorUserGettingOptedOut[0].setOptedIn(false);
+        
+        UiMain.duoClearOutAttributes(twoFactorUserGettingOptedOut[0]);
+
         twoFactorUserGettingOptedOut[0].setSequentialPassIndex(1L);
 
         twoFactorUserGettingOptedOut[0].store(twoFactorDaoFactory);

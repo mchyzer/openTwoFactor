@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Date;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -15,6 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
+import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TfSourceUtils;
@@ -63,7 +65,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     System.out.println("HOTP (printed)");
-    for (int i=-2000;i<5050;i++) {
+    for (int i=-50;i<50;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -75,7 +77,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     System.out.println("\nHOTP (token)");
-    for (int i=-2000;i<5000;i++) {
+    for (int i=-50;i<50;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -90,7 +92,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     currentTimeMillis = currentTimeMillis == null ? System.currentTimeMillis() : currentTimeMillis;
 
-    for (int i=-2000;i<2000;i++) {
+    for (int i=-50;i<50;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -103,7 +105,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     
     System.out.println("\nTOTP 30");
     
-    for (int i=-2000;i<2000;i++) {
+    for (int i=-50;i<50;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -134,22 +136,43 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    */
   public static void main(String[] args) {
 
-    if (false) {
+    if (true) {
       
-      String secret = "RYCOURGMWY37OXZKHUOUOTA7GYTZWO5L";
+      String secret = "b4d68d0c2183102142304cc3ccff41fac5a5fdb0";
       printPasswordsForSecret(secret, 
-          null, null, null, false);
+          null, null, null, true);
       return;
     }
     
-    @SuppressWarnings("unused")
-    String netId = "msirota";
+    if (false) {
     
-    String userName = "10021368";
-    userName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), netId, true);
-    if (args.length > 0) {
-      userName = args[0];
+      @SuppressWarnings("unused")
+      String netId = "msirota";
+      
+      String userName = "10021368";
+      userName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), netId, true);
+      if (args.length > 0) {
+        userName = args[0];
+      }
     }
+    
+    String serial = "70000502";
+    TwoFactorDeviceSerial twoFactorDeviceSerial = TwoFactorDaoFactory.getFactory().getTwoFactorDeviceSerial().retrieveBySerial(serial);
+    
+    String secret = twoFactorDeviceSerial.getTwoFactorSecretUnencrypted();
+    
+    System.out.println(secret);
+    
+    secret = "9f9360922509e02c15ffb14fbbd8adad07947d66";
+    
+//    printPasswordsForSecret(secret, null, null, null, true);
+    
+    
+    System.out.println(new Date(23820173L*60));
+    
+    //findTimePeriodFob(secret, 100000, 200000);
+
+    
     
 //    String secret = "GMUP LNR7 EFSY HEYZ";
 //    System.out.println(secret);
@@ -162,7 +185,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 //    
 //    printPasswordsForSecret(secret, null, null, null, false);
     
-    printPasswordsForUser(userName);
+//    printPasswordsForUser(userName);
     
    // printPasswordsForSecret("", null, null, null, true);
    // printPasswordsForSecret("U7HT WEKC 4VQX KC3C", null, null);
@@ -194,6 +217,43 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 //    System.out.println("+5: " + new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/30000)+5));
 //    System.out.println(new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/30000)+6));
 
+  }
+
+  /**
+   * @param secret
+   * @param firstPass 
+   * @param secondPass 
+   */
+  private static void findTimePeriodFob(String secret, int firstPass, int secondPass) {
+    byte[] plainText = null;
+    
+    try {
+      plainText = Hex.decodeHex(secret.toCharArray());
+    } catch (DecoderException de) {
+      throw new RuntimeException("Bad hex", de);
+    }
+    
+    int totpPassword = new TwoFactorLogic().totpPassword(plainText, 0);
+    
+    for (int i=0;i<100000000;i++) {
+      String label = "now";
+      if (i < 0) {
+        label = "" + i;
+      }
+      if (i > 0) {
+        label = "+" + i;
+      }
+      
+      int nextTotpPassword = new TwoFactorLogic().totpPassword(plainText, i+1);
+      if (totpPassword == firstPass && nextTotpPassword == secondPass) {
+        System.out.println(label + ": " + totpPassword);
+      }
+      totpPassword = nextTotpPassword;
+      
+      if ((i+1) % 10000000 == 0) {
+        System.out.println(i);
+      }
+    }
   }
   
   /**

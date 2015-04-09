@@ -1688,6 +1688,9 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUserGettingOptedOut[0].setTwoFactorSecret(null);
         
         twoFactorUserGettingOptedOut[0].setOptedIn(false);
+        
+        duoClearOutAttributes(twoFactorUserGettingOptedOut[0]);
+
         twoFactorUserGettingOptedOut[0].setSequentialPassIndex(1L);
 
         twoFactorUserGettingOptedOut[0].setDateInvitedColleagues(null);
@@ -2139,6 +2142,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSequentialPassIndex(null);
         twoFactorUser.setTokenIndex(0L);
         twoFactorUser.setLastTotpTimestampUsed(null);
+        duoClearOutAttributes(twoFactorUser);
+
         if (twoFactorPassResult.getNextHotpIndex() != null) {
           twoFactorUser.setSequentialPassIndex(twoFactorPassResult.getNextHotpIndex());
         }
@@ -2304,6 +2309,9 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setOptedIn(false);
         twoFactorUser.setSequentialPassIndex(1L);
         twoFactorUser.setDateInvitedColleagues(null);
+
+        duoClearOutAttributes(twoFactorUser);
+
 
         twoFactorUser.store(twoFactorDaoFactory);
         
@@ -3474,6 +3482,16 @@ public class UiMain extends UiServiceLogicBase {
 
   }
 
+  /**
+   * clear out duo attributes
+   * @param twoFactorUser
+   */
+  public static void duoClearOutAttributes(TwoFactorUser twoFactorUser) {
+    twoFactorUser.setDuoPushByDefault(null);
+    twoFactorUser.setDuoPushPhoneId(null);
+    twoFactorUser.setDuoPushTransactionId(null);
+    twoFactorUser.setDuoUserId(null);
+  }
 
   /**
    * validate a custom code and convert to a standard format
@@ -3637,8 +3655,9 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSeqPassIndexGivenToUser(null);
         twoFactorUser.setSequentialPassIndex(null);
         twoFactorUser.setTokenIndex(0L);
+        duoClearOutAttributes(twoFactorUser);
         twoFactorUser.store(twoFactorDaoFactory);
-  
+
         List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
   
         //untrust browsers since opting in, dont want orphans from last time

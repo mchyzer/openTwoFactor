@@ -28,10 +28,7 @@ public class TwoFactorSmsmatrix implements TwoFactorContactInterface {
    */
   public static void main(String[] args) {
     
-    String userText = "Your verification code is: 1, 2, 3, 4, 5, 6.  " +
-      "Again, your verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
-      "verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
-      "verification code is: 1, 2, 3, 4, 5, 6.  ";
+    String userText = "Your verification code is: 1, 2, 3, 4, 5, 6";
     
     new TwoFactorSmsmatrix().text("215 880 9847", userText);
     

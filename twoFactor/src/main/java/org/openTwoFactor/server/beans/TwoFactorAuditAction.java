@@ -7,6 +7,9 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  */
 public enum TwoFactorAuditAction {
   
+  /**
+   * import fobs
+   */
   IMPORT_FOB_SERIALS {
 
     /**
@@ -290,6 +293,22 @@ public enum TwoFactorAuditAction {
     @Override
     public String toStringForUi() {
       return "auditsTwoStepAuthentication";
+    }
+    
+  }, 
+  
+  /**
+   * authned but with error
+   */
+  AUTHN_ALLOW_WITH_ERROR {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAllowWithError";
     }
     
   }, 

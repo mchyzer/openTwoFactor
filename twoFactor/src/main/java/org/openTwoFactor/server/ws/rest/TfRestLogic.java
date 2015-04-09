@@ -986,14 +986,31 @@ public class TfRestLogic {
     } catch (RuntimeException re) {
       
       tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.ERROR.name());
-      tfCheckPasswordResponse.setSuccess(false);
-      tfCheckPasswordResponse.setTwoFactorUserAllowed(null);
       tfCheckPasswordResponse.setErrorMessage(ExceptionUtils.getFullStackTrace(re));
       
-      trafficLogMap.put("userAllowed", "null");
-      trafficLogMap.put("success", false);
       trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.ERROR.name());
-      trafficLogMap.put("auditAction", TwoFactorAuditAction.ERROR.name());
+
+      //maybe we should just allow in the case of runtime exceptions
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.allowOnException")) {
+        
+        TwoFactorServerUtils.injectInException(re, "");
+        
+        tfCheckPasswordResponse.setSuccess(true);
+        tfCheckPasswordResponse.setTwoFactorUserAllowed(true);
+
+        trafficLogMap.put("userAllowed", true);
+        trafficLogMap.put("success", true);
+        trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_ALLOW_WITH_ERROR.name());
+      } else {
+
+        tfCheckPasswordResponse.setSuccess(false);
+        tfCheckPasswordResponse.setTwoFactorUserAllowed(null);
+
+        trafficLogMap.put("userAllowed", "null");
+        trafficLogMap.put("success", false);
+        trafficLogMap.put("auditAction", TwoFactorAuditAction.ERROR.name());
+        
+      }
 
       LOG.error("error", re);
       
