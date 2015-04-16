@@ -198,6 +198,7 @@ public class TfRestLogic {
       boolean debug = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.debugAllRequests", false) 
         || (tfCheckPasswordRequest.getDebug() != null && tfCheckPasswordRequest.getDebug());
 
+
       logTwoFactorLogic(tfCheckPasswordRequest, trafficLogMap, tfCheckPasswordResponse, debug);
 
       String ipAddress = StringUtils.trimToNull(tfCheckPasswordRequest.getUserIpAddress());
@@ -561,38 +562,7 @@ public class TfRestLogic {
   
       tfCheckPasswordResponse.setUserBrowserUuidIsNew(needsNewCookieUuid);
       boolean requestIsTrusted = tfCheckPasswordRequest.getTrustedBrowser() != null && tfCheckPasswordRequest.getTrustedBrowser();
-      
-      //if there is no code,  or it is wrong, then not a trusted browser
-      if (StringUtils.isBlank(twoFactorPassUnencrypted) || twoFactorPassResult == null || !twoFactorPassResult.isPasswordCorrect()) {
-        requestIsTrusted = false;
-      }
-      
-      if (needsNewCookieUuid) {
-        String newCookieUuid = TwoFactorServerUtils.uuid();
-        tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
         
-        twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
-            newCookieUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
-        
-        tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
-  
-        if (debug) {
-          tfCheckPasswordResponse.appendDebug("created new two factor browser");
-        }
-        
-      } else {
-  
-        //dont change trusted status unless it is sent in (not sent if not on the screen)
-        if (tfCheckPasswordRequest.getTrustedBrowser() != null && twoFactorBrowser.isTrustedBrowser() != requestIsTrusted ) {
-          twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
-              cookieUserUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
-          if (debug) {
-            tfCheckPasswordResponse.appendDebug("updating db trusted browser status to " + requestIsTrusted);
-          }
-  
-        }
-      }
-  
       if (browserPreviouslyTrusted) {
   
         TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "browser was already trusted", null);
@@ -677,6 +647,14 @@ public class TfRestLogic {
                     long timestampLong = TwoFactorServerUtils.longValue(timestampString);
                     int duoTransactionIdLastsAfterFirstUseSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("duoTransactionIdLastsAfterFirstUseSeconds", 3);
                     if (((System.currentTimeMillis() - timestampLong) / 1000) < duoTransactionIdLastsAfterFirstUseSeconds) {
+
+                      
+                      //see if trusted browser
+                      twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+                          tfCheckPasswordResponse, debug, twoFactorUser,
+                          cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+                          requestIsTrusted, true);
+
                       TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "successful duo push active", null);
                       trafficLogMap.put("duoPushSuccessActive", duoTransactionIdLastsAfterFirstUseSeconds);
   
@@ -748,6 +726,12 @@ public class TfRestLogic {
                       }
                       if (validPush) {
   
+                        //see if trusted browser
+                        twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+                            tfCheckPasswordResponse, debug, twoFactorUser,
+                            cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+                            requestIsTrusted, true);
+                        
                         //store this timestamp as when it was used
                         twoFactorUser.setDuoPushTransactionId(timestampBrowserTxId + "__" + System.currentTimeMillis());
                         storeUser = true;
@@ -822,6 +806,19 @@ public class TfRestLogic {
           }
         }
         
+      }
+      
+      //if there is no code,  or it is wrong, then not a trusted browser
+      boolean userAuthenticated = !StringUtils.isBlank(twoFactorPassUnencrypted) && twoFactorPassResult != null & twoFactorPassResult.isPasswordCorrect();
+
+      twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+          tfCheckPasswordResponse, debug, twoFactorUser,
+          cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+          requestIsTrusted, userAuthenticated);
+
+      if (twoFactorBrowser != null) {
+        trafficLogMap.put("browserUuid", twoFactorBrowser.getUuid());
+        trafficLogMap.put("twoFactorBrowser.isTrustedBrowser()", twoFactorBrowser.isTrustedBrowser());
       }
       
       if (storeUser) {
@@ -1009,16 +1006,16 @@ public class TfRestLogic {
         trafficLogMap.put("userAllowed", "null");
         trafficLogMap.put("success", false);
         trafficLogMap.put("auditAction", TwoFactorAuditAction.ERROR.name());
-        
+
       }
 
       LOG.error("error", re);
-      
+
       return tfCheckPasswordResponse;
 
     } finally {
       DuoLog.assignUsername(null);
-
+      
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getClientSourceIpAddress())) {
         trafficLogMap.put("wsClientIp", tfCheckPasswordRequest.getClientSourceIpAddress());
       }
@@ -1027,7 +1024,64 @@ public class TfRestLogic {
       }
       trafficLogMap.put("logicTime", ((System.nanoTime() - start)/1000000) + "ms");
       TfRestLogicTrafficLog.wsRestTrafficLog(trafficLogMap);
+
+      TwoFactorRestServlet.addLogMapParamsIfLogging("tfRestServlet", trafficLogMap);
+
     }
+  }
+
+  /**
+   * logic to trust a browser
+   * @param twoFactorDaoFactory
+   * @param tfCheckPasswordRequest
+   * @param tfCheckPasswordResponse
+   * @param debug
+   * @param twoFactorUser
+   * @param cookieUserUuid
+   * @param needsNewCookieUuid
+   * @param twoFactorBrowser
+   * @param requestIsTrusted
+   * @param userAuthenticated
+   * @return the browser (marked as trusted)
+   */
+  private static TwoFactorBrowser trustBrowserLogic(TwoFactorDaoFactory twoFactorDaoFactory,
+      TfCheckPasswordRequest tfCheckPasswordRequest,
+      TfCheckPasswordResponse tfCheckPasswordResponse, 
+      boolean debug, TwoFactorUser twoFactorUser, 
+      String cookieUserUuid, boolean needsNewCookieUuid, TwoFactorBrowser twoFactorBrowser,
+      boolean requestIsTrusted, boolean userAuthenticated) {
+    
+    //if there is no code,  or it is wrong, then not a trusted browser
+    if (!userAuthenticated) {
+      requestIsTrusted = false;
+    }
+        
+    if (needsNewCookieUuid) {
+      String newCookieUuid = TwoFactorServerUtils.uuid();
+      tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
+      
+      twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
+          newCookieUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
+      
+      tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
+ 
+      if (debug) {
+        tfCheckPasswordResponse.appendDebug("created new two factor browser");
+      }
+      
+    } else {
+
+      //dont change trusted status unless it is sent in (not sent if not on the screen)
+      if (tfCheckPasswordRequest.getTrustedBrowser() != null && twoFactorBrowser.isTrustedBrowser() != requestIsTrusted ) {
+        twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
+            cookieUserUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
+        if (debug) {
+          tfCheckPasswordResponse.appendDebug("updating db trusted browser status to " + requestIsTrusted);
+        }
+
+      }
+    }
+    return twoFactorBrowser;
   }
 
   /**
@@ -1556,38 +1610,12 @@ public class TfRestLogic {
       }
   
       tfCheckPasswordResponse.setUserBrowserUuidIsNew(needsNewCookieUuid);
-      boolean requestIsTrusted = tfCheckPasswordRequest.getTrustedBrowser() != null && tfCheckPasswordRequest.getTrustedBrowser();
+//      boolean requestIsTrusted = tfCheckPasswordRequest.getTrustedBrowser() != null && tfCheckPasswordRequest.getTrustedBrowser();
       
-      //if there is no code,  or it is wrong, then not a trusted browser
-      if (StringUtils.isBlank(twoFactorPassUnencrypted) || twoFactorPassResult == null || !twoFactorPassResult.isPasswordCorrect()) {
-        requestIsTrusted = false;
-      }
-      
-      if (needsNewCookieUuid) {
-        String newCookieUuid = TwoFactorServerUtils.uuid();
-        tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
-        
-        twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
-            newCookieUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
-        
-        tfCheckPasswordResponse.setChangeUserBrowserUuid(newCookieUuid);
-  
-        if (debug) {
-          tfCheckPasswordResponse.appendDebug("created new two factor browser");
-        }
-        
-      } else {
-  
-        //dont change trusted status unless it is sent in (not sent if not on the screen)
-        if (tfCheckPasswordRequest.getTrustedBrowser() != null && twoFactorBrowser.isTrustedBrowser() != requestIsTrusted ) {
-          twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuidOrCreate(twoFactorDaoFactory, 
-              cookieUserUuid, twoFactorUser.getUuid(), requestIsTrusted, false);
-          if (debug) {
-            tfCheckPasswordResponse.appendDebug("updating db trusted browser status to " + requestIsTrusted);
-          }
-  
-        }
-      }
+//      twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+//          tfCheckPasswordResponse, twoFactorPassUnencrypted, debug, twoFactorUser,
+//          twoFactorPassResult, cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+//          requestIsTrusted);
   
       if (browserPreviouslyTrusted) {
   

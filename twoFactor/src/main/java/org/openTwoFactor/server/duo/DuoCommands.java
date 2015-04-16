@@ -2110,7 +2110,7 @@ public class DuoCommands {
 
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
-    debugMap.put("method", "associateUserWithPhone");
+    debugMap.put("method", "verifyDuoCode");
     debugMap.put("userId", duoUserId);
     debugMap.put("code", StringUtils.repeat("*", TwoFactorServerUtils.stringLength(code)));
     long startTime = System.nanoTime();
@@ -2259,9 +2259,11 @@ public class DuoCommands {
       Http request = httpAuth("POST", path, timeoutSeconds);
 
       request.addParam("user_id", duoUserId);
+      debugMap.put("user_id", duoUserId);
       request.addParam("factor", "push");
       request.addParam("async", "1");
       request.addParam("device", duoPushPhoneId);
+      debugMap.put("device", duoPushPhoneId);
   
       if (!StringUtils.isBlank(message)) {
         request.addParam("type", message);

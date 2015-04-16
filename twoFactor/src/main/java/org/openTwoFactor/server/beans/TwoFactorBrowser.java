@@ -23,6 +23,7 @@ import org.openTwoFactor.server.hibernate.TfAuditControl;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
+import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -482,6 +483,11 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
               //not sure why we include deleted here... hmmm
               twoFactorBrowser = retrieveByBrowserTrustedUuidEncrypted(twoFactorDaoFactory, browserUuid, true);
             }
+            
+            if (TwoFactorRestServlet.isLoggingParams()) {
+              TwoFactorRestServlet.addLogParamIfLogging("TwoFactorBrowser", "settingTrusted", "was: " + twoFactorBrowser.isTrustedBrowser() + " will be: " + newTrusted);
+            }
+            
             twoFactorBrowser.setTrustedBrowser(newTrusted);
             if (newTrusted) {
               twoFactorBrowser.setWhenTrusted(System.currentTimeMillis());

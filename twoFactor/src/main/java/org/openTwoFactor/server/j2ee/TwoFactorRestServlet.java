@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -246,6 +247,79 @@ public class TwoFactorRestServlet extends HttpServlet {
   }
   
   /**
+   * params you can add to the logging of a request
+   */
+  private static InheritableThreadLocal<Map<String, Object>> userLogMapThreadlocal = new InheritableThreadLocal<Map<String, Object>>();
+
+  /**
+   * @param map
+   * @param prefix
+   */
+  public static void addLogMapParamsIfLogging(String prefix, Map<String, Object> map) {
+    
+    Map<String, Object> userLogMap= userLogMapThreadlocal.get();
+    
+    //it will be null if we are not logging stuff
+    if (userLogMap != null && map != null) {
+      for (String key: map.keySet()) {
+        userLogMap.put(prefix + (prefix.endsWith("_") ? "" : "_") + key, map.get(key));
+      }
+    }
+  }
+  
+  /**
+   * @return if logging params
+   */
+  public static boolean isLoggingParams() {
+    
+    Map<String, Object> userLogMap= userLogMapThreadlocal.get();
+    
+    return userLogMap != null;
+  }
+  
+
+  
+  /**
+   * @param prefix
+   * @param key 
+   * @param value 
+   */
+  public static void addLogParamIfLogging(String prefix, String key, Object value) {
+    
+    Map<String, Object> userLogMap= userLogMapThreadlocal.get();
+    
+    //it will be null if we are not logging stuff
+    if (userLogMap != null) {
+      String theKey = prefix + (prefix.endsWith("_") ? "" : "_") + key;
+
+      
+      //lets allow same thing logged multiple times
+      if (userLogMap.containsKey(theKey)) {
+        
+        boolean foundKey = false;
+        
+        //find a number not in use
+        for (int i=0;i<100;i++) {
+          String newKey = theKey + "__" + i;
+          if (userLogMap.containsKey(newKey)) {
+            continue;
+          }
+          foundKey = true;
+          theKey = newKey;
+        }
+        
+        //dont overwrite
+        if (!foundKey) {
+          return;
+        }
+        
+      }
+      
+      userLogMap.put(theKey, value);
+    }
+  }
+  
+  /**
    * @see javax.servlet.http.HttpServlet#service(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
    */
   @SuppressWarnings("unchecked")
@@ -253,312 +327,323 @@ public class TwoFactorRestServlet extends HttpServlet {
   protected void service(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
 
-    // if the WS should run in this env
-    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.runWs", true)) {
-      throw new RuntimeException("WS doesnt run in this env per: twoFactorServer.runWs");
-    }
-    
-    if (StringUtils.equals("true",request.getParameter("status"))) {
-      return;
-    }
-
-    long serviceStarted = System.nanoTime();
-
-    request = new TfHttpServletRequest(request);
-    TwoFactorFilterJ2ee.assignHttpServletRequest(request);
-    
-    TwoFactorFilterJ2ee.assignHttpServlet(this);
-    List<String> urlStrings = null;
-    StringBuilder warnings = new StringBuilder();
-
-    TwoFactorResponseBeanBase twoFactorResponseBeanBase = null;
-    
-    //we need something here if errors, so default to xhtml
-    TfRestContentType wsRestContentType = TfRestContentType.json;
-    TfRestContentType.assignContentType(wsRestContentType);
-
-    boolean logRequestsResponses = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponses", false);
-
-    boolean indent = false;
-    
-    String body = null;
-    
     try {
-      
-      if (TwoFactorServerUtils.booleanValue(request.getParameter("indent"), false)) {
-        indent = true;
-      }
-      
-      //init params (if problem, exception will be thrown)
-      request.getParameterMap();
-      
-      urlStrings = extractUrlStrings(request);
-      int urlStringsLength = TwoFactorServerUtils.length(urlStrings);
 
-      //get the body and convert to an object
-      body = TwoFactorServerUtils.toString(request.getReader());
-
-      TfWsVersion clientVersion = null;
-
-      //get the method and validate (either from object, or HTTP method
-      TfRestHttpMethod tfRestHttpMethod = null;
-      {
-        String methodString = request.getMethod();
-        tfRestHttpMethod = TfRestHttpMethod.valueOfIgnoreCase(methodString, true);
+      // if the WS should run in this env
+      if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.runWs", true)) {
+        throw new RuntimeException("WS doesnt run in this env per: twoFactorServer.runWs");
       }
+  
+      userLogMapThreadlocal.remove();
       
-      //if there are other content types, detect them here
-      boolean foundContentType = false;
-      if (request.getRequestURI().endsWith(".xml")) {
-        wsRestContentType = TfRestContentType.xml;
-        foundContentType = true;
-      } else if (request.getRequestURI().endsWith(".json")) {
-        wsRestContentType = TfRestContentType.json;
-        foundContentType = true;
+      if (StringUtils.equals("true",request.getParameter("status"))) {
+        return;
       }
+  
+      long serviceStarted = System.nanoTime();
+  
+      request = new TfHttpServletRequest(request);
+      TwoFactorFilterJ2ee.assignHttpServletRequest(request);
+      
+      TwoFactorFilterJ2ee.assignHttpServlet(this);
+      List<String> urlStrings = null;
+      StringBuilder warnings = new StringBuilder();
+  
+      TwoFactorResponseBeanBase twoFactorResponseBeanBase = null;
+      
+      //we need something here if errors, so default to xhtml
+      TfRestContentType wsRestContentType = TfRestContentType.json;
       TfRestContentType.assignContentType(wsRestContentType);
-
-      if (foundContentType && urlStringsLength > 0) {
-        
-        String lastUrlString = urlStrings.get(urlStringsLength-1);
-        if (lastUrlString.endsWith("." + wsRestContentType.name())) {
-          lastUrlString = lastUrlString.substring(0, lastUrlString.length()-(1+wsRestContentType.name().length()));
-        }
-        urlStrings.set(urlStringsLength-1, lastUrlString);
+  
+      boolean logRequestsResponses = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponses", false);
+  
+      if (logRequestsResponses) {
+        userLogMapThreadlocal.set(new LinkedHashMap<String, Object>());
       }
       
-      if (urlStringsLength == 0) {
-        
-        if (tfRestHttpMethod != TfRestHttpMethod.GET) {
-          throw new TfRestInvalidRequest("Cant have non-GET method for default resource: " + tfRestHttpMethod);
-        }
-        
-        if (foundContentType) {
-          
-          //twoFactorResponseBeanBase = new AsasDefaultVersionResourceContainer();
-          throw new TfRestInvalidRequest("Invalid request");
-        }
-        //twoFactorResponseBeanBase = new AsasDefaultResourceContainer();
-        throw new TfRestInvalidRequest("Invalid request");
-
-      }
-        
-      if (!foundContentType) {
-        throw new TfRestInvalidRequest("Request must end in .json or .xml: " + request.getRequestURI());
-      }
+      boolean indent = false;
       
-      //first see if version
-      clientVersion = TfWsVersion.valueOfIgnoreCase(TwoFactorServerUtils.popUrlString(urlStrings), true);
-
-      TfWsVersion.assignCurrentClientVersion(clientVersion, warnings);
-      
-//      WsRequestBean requestObject = null;
-//
-//      if (!StringUtils.isBlank(body)) {
-//        requestObject = (WsRequestBean) wsRestRequestContentType.parseString(body,
-//            warnings);
-//      }
-//      
-//      //might be in params (which might not be in body
-//      if (requestObject == null) {
-//        //might be in http params...
-//        requestObject = (WsRequestBean) GrouperServiceUtils.marshalHttpParamsToObject(
-//            request.getParameterMap(), request, warnings);
-//
-//      }
-                  
-      twoFactorResponseBeanBase = tfRestHttpMethod.service(urlStrings, request.getParameterMap(), body);
-    } catch (TfRestInvalidRequest arir) {
-
-      twoFactorResponseBeanBase = new TfResultProblem();
-      String error = arir.getMessage() + ", " + requestDebugInfo(request);
-
-      //this is a user error, but an error nonetheless
-      LOG.error(error, arir);
-
-      twoFactorResponseBeanBase.setErrorMessage(error + TwoFactorServerUtils.getFullStackTrace(arir));
-      twoFactorResponseBeanBase.setSuccess(false);
-
-    } catch (RuntimeException e) {
-
-      //this is not a user error, is a big problem
-
-      twoFactorResponseBeanBase = new TfResultProblem();
-      LOG.error("Problem with request: " + requestDebugInfo(request), e);
-      twoFactorResponseBeanBase.setErrorMessage("Problem with request: "
-          + requestDebugInfo(request) + ",\n" + TwoFactorServerUtils.getFullStackTrace(e));
-      twoFactorResponseBeanBase.setSuccess(false);
-
-    }
-    
-    //set http status code, content type, and write the response
-    StringBuilder urlBuilder = null;
-    String responseString = null;
-    String responseStringForLog = null;
-
-    try {
-      { 
-        urlBuilder = new StringBuilder();
-        {
-          String url = request.getRequestURL().toString();
-          url = TwoFactorServerUtils.prefixOrSuffix(url, "?", true);
-          urlBuilder.append(url);
-        }
-        //lets put the params back on (the ones we expect)
-        Map<String, String> paramMap = request.getParameterMap();
-        boolean firstParam = true;
-        for (String paramName : paramMap.keySet()) {
-          if (firstParam) {
-            urlBuilder.append("?");
-          } else {
-            urlBuilder.append("&");
-          }
-          firstParam = false;
-          
-          urlBuilder.append(TwoFactorServerUtils.escapeUrlEncode(paramName))
-            .append("=").append(TwoFactorServerUtils.escapeUrlEncode(paramMap.get(paramName)));
-          
-        }
-        
-      }
-      if (warnings.length() > 0) {
-        twoFactorResponseBeanBase.appendWarning(warnings.toString());
-      }
-
-      {
-        Set<String> unusedParams = ((TfHttpServletRequest)request).unusedParams();
-        //add warnings about unused params
-        if (TwoFactorServerUtils.length(unusedParams) > 0) {
-          for (String unusedParam : unusedParams) {
-            twoFactorResponseBeanBase.appendWarning("Unused HTTP param: " + unusedParam);
-          }
-        }
-      }     
-      
-      //structure name
-      //twoFactorResponseBeanBase.setStructureName(TwoFactorServerUtils.structureName(twoFactorResponseBeanBase.getClass()));
-      
-      //headers should be there by now
-      //set the status code
-      //response.setStatus(twoFactorResponseBeanBase.getResponseMeta().getHttpStatusCode());
-      response.setStatus(200);
-
-      String restCharset = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.restHttpContentTypeCharset", "UTF-8");
-      String responseContentType = wsRestContentType.getContentType();
-      
-      if (!TwoFactorServerUtils.isBlank(restCharset)) {
-        responseContentType += "; charset=" + restCharset;
-      }
-      
-      response.setContentType(responseContentType);
-
-      //temporarily set to uuid, so we can time the content generation
-      long millisUuid = -314253647586987L;
-      
-      //twoFactorResponseBeanBase.getResponseMeta().setMillis(millisUuid);
-      
-      responseString = wsRestContentType.writeString(twoFactorResponseBeanBase);
-      
-      if (indent) {
-        responseString = wsRestContentType.indent(responseString);
-        if (logRequestsResponses) {
-          responseStringForLog = responseString;
-        }
-      } else {
-        if (logRequestsResponses) {
-          responseStringForLog = wsRestContentType.indent(responseString);
-        }
-      }
-      
-      responseString = TwoFactorServerUtils.replace(responseString, Long.toString(millisUuid), Long.toString(((System.nanoTime()-serviceStarted) / 1000000)));
+      String body = null;
       
       try {
-        response.getWriter().write(responseString);
-      } catch (IOException ioe) {
-        throw new RuntimeException(ioe);
-      }
-      
-    } catch (RuntimeException re) {
-      //problem!
-      LOG.error("Problem with request: " + requestDebugInfo(request), re);
-    } finally {
-
-      TwoFactorServerUtils.closeQuietly(response.getWriter());
-      TfWsVersion.removeCurrentClientVersion();
-      TfRestContentType.clearContentType();
-
-    }
-    
-    HttpSession httpSession = request.getSession(false);
-    if (httpSession != null) {
-      httpSession.invalidate();
-    }
-    
-    //lets write the response to file
-    if (logRequestsResponses) {
-      //make a file:
-      StringBuilder fileContents = new StringBuilder();
-      Date currentDate = new Date();
-      fileContents.append("Timestamp: ").append(currentDate).append("\n");
-      fileContents.append("Millis: ").append(Long.toString(((System.nanoTime()-serviceStarted) / 1000000))).append("\n");
-      fileContents.append("URL: ").append(urlBuilder).append("\n");
-      fileContents.append("Request body: ").append(body).append("\n\n");
-      fileContents.append("Response body: ").append(responseStringForLog).append("\n\n");
-      String tempDirLocation = TwoFactorServerUtils.tempFileDirLocation();
-      
-      File logdir = new File(tempDirLocation + "wsLogs");
-      TwoFactorServerUtils.mkdirs(logdir);
-      
-      long myRequestIndex = 0;
-      synchronized(TwoFactorRestServlet.class) {
-        myRequestIndex = ++requestIndex;
-      }
-      
-      String usernameForFilePath = "";
-      
-      //maybe we want userids in the file name
-      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponsesLogSubjectId", false)) {
         
-        String username = request.getParameter("username");
+        if (TwoFactorServerUtils.booleanValue(request.getParameter("indent"), false)) {
+          indent = true;
+        }
         
-        if (!StringUtils.isBlank(username)) {
-          String subjectAttributeName = TwoFactorServerConfig.retrieveConfig()
-              .propertyValueString("twoFactorServer.ws.log.requestsResponsesLogSubjectAttribute");
+        //init params (if problem, exception will be thrown)
+        request.getParameterMap();
+        
+        urlStrings = extractUrlStrings(request);
+        int urlStringsLength = TwoFactorServerUtils.length(urlStrings);
+  
+        //get the body and convert to an object
+        body = TwoFactorServerUtils.toString(request.getReader());
+  
+        TfWsVersion clientVersion = null;
+  
+        //get the method and validate (either from object, or HTTP method
+        TfRestHttpMethod tfRestHttpMethod = null;
+        {
+          String methodString = request.getMethod();
+          tfRestHttpMethod = TfRestHttpMethod.valueOfIgnoreCase(methodString, true);
+        }
+        
+        //if there are other content types, detect them here
+        boolean foundContentType = false;
+        if (request.getRequestURI().endsWith(".xml")) {
+          wsRestContentType = TfRestContentType.xml;
+          foundContentType = true;
+        } else if (request.getRequestURI().endsWith(".json")) {
+          wsRestContentType = TfRestContentType.json;
+          foundContentType = true;
+        }
+        TfRestContentType.assignContentType(wsRestContentType);
+  
+        if (foundContentType && urlStringsLength > 0) {
           
-          //maybe we are using netId instead of an opaque id
-          if (!StringUtils.isBlank(subjectAttributeName)) {
+          String lastUrlString = urlStrings.get(urlStringsLength-1);
+          if (lastUrlString.endsWith("." + wsRestContentType.name())) {
+            lastUrlString = lastUrlString.substring(0, lastUrlString.length()-(1+wsRestContentType.name().length()));
+          }
+          urlStrings.set(urlStringsLength-1, lastUrlString);
+        }
+        
+        if (urlStringsLength == 0) {
+          
+          if (tfRestHttpMethod != TfRestHttpMethod.GET) {
+            throw new TfRestInvalidRequest("Cant have non-GET method for default resource: " + tfRestHttpMethod);
+          }
+          
+          if (foundContentType) {
             
-            try {
-              Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(
-                  TfSourceUtils.mainSource(), username, true, false, true);
-
-              if (subject != null) {
-                String attributeValue = subject.getAttributeValue(subjectAttributeName);
-                if (!StringUtils.isBlank(attributeValue)) {
-                  usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(attributeValue);
+            //twoFactorResponseBeanBase = new AsasDefaultVersionResourceContainer();
+            throw new TfRestInvalidRequest("Invalid request");
+          }
+          //twoFactorResponseBeanBase = new AsasDefaultResourceContainer();
+          throw new TfRestInvalidRequest("Invalid request");
+  
+        }
+          
+        if (!foundContentType) {
+          throw new TfRestInvalidRequest("Request must end in .json or .xml: " + request.getRequestURI());
+        }
+        
+        //first see if version
+        clientVersion = TfWsVersion.valueOfIgnoreCase(TwoFactorServerUtils.popUrlString(urlStrings), true);
+  
+        TfWsVersion.assignCurrentClientVersion(clientVersion, warnings);
+        
+  //      WsRequestBean requestObject = null;
+  //
+  //      if (!StringUtils.isBlank(body)) {
+  //        requestObject = (WsRequestBean) wsRestRequestContentType.parseString(body,
+  //            warnings);
+  //      }
+  //      
+  //      //might be in params (which might not be in body
+  //      if (requestObject == null) {
+  //        //might be in http params...
+  //        requestObject = (WsRequestBean) GrouperServiceUtils.marshalHttpParamsToObject(
+  //            request.getParameterMap(), request, warnings);
+  //
+  //      }
+                    
+        twoFactorResponseBeanBase = tfRestHttpMethod.service(urlStrings, request.getParameterMap(), body);
+      } catch (TfRestInvalidRequest arir) {
+  
+        twoFactorResponseBeanBase = new TfResultProblem();
+        String error = arir.getMessage() + ", " + requestDebugInfo(request);
+  
+        //this is a user error, but an error nonetheless
+        LOG.error(error, arir);
+  
+        twoFactorResponseBeanBase.setErrorMessage(error + TwoFactorServerUtils.getFullStackTrace(arir));
+        twoFactorResponseBeanBase.setSuccess(false);
+  
+      } catch (RuntimeException e) {
+  
+        //this is not a user error, is a big problem
+  
+        twoFactorResponseBeanBase = new TfResultProblem();
+        LOG.error("Problem with request: " + requestDebugInfo(request), e);
+        twoFactorResponseBeanBase.setErrorMessage("Problem with request: "
+            + requestDebugInfo(request) + ",\n" + TwoFactorServerUtils.getFullStackTrace(e));
+        twoFactorResponseBeanBase.setSuccess(false);
+  
+      }
+      
+      //set http status code, content type, and write the response
+      StringBuilder urlBuilder = null;
+      String responseString = null;
+      String responseStringForLog = null;
+  
+      try {
+        { 
+          urlBuilder = new StringBuilder();
+          {
+            String url = request.getRequestURL().toString();
+            url = TwoFactorServerUtils.prefixOrSuffix(url, "?", true);
+            urlBuilder.append(url);
+          }
+          //lets put the params back on (the ones we expect)
+          Map<String, String> paramMap = request.getParameterMap();
+          boolean firstParam = true;
+          for (String paramName : paramMap.keySet()) {
+            if (firstParam) {
+              urlBuilder.append("?");
+            } else {
+              urlBuilder.append("&");
+            }
+            firstParam = false;
+            
+            urlBuilder.append(TwoFactorServerUtils.escapeUrlEncode(paramName))
+              .append("=").append(TwoFactorServerUtils.escapeUrlEncode(paramMap.get(paramName)));
+            
+          }
+          
+        }
+        if (warnings.length() > 0) {
+          twoFactorResponseBeanBase.appendWarning(warnings.toString());
+        }
+  
+        {
+          Set<String> unusedParams = ((TfHttpServletRequest)request).unusedParams();
+          //add warnings about unused params
+          if (TwoFactorServerUtils.length(unusedParams) > 0) {
+            for (String unusedParam : unusedParams) {
+              twoFactorResponseBeanBase.appendWarning("Unused HTTP param: " + unusedParam);
+            }
+          }
+        }     
+        
+        //structure name
+        //twoFactorResponseBeanBase.setStructureName(TwoFactorServerUtils.structureName(twoFactorResponseBeanBase.getClass()));
+        
+        //headers should be there by now
+        //set the status code
+        //response.setStatus(twoFactorResponseBeanBase.getResponseMeta().getHttpStatusCode());
+        response.setStatus(200);
+  
+        String restCharset = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.restHttpContentTypeCharset", "UTF-8");
+        String responseContentType = wsRestContentType.getContentType();
+        
+        if (!TwoFactorServerUtils.isBlank(restCharset)) {
+          responseContentType += "; charset=" + restCharset;
+        }
+        
+        response.setContentType(responseContentType);
+  
+        //temporarily set to uuid, so we can time the content generation
+        long millisUuid = -314253647586987L;
+        
+        //twoFactorResponseBeanBase.getResponseMeta().setMillis(millisUuid);
+        
+        responseString = wsRestContentType.writeString(twoFactorResponseBeanBase);
+        
+        if (indent) {
+          responseString = wsRestContentType.indent(responseString);
+          if (logRequestsResponses) {
+            responseStringForLog = responseString;
+          }
+        } else {
+          if (logRequestsResponses) {
+            responseStringForLog = wsRestContentType.indent(responseString);
+          }
+        }
+        
+        responseString = TwoFactorServerUtils.replace(responseString, Long.toString(millisUuid), Long.toString(((System.nanoTime()-serviceStarted) / 1000000)));
+        
+        try {
+          response.getWriter().write(responseString);
+        } catch (IOException ioe) {
+          throw new RuntimeException(ioe);
+        }
+        
+      } catch (RuntimeException re) {
+        //problem!
+        LOG.error("Problem with request: " + requestDebugInfo(request), re);
+      } finally {
+  
+        TwoFactorServerUtils.closeQuietly(response.getWriter());
+        TfWsVersion.removeCurrentClientVersion();
+        TfRestContentType.clearContentType();
+  
+      }
+      
+      HttpSession httpSession = request.getSession(false);
+      if (httpSession != null) {
+        httpSession.invalidate();
+      }
+      
+      //lets write the response to file
+      if (logRequestsResponses) {
+        //make a file:
+        StringBuilder fileContents = new StringBuilder();
+        Date currentDate = new Date();
+        fileContents.append("Timestamp: ").append(currentDate).append("\n");
+        fileContents.append("Millis: ").append(Long.toString(((System.nanoTime()-serviceStarted) / 1000000))).append("\n");
+        fileContents.append("URL: ").append(urlBuilder).append("\n");
+        fileContents.append("Request body: ").append(body).append("\n\n");
+        fileContents.append("Response body: ").append(responseStringForLog).append("\n\n");
+        fileContents.append("Logging: ").append(TwoFactorServerUtils.mapToString(userLogMapThreadlocal.get())).append("\n\n");
+        String tempDirLocation = TwoFactorServerUtils.tempFileDirLocation();
+        
+        File logdir = new File(tempDirLocation + "wsLogs");
+        TwoFactorServerUtils.mkdirs(logdir);
+        
+        long myRequestIndex = 0;
+        synchronized(TwoFactorRestServlet.class) {
+          myRequestIndex = ++requestIndex;
+        }
+        
+        String usernameForFilePath = "";
+        
+        //maybe we want userids in the file name
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponsesLogSubjectId", false)) {
+          
+          String username = request.getParameter("username");
+          
+          if (!StringUtils.isBlank(username)) {
+            String subjectAttributeName = TwoFactorServerConfig.retrieveConfig()
+                .propertyValueString("twoFactorServer.ws.log.requestsResponsesLogSubjectAttribute");
+            
+            //maybe we are using netId instead of an opaque id
+            if (!StringUtils.isBlank(subjectAttributeName)) {
+              
+              try {
+                Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(
+                    TfSourceUtils.mainSource(), username, true, false, true);
+  
+                if (subject != null) {
+                  String attributeValue = subject.getAttributeValue(subjectAttributeName);
+                  if (!StringUtils.isBlank(attributeValue)) {
+                    usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(attributeValue);
+                  }
                 }
+                
+              } catch (RuntimeException re) {
+                LOG.error("Error finding subject: " + username, re);
               }
               
-            } catch (RuntimeException re) {
-              LOG.error("Error finding subject: " + username, re);
+            }
+            if (StringUtils.isBlank(usernameForFilePath) ) {
+              usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(username);
             }
             
           }
-          if (StringUtils.isBlank(usernameForFilePath) ) {
-            usernameForFilePath = "_" + TwoFactorServerUtils.validFileName(username);
-          }
           
         }
         
+        String logfileName = tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + usernameForFilePath + ".txt";
+        File file = new File(logfileName);
+        file.createNewFile();
+        TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
+        
       }
-      
-      String logfileName = tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + usernameForFilePath + ".txt";
-      File file = new File(logfileName);
-      file.createNewFile();
-      TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
-      
+    } finally {
+      userLogMapThreadlocal.remove();
     }
-    
   }
 
   /** unique id for requests */
