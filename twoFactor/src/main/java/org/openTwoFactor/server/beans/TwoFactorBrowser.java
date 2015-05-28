@@ -417,10 +417,14 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
         TwoFactorBrowser dbVersion = (TwoFactorBrowser)TwoFactorBrowser.this.dbVersion();
 
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorBrowser.this)) {
-          twoFactorDaoFactory.getTwoFactorBrowser().store(TwoFactorBrowser.this);
-        
+
+          if (!HibernateSession.isReadonlyMode()) {
+            twoFactorDaoFactory.getTwoFactorBrowser().store(TwoFactorBrowser.this);
+          
+            hibernateSession.misc().flush();
+          }
+
           testInsertsAndUpdates++;
-          hibernateSession.misc().flush();
           TwoFactorBrowser.this.dbVersionReset();
           return true;
         }
@@ -443,7 +447,11 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
         
-        twoFactorDaoFactory.getTwoFactorBrowser().delete(TwoFactorBrowser.this);
+        if (!HibernateSession.isReadonlyMode()) {
+
+          twoFactorDaoFactory.getTwoFactorBrowser().delete(TwoFactorBrowser.this);
+        }
+        
         TwoFactorBrowser.testDeletes++;
         return null;
       }

@@ -64,9 +64,9 @@ public class HibernateSession {
    * @return true if readonly
    */
   public static boolean isReadonlyMode() {
-    //if (Config.retrieveConfig().propertyValueBoolean("db.api.readonly", false)) {
-    //  return true;
-    //}
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactor.api.readonly", false)) {
+      return true;
+    }
     
     Boolean threadlocalBoolean = threadlocalReadonly.get();
     

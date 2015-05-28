@@ -321,7 +321,9 @@ public class TwoFactorServiceProvider extends TwoFactorHibernateBeanBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
   
-        twoFactorDaoFactory.getTwoFactorServiceProvider().delete(TwoFactorServiceProvider.this);
+        if (!HibernateSession.isReadonlyMode()) {
+          twoFactorDaoFactory.getTwoFactorServiceProvider().delete(TwoFactorServiceProvider.this);
+        }
         testDeletes++;
         return null;
       }
@@ -365,10 +367,13 @@ public class TwoFactorServiceProvider extends TwoFactorHibernateBeanBase {
         TwoFactorServiceProvider dbVersion = (TwoFactorServiceProvider)TwoFactorServiceProvider.this.dbVersion();
 
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorServiceProvider.this)) {
-          twoFactorDaoFactory.getTwoFactorServiceProvider().store(TwoFactorServiceProvider.this);
-        
+          if (!HibernateSession.isReadonlyMode()) {
+            twoFactorDaoFactory.getTwoFactorServiceProvider().store(TwoFactorServiceProvider.this);
+          }
           testInsertsAndUpdates++;
-          hibernateSession.misc().flush();
+          if (!HibernateSession.isReadonlyMode()) {
+            hibernateSession.misc().flush();
+          }
           TwoFactorServiceProvider.this.dbVersionReset();
           return true;
         }

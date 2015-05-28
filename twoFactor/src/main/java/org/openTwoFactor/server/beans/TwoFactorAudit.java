@@ -12,6 +12,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
@@ -459,7 +460,9 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
   @Override
   public void delete(final TwoFactorDaoFactory twoFactorDaoFactory) {
     
-    twoFactorDaoFactory.getTwoFactorAudit().delete(this);
+    if (!HibernateSession.isReadonlyMode()) {
+      twoFactorDaoFactory.getTwoFactorAudit().delete(this);
+    }
     testDeletes++;
   
   }
@@ -486,7 +489,9 @@ public class TwoFactorAudit extends TwoFactorHibernateBeanBase {
     
     //max length if 1000, chop off some for invalid chars
     this.truncate();
-    twoFactorDaoFactory.getTwoFactorAudit().store(this);
+    if (!HibernateSession.isReadonlyMode()) {
+      twoFactorDaoFactory.getTwoFactorAudit().store(this);
+    }
     testInsertsAndUpdates++;
 
   }

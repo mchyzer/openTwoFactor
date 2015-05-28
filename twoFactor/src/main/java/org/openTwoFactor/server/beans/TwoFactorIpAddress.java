@@ -320,7 +320,9 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
   
-        twoFactorDaoFactory.getTwoFactorIpAddress().delete(TwoFactorIpAddress.this);
+        if (!HibernateSession.isReadonlyMode()) {
+          twoFactorDaoFactory.getTwoFactorIpAddress().delete(TwoFactorIpAddress.this);
+        }
         testDeletes++;
         return null;
       }
@@ -351,7 +353,14 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
     TwoFactorIpAddress dbVersion = (TwoFactorIpAddress)this.dbVersion();
 
     if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, this)) {
-      boolean success = twoFactorDaoFactory.getTwoFactorIpAddress().store(this, exceptionOnError);
+      boolean success = true;
+
+      if (!HibernateSession.isReadonlyMode()) {
+
+        success = twoFactorDaoFactory.getTwoFactorIpAddress().store(this, exceptionOnError);
+        
+      }
+      
       if (!success) {
         return null;
       }

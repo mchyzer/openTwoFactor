@@ -388,7 +388,9 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
   
-        twoFactorDaoFactory.getTwoFactorUserAgent().delete(TwoFactorUserAgent.this);
+        if (!HibernateSession.isReadonlyMode()) {
+          twoFactorDaoFactory.getTwoFactorUserAgent().delete(TwoFactorUserAgent.this);
+        }
         testDeletes++;
         return null;
       }
@@ -416,7 +418,11 @@ public class TwoFactorUserAgent extends TwoFactorHibernateBeanBase {
 
     if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, this)) {
 
-      boolean success = twoFactorDaoFactory.getTwoFactorUserAgent().store(this, exceptionOnError);
+      boolean success = true;
+      
+      if (!HibernateSession.isReadonlyMode()) {
+        success = twoFactorDaoFactory.getTwoFactorUserAgent().store(this, exceptionOnError);
+      }
       if (!success) {
         return null;
       }

@@ -863,8 +863,9 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
         boolean hadChange = false;
         
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorUser.this)) {
-          twoFactorDaoFactory1.getTwoFactorUser().store(TwoFactorUser.this);
-        
+          if (!HibernateSession.isReadonlyMode()) {
+            twoFactorDaoFactory1.getTwoFactorUser().store(TwoFactorUser.this);
+          }
           testInsertsAndUpdates++;
           hadChange = true;
         }
@@ -912,7 +913,9 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
           }
         }
         if (hadChange) {
-          hibernateSession.misc().flush();
+          if (!HibernateSession.isReadonlyMode()) {
+            hibernateSession.misc().flush();
+          }
           TwoFactorUser.this.dbVersionReset();
         }
         return hadChange;
@@ -933,19 +936,21 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
 
-        for (TwoFactorUserAttr twoFactorUserAttr : TwoFactorServerUtils.nonNull(TwoFactorUser.this.getAttributes())) {
+        if (!HibernateSession.isReadonlyMode()) {
+          for (TwoFactorUserAttr twoFactorUserAttr : TwoFactorServerUtils.nonNull(TwoFactorUser.this.getAttributes())) {
+            
+            twoFactorUserAttr.delete(twoFactorDaoFactory1);
+            
+          }
           
-          twoFactorUserAttr.delete(twoFactorDaoFactory1);
+          for (TwoFactorBrowser twoFactorBrowser : TwoFactorServerUtils.nonNull(TwoFactorBrowser.retrieveByUserUuid(twoFactorDaoFactory1, TwoFactorUser.this.getUuid(), true))) {
+            
+            twoFactorBrowser.delete(twoFactorDaoFactory1);
+            
+          }
           
+          twoFactorDaoFactory1.getTwoFactorUser().delete(TwoFactorUser.this);
         }
-        
-        for (TwoFactorBrowser twoFactorBrowser : TwoFactorServerUtils.nonNull(TwoFactorBrowser.retrieveByUserUuid(twoFactorDaoFactory1, TwoFactorUser.this.getUuid(), true))) {
-          
-          twoFactorBrowser.delete(twoFactorDaoFactory1);
-          
-        }
-        
-        twoFactorDaoFactory1.getTwoFactorUser().delete(TwoFactorUser.this);
         testDeletes++;
         return null;
       }

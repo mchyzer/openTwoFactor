@@ -405,6 +405,18 @@
       </then>
     </if>
     <if>
+      <istrue value="${prop.packageProdWsReadonly}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="prodWsReadonly" />
+          <param name="main.arSuffix" value="WsReadonlyProd" />
+          <param name="main.buildToDelete" value="WsReadonlyProd.war" />
+          <param name="main.contextRoot" value="${prop.contextRootProdWsReadonly}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
       <istrue value="${prop.packageTest}" />
       <then>
         <antcall target="packageEnvHelper">
@@ -424,6 +436,18 @@
           <param name="main.arSuffix" value="WsTest" />
           <param name="main.buildToDelete" value="WsTest.war" />
           <param name="main.contextRoot" value="${prop.contextRootTestWs}" />
+          <param name="main.buildEar" value="true" />
+        </antcall>
+      </then>
+    </if>
+    <if>
+      <istrue value="${prop.packageTestWsReadonly}" />
+      <then>
+        <antcall target="packageEnvHelper">
+          <param name="main.serverDirName" value="testWsReadonly" />
+          <param name="main.arSuffix" value="WsReadonlyTest" />
+          <param name="main.buildToDelete" value="WsReadonlyTest.war" />
+          <param name="main.contextRoot" value="${prop.contextRootTestWsReadonly}" />
           <param name="main.buildEar" value="true" />
         </antcall>
       </then>

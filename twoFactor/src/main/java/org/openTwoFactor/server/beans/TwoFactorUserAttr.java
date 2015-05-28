@@ -521,7 +521,9 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
   @Override
   public void delete(TwoFactorDaoFactory twoFactorDaoFactory) {
 
-    twoFactorDaoFactory.getTwoFactorUserAttr().delete(this);
+    if (!HibernateSession.isReadonlyMode()) {
+      twoFactorDaoFactory.getTwoFactorUserAttr().delete(this);
+    }
     testDeletes++;
 
   }
@@ -554,8 +556,10 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
         TwoFactorUserAttr dbVersion = (TwoFactorUserAttr)TwoFactorUserAttr.this.dbVersion();
 
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorUserAttr.this)) {
-          twoFactorDaoFactory.getTwoFactorUserAttr().store(TwoFactorUserAttr.this);
-          hibernateSession.misc().flush();
+          if (!HibernateSession.isReadonlyMode()) {
+            twoFactorDaoFactory.getTwoFactorUserAttr().store(TwoFactorUserAttr.this);
+            hibernateSession.misc().flush();
+          }
           TwoFactorUserAttr.this.dbVersionReset();
 
           testInsertsAndUpdates++;
