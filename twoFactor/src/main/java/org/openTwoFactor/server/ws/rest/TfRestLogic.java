@@ -75,6 +75,14 @@ public class TfRestLogic {
     }
 
     {
+      String duoDontPushString = params.get("duoDontPush");
+      
+      Boolean duoDontPush = TwoFactorServerUtils.booleanObjectValue(duoDontPushString);
+      
+      tfCheckPasswordRequest.assignDuoDontPush(duoDontPush);
+    }
+
+    {
       //serviceId: is some unchanging ID of the service which is requesting authentication
       String serviceId = params.get("serviceId");
       tfCheckPasswordRequest.assignServiceId(serviceId);
@@ -604,7 +612,8 @@ public class TfRestLogic {
         
         if (!StringUtils.isBlank(browserId) && duoRegisterUsers && duoPushByDefaultEnabled 
             && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
-            && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+            && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())
+            && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)) {
           try {
              
             boolean needsPush = true;

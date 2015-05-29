@@ -75,6 +75,12 @@ public class TfValidatePassword extends AsacApiRequestBase {
    * true|false If true or if a param is set on the server, then a debug message will be returned
    */
   private Boolean debug;
+  
+  /**
+   * true|false If true then dont auto push if the user is enrolled in push
+   */
+  private Boolean duoDontPush;
+  
   /**
    * true|false if the service requires reauth
    */
@@ -183,6 +189,9 @@ public class TfValidatePassword extends AsacApiRequestBase {
     if (!TwoFactorClientUtils.isBlank(this.userIpAddress)) {
       params.put("userIpAddress", this.userIpAddress);
     }
+    if (this.duoDontPush != null) {
+      params.put("duoDontPush", this.duoDontPush ? "true" : "false");
+    }
     if (!TwoFactorClientUtils.isBlank(this.username)) {
       params.put("username", this.username);
     }
@@ -215,6 +224,16 @@ public class TfValidatePassword extends AsacApiRequestBase {
     return this;
   }
 
+  /**
+   * true|false If true then dont auto push if the user is enrolled in push
+   * @param duoDontPush1
+   * @return this for chaining
+   */
+  public TfValidatePassword assignDuoDontPush(Boolean duoDontPush1) {
+    this.duoDontPush = duoDontPush1;
+    return this;
+  }
+  
   /**
    * true|false if the service requires reauth
    * @param requireReauth1 the requireReauth to set

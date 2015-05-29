@@ -72,7 +72,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "browserUserAgent", "debug", "requireReauth", "requireTwoFactor", 
       "serviceId", "serviceName", "spRequiredFactors", "trustedBrowser", 
       "twoFactorPass", "userBrowserUuid",
-      "userIpAddress", "username",
+      "userIpAddress", "username", "duoDontPush",
       
       //for UI
       "twoFactorCode", "twoFactorCustomCode", "profileForOptin",

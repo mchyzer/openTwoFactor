@@ -280,6 +280,11 @@ public class TwoFactorClient {
         tfValidatePassword.assignUsername(username);
       }
 
+      {
+        Boolean duoDontPush = TwoFactorClientUtils.argMapBoolean(argMap, argMapNotUsed, "duoDontPush");
+        tfValidatePassword.assignDuoDontPush(duoDontPush);
+      }
+
       failOnArgsNotUsed(argMapNotUsed);
       
       TfCheckPasswordResponse tfCheckPasswordResponse = tfValidatePassword.execute();

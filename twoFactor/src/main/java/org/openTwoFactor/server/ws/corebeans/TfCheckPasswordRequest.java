@@ -14,6 +14,29 @@ import edu.internet2.middleware.subject.Source;
 public class TfCheckPasswordRequest {
 
   /**
+   * if true then dont auto push, this is for an enrollment check
+   */
+  private Boolean duoDontPush;
+  
+  /**
+   * if true then dont auto push, this is for an enrollment check
+   * @param theDuoDontPush
+   * @return this for chaining
+   */
+  public TfCheckPasswordRequest assignDuoDontPush(Boolean theDuoDontPush) {
+    this.duoDontPush = theDuoDontPush;
+    return this;
+  }
+  
+  /**
+   * if true then dont auto push, this is for an enrollment check
+   * @return the duoDontPush
+   */
+  public Boolean getDuoDontPush() {
+    return this.duoDontPush;
+  }
+
+  /**
    * subject source
    */
   private Source subjectSource;
