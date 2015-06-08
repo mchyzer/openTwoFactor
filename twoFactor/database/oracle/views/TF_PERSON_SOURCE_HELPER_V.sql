@@ -26,6 +26,8 @@ AS
              WHEN CPV.IS_ACTIVE_FACULTY = 'Y' THEN 'T'
              WHEN CPV.IS_ACTIVE_STAFF = 'Y' THEN 'T'
              WHEN CPV.IS_ACTIVE_STUDENT = 'Y' THEN 'T'
+             WHEN CPV.IS_ACTIVE_UPHS = 'Y' THEN 'T'
+             WHEN CPV.ALL_ACTIVE_AFFILIATIONS like '%SERV%' THEN 'T'
              WHEN TSMA.ACTIVE = 'T' THEN 'T'
              ELSE 'F'
           END
