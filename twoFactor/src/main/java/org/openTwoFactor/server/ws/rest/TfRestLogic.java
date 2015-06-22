@@ -610,7 +610,7 @@ public class TfRestLogic {
           
         }
         
-        if (!StringUtils.isBlank(browserId) && duoRegisterUsers && duoPushByDefaultEnabled 
+        if (duoRegisterUsers && duoPushByDefaultEnabled 
             && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
             && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())
             && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)) {
@@ -801,6 +801,26 @@ public class TfRestLogic {
               }
 
               if (!StringUtils.isBlank(txId)) {
+
+                //20150622 MCH had trouble with no browserId giving problems
+                if (StringUtils.isBlank(browserId)) {
+                  
+                  twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+                      tfCheckPasswordResponse, debug, twoFactorUser,
+                      cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+                      requestIsTrusted, false);
+
+                  if (twoFactorBrowser != null) {
+
+                    browserId = twoFactorBrowser.getUuid();
+                    
+                  } else {
+                    //shouldnt happen
+                    throw new RuntimeException("why is two factor browser null????");
+                  }
+
+                }
+                
                 trafficLogMap.put("duoPush", true);
                 TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
                 String duoTxId = System.currentTimeMillis() + "__" + browserId + "__" + txId;
@@ -820,7 +840,7 @@ public class TfRestLogic {
       //if there is no code,  or it is wrong, then not a trusted browser
       boolean userAuthenticated = !StringUtils.isBlank(twoFactorPassUnencrypted) && twoFactorPassResult != null & twoFactorPassResult.isPasswordCorrect();
 
-      twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+      twoFactorBrowser = twoFactorBrowser != null ? twoFactorBrowser: trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
           tfCheckPasswordResponse, debug, twoFactorUser,
           cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
           requestIsTrusted, userAuthenticated);
