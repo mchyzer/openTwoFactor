@@ -164,7 +164,7 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
     
     int daysTrustLasts = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.trustBrowserForDays", 30);
     
-    return (now - this.whenTrusted) < ((long)daysTrustLasts * 24L * 60L * 60L * 1000L);
+    return (now - this.whenTrusted) < (daysTrustLasts * 24L * 60L * 60L * 1000L);
 
   }
   
@@ -225,7 +225,7 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
     return TwoFactorServerUtils.encryptSha(browserUserUuid);
     
   }
-  
+
   /**
    * foreign key to the user table
    * USER_UUID             VARCHAR2(40 CHAR),

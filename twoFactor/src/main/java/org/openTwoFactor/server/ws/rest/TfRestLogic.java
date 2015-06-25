@@ -633,8 +633,8 @@ public class TfRestLogic {
   
               } else {
                 String browserIdFromDb = pieces[1];
-  
-                if (!StringUtils.equals(browserId, browserIdFromDb)) {
+                
+                if (StringUtils.isBlank(browserId) || !StringUtils.equals(TwoFactorBrowser.encryptBrowserUserUuid(browserId), browserIdFromDb)) {
                   TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push not valid browser id mismatch", null);
                   trafficLogMap.put("duoPushNotValidBrowserIdMismatch", true);
   
@@ -812,7 +812,10 @@ public class TfRestLogic {
 
                   if (twoFactorBrowser != null) {
 
-                    browserId = twoFactorBrowser.getUuid();
+                    browserId = tfCheckPasswordResponse.getChangeUserBrowserUuid();
+                    if (StringUtils.isBlank(browserId)) {
+                      throw new RuntimeException("Why is browserId null????");
+                    }
                     
                   } else {
                     //shouldnt happen
@@ -823,7 +826,7 @@ public class TfRestLogic {
                 
                 trafficLogMap.put("duoPush", true);
                 TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
-                String duoTxId = System.currentTimeMillis() + "__" + browserId + "__" + txId;
+                String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserId) + "__" + txId;
                 twoFactorUser.setDuoPushTransactionId(duoTxId);
                 storeUser = true;
               }
