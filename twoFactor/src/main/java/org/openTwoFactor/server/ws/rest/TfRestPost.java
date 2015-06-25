@@ -44,33 +44,6 @@ public enum TfRestPost {
       
     }
 
-  },
-  /** checkPassword post requests readonly */
-  validatePasswordReadonly {
-
-    /**
-     * handle the incoming request based on POST HTTP method and groups resource
-     * @param urlStrings not including the app name or servlet.  
-     * for http://localhost/twoFactor/validatePasswordReadonly.json
-     * @return the result object
-     */
-    @Override
-    public TwoFactorResponseBeanBase service(List<String> urlStrings,
-        Map<String, String> params, String body) {
-      
-      if (TwoFactorServerUtils.length(urlStrings) > 0) {
-        throw new TfRestInvalidRequest("Not expecting more url strings: " + TwoFactorServerUtils.toStringForLog(urlStrings));
-      }
-      
-      //make sure sensitive info is not in URL
-      if (!StringUtils.isBlank(TwoFactorFilterJ2ee.retrieveHttpServletRequest().getQueryString())) {
-        throw new TfRestInvalidRequest("Not expecting query string in request, pass params in the POST body");
-      }
-      
-      return TfRestLogic.checkPasswordReadonly(TwoFactorDaoFactory.getFactory(), params);
-      
-    }
-
   }
   ;
 
