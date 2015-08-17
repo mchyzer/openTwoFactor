@@ -19,6 +19,7 @@ import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.duo.DuoLog;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
+import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
@@ -29,6 +30,8 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordRequest;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordResponse;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordResponseCode;
+
+import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 
 
 /**
@@ -177,6 +180,11 @@ public class TfRestLogic {
     return checkPasswordLogic(twoFactorDaoFactory, tfCheckPasswordRequest);
   }
 
+  /**
+   * since we cant store tx ids to the database in readonly mode, this is the map cache of browser id to duo tx id
+   */
+  private static ExpirableCache<String, String> readonlyBrowserIdToDuoTxIdTemp = new ExpirableCache<String, String>();
+  
   /**
    * @param twoFactorDaoFactory data access
    * @param tfCheckPasswordRequest 
@@ -535,11 +543,28 @@ public class TfRestLogic {
         twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuid(twoFactorDaoFactory, cookieUserUuid, false);
         //if there is no browser
         if (twoFactorBrowser == null) {
-          if (debug) {
-            tfCheckPasswordResponse.appendDebug("cant find active twoFactorBrowser by cookie uuid");
+          
+          String txId = null;
+          
+          if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(cookieUserUuid)) {
+            
+            txId = readonlyBrowserIdToDuoTxIdTemp.get(TwoFactorBrowser.encryptBrowserUserUuid(cookieUserUuid));
           }
-          trafficLogMap.put("foundBrowser", false);
-          needsNewCookieUuid = true;
+          
+          //if there is an in memory transactino id
+          if (!StringUtils.isBlank(txId)) {
+            //fake a browser?
+            twoFactorBrowser = new TwoFactorBrowser();
+            twoFactorBrowser.setBrowserTrustedUuidUnencrypted(cookieUserUuid);
+          } else {
+          
+            
+            if (debug) {
+              tfCheckPasswordResponse.appendDebug("cant find active twoFactorBrowser by cookie uuid");
+            }
+            trafficLogMap.put("foundBrowser", false);
+            needsNewCookieUuid = true;
+          }
         } else {
           trafficLogMap.put("foundBrowser", true);
           //make sure the username matches up
@@ -600,11 +625,21 @@ public class TfRestLogic {
 
         String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
 
+        //lets see if we are readonly, switch to readonly if needed
+        if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+          String memoryTimestampBrowserId = readonlyBrowserIdToDuoTxIdTemp.get(TwoFactorBrowser.encryptBrowserUserUuid(browserId));
+          timestampBrowserTxId = TwoFactorBrowser.pickCurrentDuoTransactionId(timestampBrowserTxId, memoryTimestampBrowserId);
+        }
+        
+        
         //clear it out - dont clear it out since subsequent requests should ignore push
         if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duoDeletePushTransactionId", true)) {
-          if (!StringUtils.isBlank(timestampBrowserTxId) && !StringUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+          if (!StringUtils.isBlank(timestampBrowserTxId)) {
             //clear it out
             twoFactorUser.setDuoPushTransactionId(null);
+            if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+              readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
+            }
             storeUser = true;
           }
           
@@ -626,8 +661,11 @@ public class TfRestLogic {
               if (TwoFactorServerUtils.length(pieces) != 3 && !alreadyUsed) {
   
                 //clear it out
-                if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId()) && !StringUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                   twoFactorUser.setDuoPushTransactionId(null);
+                  if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+                    readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
+                  }
                   storeUser = true;
                 }
   
@@ -639,8 +677,11 @@ public class TfRestLogic {
                   trafficLogMap.put("duoPushNotValidBrowserIdMismatch", true);
   
                   //clear it out
-                  if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId()) && !StringUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                  if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                     twoFactorUser.setDuoPushTransactionId(null);
+                    if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+                      readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
+                    }
                     storeUser = true;
                   }
   
@@ -689,8 +730,11 @@ public class TfRestLogic {
                     trafficLogMap.put("duoPushAlreadyUsedTimedOut", duoTransactionIdLastsAfterFirstUseSeconds);
   
                     //clear it out
-                    if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId()) && !StringUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                    if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                       twoFactorUser.setDuoPushTransactionId(null);
+                      if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+                        readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
+                      }
                       storeUser = true;
                     }
   
@@ -710,8 +754,11 @@ public class TfRestLogic {
                       trafficLogMap.put("duoPushTimedOutAfterSeconds", pushLastsForSeconds);
                       
                       //clear it out
-                      if (!TwoFactorServerUtils.isBlank(twoFactorUser.getDuoPushTransactionId())) {
+                      if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                         twoFactorUser.setDuoPushTransactionId(null);
+                        if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
+                          readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
+                        }
                         storeUser = true;
                       }
                     } else {
@@ -742,7 +789,12 @@ public class TfRestLogic {
                             requestIsTrusted, true);
                         performedTrustedBrowserLogic = true;
                         //store this timestamp as when it was used
-                        twoFactorUser.setDuoPushTransactionId(timestampBrowserTxId + "__" + System.currentTimeMillis());
+                        String duoPushTransactionId = timestampBrowserTxId + "__" + System.currentTimeMillis();
+                        twoFactorUser.setDuoPushTransactionId(duoPushTransactionId);
+                        if (HibernateSession.isReadonlyMode()) {
+                          //note this field is already hashed
+                          readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoPushTransactionId);
+                        }
                         storeUser = true;
                         
                         TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push valid", null);
@@ -828,6 +880,10 @@ public class TfRestLogic {
                 TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
                 String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserId) + "__" + txId;
                 twoFactorUser.setDuoPushTransactionId(duoTxId);
+                if (HibernateSession.isReadonlyMode()) {
+                  //note this field is already hashed
+                  readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoTxId);
+                }
                 storeUser = true;
               }
             }

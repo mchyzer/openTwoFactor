@@ -371,6 +371,82 @@ public class TwoFactorBrowser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * find the most current duo transaction ID
+   * @param duoTransactionId1bundle
+   * @param duoTransactionId2bundle
+   * @return the most current one
+   */
+  public static String pickCurrentDuoTransactionId(String duoTransactionId1bundle, 
+      String duoTransactionId2bundle) {
+    if (StringUtils.isBlank(duoTransactionId1bundle)) {
+      return duoTransactionId2bundle;
+    }
+    if (StringUtils.isBlank(duoTransactionId2bundle)) {
+      return duoTransactionId1bundle;
+    }
+    
+    //we have two non blank ids
+    String[] pieces1 = TwoFactorServerUtils.splitTrim(duoTransactionId1bundle, "__");
+    String[] pieces2 = TwoFactorServerUtils.splitTrim(duoTransactionId2bundle, "__");
+
+    //make sure 3 or 4
+    if (TwoFactorServerUtils.length(pieces1) != 3 && TwoFactorServerUtils.length(pieces1) != 4) {
+      return duoTransactionId2bundle;
+    }
+    if (TwoFactorServerUtils.length(pieces2) != 3 && TwoFactorServerUtils.length(pieces2) != 4) {
+      return duoTransactionId1bundle;
+    }
+    
+    boolean alreadyUsed1 = TwoFactorServerUtils.length(pieces1) == 4;
+    boolean alreadyUsed2 = TwoFactorServerUtils.length(pieces2) == 4;
+    
+    //first one is the timestamp
+    long millis1 = TwoFactorServerUtils.longValue(pieces1[0]);
+    long millis2 = TwoFactorServerUtils.longValue(pieces2[0]);
+
+    //if 1 is more recent, use that
+    if (millis1 > millis2) {
+      return duoTransactionId1bundle;
+    }
+    
+    //if 2 is more recent, use that
+    if (millis2 > millis1) {
+      return duoTransactionId2bundle;
+    }
+
+    //if the same, see if neither used
+    if (!alreadyUsed1 && !alreadyUsed1) {
+      return duoTransactionId1bundle;
+    }
+
+    //use the one that is used...
+    if (alreadyUsed1 && !alreadyUsed2) {
+      return duoTransactionId1bundle;
+    }
+    if (alreadyUsed2 && !alreadyUsed1) {
+      return duoTransactionId2bundle;
+    }
+    
+    //they are both already used
+    millis1 = TwoFactorServerUtils.longValue(pieces1[3]);
+    millis2 = TwoFactorServerUtils.longValue(pieces2[3]);
+    
+    //use the one most recently used
+    if (millis1 > millis2) {
+      return duoTransactionId1bundle;
+    }
+    
+    //if 2 is more recent, use that
+    if (millis2 > millis1) {
+      return duoTransactionId2bundle;
+    }
+
+    //doesnt matter
+    return duoTransactionId1bundle;
+    
+  }
+  
+  /**
    * retrieve a browser by browserTrustedUuid
    * @param twoFactorDaoFactory
    * @param browserTrustedUuidUnencrypted
