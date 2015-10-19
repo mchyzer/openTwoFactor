@@ -281,6 +281,7 @@ public class TfRestLogic {
         //note, they really arent, but we need to send them to the screen since we arent checking
         tfCheckPasswordResponse.setUserEnrolledInTwoFactor(true);
         tfCheckPasswordResponse.setSuccess(true);
+        tfCheckPasswordResponse.setRateLimitedUser(true);
 
         trafficLogMap.put("userAllowed", false);
         trafficLogMap.put("success", true);
@@ -290,6 +291,8 @@ public class TfRestLogic {
 
         return tfCheckPasswordResponse;
       }
+
+      tfCheckPasswordResponse.setRateLimitedUser(false);
       
       String username = tfCheckPasswordRequest.getUsername();
       
