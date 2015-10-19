@@ -20,6 +20,14 @@ public class TimePoc {
     
     System.out.println(System.currentTimeMillis());
     
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
+    System.out.println(simpleDateFormat.parse("2015/9/1 8:01:50").getTime());
+    
+    System.out.println(new Date(1441108910000L));
+    
+    simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
+    System.out.println(simpleDateFormat.parse("2015/8/27 9:09:50").getTime());
+    
     if (true) {
       return;
     }
@@ -27,7 +35,7 @@ public class TimePoc {
     System.out.println(new Date(1372437208564L));
     System.out.println(new Date(1380194743444L));
     
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
+    simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
     System.out.println(simpleDateFormat.parse("2013/8/20 00:00:00").getTime());
     
     Calendar calendar = new GregorianCalendar();

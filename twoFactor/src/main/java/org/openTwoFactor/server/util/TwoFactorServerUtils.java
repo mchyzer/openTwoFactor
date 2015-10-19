@@ -9615,7 +9615,7 @@ public class TwoFactorServerUtils {
     for (int i=namePart.length()-1;i>=0;i--) {
       
       Character theChar = namePart.charAt(i);
-      if (theChar.isLetterOrDigit(theChar)) {
+      if (Character.isLetterOrDigit(theChar)) {
         break;
       }
       
@@ -11860,12 +11860,12 @@ public class TwoFactorServerUtils {
    * @return true if temp file
    */
   public static boolean isTempFile(File file) {
-    String tempDirLocation = tempFileDirLocation();
+    String theTempDirLocation = tempFileDirLocation();
     //convert this to canonical path
-    tempDirLocation = canonicalPath(new File(tempDirLocation));
+    theTempDirLocation = canonicalPath(new File(theTempDirLocation));
     String canonicalPath = canonicalPath(file);
     //dont let it equal the temp dir, must be in temp dir
-    return !StringUtils.equals(canonicalPath, tempDirLocation) && canonicalPath.startsWith(tempDirLocation);
+    return !StringUtils.equals(canonicalPath, theTempDirLocation) && canonicalPath.startsWith(theTempDirLocation);
   }
 
   /**

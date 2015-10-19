@@ -1,12 +1,15 @@
 package org.openTwoFactor.server.ws.rest;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -39,6 +42,59 @@ import edu.internet2.middleware.grouperClient.util.ExpirableCache;
  */
 public class TfRestLogic {
 
+  /**
+   * keep a list of username and minute of day to the number of times the WS has been called for that minute
+   */
+  private static ExpirableCache<MultiKey, Integer> rateLimitStats = new ExpirableCache<MultiKey, Integer>(5);
+  
+  /**
+   * semaphore to synchronize on
+   */
+  private static final Object rateLimitSemaphore = new Object();
+  
+  /**
+   * see if rate limiting for user
+   * @param userName
+   * @return true if rate limiting for user
+   */
+  private static boolean rateLimit(String userName) {
+
+    //cant deal with this
+    if (StringUtils.isBlank(userName)) {
+      return false;
+    }
+    
+    //# if we should rate limit per user being checked (note, this happens per node in a cluster)
+    //twoFactorServer.ws.rateLimit = true
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.rateLimit", true)) {
+      //dont rate limit
+      return false;
+    }
+    
+    //see if ignore this user
+    if (TwoFactorServerConfig.retrieveConfig().ignoreRateLimitOnUsers().contains(userName)) {
+      return false;
+    }
+    
+    //
+    //# this should be just more than the expected rate the a user would authn (per node)
+    //twoFactorServer.ws.rateLimitUserTxPerMinute = 10
+    int maxTxPerMinutePerUser = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.rateLimitUserTxPerMinute", 10);
+    Calendar calendar = new GregorianCalendar();
+    MultiKey userMinute = new MultiKey(userName, calendar.get(Calendar.MINUTE) );
+    
+    //synchronize so we get an exact count and so the cache works correctly
+    synchronized(rateLimitSemaphore) {
+      Integer hitsInMinute = rateLimitStats.get(userMinute);
+      if (hitsInMinute == null) {
+        hitsInMinute = 0;
+      }
+      rateLimitStats.put(userMinute, hitsInMinute+1);
+      return hitsInMinute > maxTxPerMinutePerUser;
+    }
+
+  }
+  
   /**
    * populate the check password request from request params
    * @param tfCheckPasswordRequest
@@ -139,14 +195,22 @@ public class TfRestLogic {
       String originalUserName = username;
       
       tfCheckPasswordRequest.assignOriginalUsername(originalUserName);
+
+      boolean rateLimit = rateLimit(username);
       
-      //see if we need to resolve the subject id
-      if (!StringUtils.isBlank(username) 
-          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnWsSubject", true)) {
-        username = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), username, false);
+      tfCheckPasswordRequest.assignRateLimit(rateLimit);
+      
+      //dont lookup the username if we are rate limiting
+      if (!rateLimit) {
+        
+        //see if we need to resolve the subject id
+        if (!StringUtils.isBlank(username) 
+            && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnWsSubject", true)) {
+          username = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), username, false);
+        }
+        
+        tfCheckPasswordRequest.assignUsername(username);
       }
-      
-      tfCheckPasswordRequest.assignUsername(username);
     }
     
     {
@@ -201,18 +265,34 @@ public class TfRestLogic {
     
     try {
       
+      trafficLogMap.put("originalUsername", tfCheckPasswordRequest.getOriginalUsername());
+      
+      //if set for everyone, or set for this request
+      boolean debug = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.debugAllRequests", false) 
+        || (tfCheckPasswordRequest.getDebug() != null && tfCheckPasswordRequest.getDebug());
+
+      if (tfCheckPasswordRequest.isRateLimit()) {
+        tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
+        tfCheckPasswordResponse.setErrorMessage(null);
+        tfCheckPasswordResponse.setResponseMessage("User is rate limited since two many requests per minute on this node");
+        tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.WRONG_PASSWORD.name());
+        tfCheckPasswordResponse.setTwoFactorUserAllowed(false);
+  
+        trafficLogMap.put("userAllowed", false);
+        trafficLogMap.put("success", true);
+        trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.WRONG_PASSWORD.name());
+        trafficLogMap.put("rateLimit", true);
+  
+        return tfCheckPasswordResponse;
+      }
+      
       String username = tfCheckPasswordRequest.getUsername();
       
-      trafficLogMap.put("originalUsername", tfCheckPasswordRequest.getOriginalUsername());
       trafficLogMap.put("username", username);
       
       DuoLog.assignUsername(StringUtils.defaultIfEmpty(tfCheckPasswordRequest.getOriginalUsername(), username));
       
       String twoFactorPassUnencrypted = tfCheckPasswordRequest.getTwoFactorPass();
-
-      //if set for everyone, or set for this request
-      boolean debug = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.debugAllRequests", false) 
-        || (tfCheckPasswordRequest.getDebug() != null && tfCheckPasswordRequest.getDebug());
 
 
       logTwoFactorLogic(tfCheckPasswordRequest, trafficLogMap, tfCheckPasswordResponse, debug);

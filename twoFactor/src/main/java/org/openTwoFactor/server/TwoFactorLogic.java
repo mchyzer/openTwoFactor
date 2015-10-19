@@ -136,11 +136,16 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
    */
   public static void main(String[] args) {
 
+//    if (true) {
+//      System.out.println(EncryptionKey.decrypt("XXXXXX"));
+//      return;
+//    }
+    
     if (true) {
       
-      String secret = "b4d68d0c2183102142304cc3ccff41fac5a5fdb0";
+      String secret = "xxx";
       printPasswordsForSecret(secret, 
-          null, null, null, true);
+          null, null, 1440680990000L, false);
       return;
     }
     

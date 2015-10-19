@@ -29,6 +29,42 @@ import edu.internet2.middleware.grouperClient.config.ConfigPropertiesCascadeBase
 public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
 
   /**
+   * set of users to ignore rate limit
+   */
+  private Set<String> ignoreRateLimitOnUsers = null;
+
+  /**
+   * set of users to ignore rate limit
+   * @return the set of strings or empty set, never null
+   */
+  public Set<String> ignoreRateLimitOnUsers() {
+    
+    if (this.ignoreRateLimitOnUsers == null) {
+
+      synchronized(this) {
+        
+        if (this.ignoreRateLimitOnUsers == null) {
+          
+          String ignoreRateLimitOnUsersString = this.propertyValueString("twoFactorServer.ws.ignoreRateLimitOnUsers");
+          
+          Set<String> tempIgnoreRateLimitOnUsers = new HashSet<String>();
+          
+          if (!StringUtils.isBlank(ignoreRateLimitOnUsersString)) {
+            
+            tempIgnoreRateLimitOnUsers = TwoFactorServerUtils.splitTrimToSet(ignoreRateLimitOnUsersString, ",");
+            
+          }
+          this.ignoreRateLimitOnUsers = tempIgnoreRateLimitOnUsers;
+        }
+        
+      }
+      
+    }
+    return this.ignoreRateLimitOnUsers;
+    
+  }
+  
+  /**
    * set of strings not null to not audit
    */
   private Set<String> dontAuditActions = null;

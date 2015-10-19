@@ -14,6 +14,29 @@ import edu.internet2.middleware.subject.Source;
 public class TfCheckPasswordRequest {
 
   /**
+   * if true then rate lmit this response and dont use any resources
+   */
+  private boolean rateLimit = false;
+  
+  /**
+   * if we should rate limit this request due to max requests for this user
+   * @param theRateLimit
+   * @return this for chaining
+   */
+  public TfCheckPasswordRequest assignRateLimit(boolean theRateLimit) {
+    this.rateLimit = theRateLimit;
+    return this;
+  }
+  
+  /**
+   * if we should rate limit this request due to max requests for this user
+   * @return true if should rate limit
+   */
+  public boolean isRateLimit() {
+    return this.rateLimit;
+  }
+
+  /**
    * if true then dont auto push, this is for an enrollment check
    */
   private Boolean duoDontPush;
