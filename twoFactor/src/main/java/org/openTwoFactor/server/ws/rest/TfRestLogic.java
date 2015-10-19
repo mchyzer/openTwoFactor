@@ -277,12 +277,17 @@ public class TfRestLogic {
         tfCheckPasswordResponse.setResponseMessage("User is rate limited since two many requests per minute on this node");
         tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.WRONG_PASSWORD.name());
         tfCheckPasswordResponse.setTwoFactorUserAllowed(false);
-  
+        tfCheckPasswordResponse.setTwoFactorRequired(true);
+        //note, they really arent, but we need to send them to the screen since we arent checking
+        tfCheckPasswordResponse.setUserEnrolledInTwoFactor(true);
+        tfCheckPasswordResponse.setSuccess(true);
+
         trafficLogMap.put("userAllowed", false);
         trafficLogMap.put("success", true);
         trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.WRONG_PASSWORD.name());
+        trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_WRONG_PASSWORD.name());
         trafficLogMap.put("rateLimit", true);
-  
+
         return tfCheckPasswordResponse;
       }
       
