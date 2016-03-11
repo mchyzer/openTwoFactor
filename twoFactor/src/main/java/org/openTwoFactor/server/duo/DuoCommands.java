@@ -371,6 +371,11 @@ public class DuoCommands {
       String number = args[1];
       JSONObject phoneObject = duoPhoneByIdOrNumber(number, false);
       System.out.println(phoneObject);
+
+    } else if (args.length == 3 && StringUtils.equals("migrateHotpTokenBySomeId", args[0])) {
+      String someId = args[1];
+      Long tokenIndex = TwoFactorServerUtils.longObjectValue(args[2], true);
+      migrateHotpTokenBySomeId(someId, tokenIndex);
       
     } else {
 
@@ -392,7 +397,7 @@ public class DuoCommands {
       System.out.println("Enter arg: duoPushByDefault <someUserId> true|false to set default push flag");
       System.out.println("Enter arg: syncDuoUserIds to sync all duo user ids");
       System.out.println("Enter arg: duoPhoneByNumber <phoneNumber> to retrieve a phone");
-            
+      System.out.println("Enter arg: migrateHotpTokenBySomeId <someUserId> <tokenIndex> to setup a hardware token a specific index");
       System.exit(1);
     }
     
@@ -1283,6 +1288,32 @@ public class DuoCommands {
   }
 
   /**
+   * @param someId
+   * @param tokenIndex (0 based)
+   */
+  private static void migrateHotpTokenBySomeId(String someId, Long tokenIndex) {
+    
+    String duoUserId = retrieveDuoUserIdBySomeId(someId);
+  
+    if (!StringUtils.isBlank(duoUserId)) {
+      try {
+      
+        String tfUserId = retrieveTfUserUuidBySomeId(someId, true);
+        TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), tfUserId);
+
+        setupHotpToken(twoFactorUser, duoUserId, true, tokenIndex);
+
+      } catch (Exception e) {
+        
+        System.out.println("Problem with user: duoUserId: " + duoUserId + ", someId: " + someId);
+        e.printStackTrace();
+        
+      }
+    }
+  
+  }  
+  
+  /**
    * setup an HOTP token for this
    * @param twoFactorUser
    * @param userId
@@ -1400,12 +1431,34 @@ public class DuoCommands {
    */
   private static void setupHotpToken(TwoFactorUser twoFactorUser,
      String userId, boolean resetCodesIfExists) {
-    
-    Long tokenIndex = twoFactorUser.getTokenIndex();
-    if (tokenIndex == null || tokenIndex == 0) {
-      tokenIndex = 0L;
-    }
+    setupHotpToken(twoFactorUser, userId, resetCodesIfExists, null);
+  }
 
+  /**
+   * setup an HOTP token for this index 0
+   * @param twoFactorUser
+   * @param userId
+   * @param resetCodesIfExists
+   * @param tokenIndex
+   */
+  private static void setupHotpToken(TwoFactorUser twoFactorUser,
+     String userId, boolean resetCodesIfExists, Long tokenIndex) {
+    
+    if (tokenIndex == null) {
+      tokenIndex = twoFactorUser.getTokenIndex();
+
+      if (tokenIndex == null || tokenIndex == 0) {
+        tokenIndex = 0L;
+      }
+    } else {
+      try {
+        twoFactorUser.setTokenIndex(tokenIndex);
+        twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    
     String institutionEnvironmentPrefix = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("duo.tokenInstitutionEnvironmentString");
     
     String tokenSerial = institutionEnvironmentPrefix + "__" + twoFactorUser.getLoginid() + "__hotp__0";

@@ -18,6 +18,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.encryption.EncryptionKey;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.util.TfSourceUtils;
 
@@ -137,13 +138,13 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
   public static void main(String[] args) {
 
 //    if (true) {
-//      System.out.println(EncryptionKey.decrypt("XXXXXX"));
+//      System.out.println(EncryptionKey.decrypt("XXXXXXXX"));
 //      return;
 //    }
     
     if (true) {
       
-      String secret = "xxx";
+      String secret = "RPKFDMCU3NTNXEPD";
       printPasswordsForSecret(secret, 
           null, null, 1440680990000L, false);
       return;
