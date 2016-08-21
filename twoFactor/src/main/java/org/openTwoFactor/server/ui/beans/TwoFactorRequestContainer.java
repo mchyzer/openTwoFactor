@@ -5,6 +5,8 @@ package org.openTwoFactor.server.ui.beans;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -19,6 +21,27 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  *
  */
 public class TwoFactorRequestContainer {
+  
+  /**
+   * there is no request so store in threadlocal for testing
+   */
+  private static boolean storeInThreadLocalForTesting = false;
+
+  /**
+   * there is no request so store in threadlocal for testing
+   */
+  private static ThreadLocal<TwoFactorRequestContainer> twoFactorRequestContainerThreadLocal = new InheritableThreadLocal<TwoFactorRequestContainer>();
+  
+  /**
+   * there is no request so store in threadlocal for testing
+   * @param theStoreInThreadLocalForTesting
+   */
+  public static void storeInThreadLocalForTesting(boolean theStoreInThreadLocalForTesting) {
+    storeInThreadLocalForTesting = theStoreInThreadLocalForTesting;
+    if (!theStoreInThreadLocalForTesting) {
+      twoFactorRequestContainerThreadLocal.remove();
+    }
+  }
   
   /**
    * two factor duo push container
@@ -230,7 +253,7 @@ public class TwoFactorRequestContainer {
     if (TwoFactorServerUtils.isBlank(loggedInUser)) {
       throw new RuntimeException("There is no user logged in");
     }
-    if (this.getTwoFactorUserLoggedIn() == null) {
+    if (this.getTwoFactorUserLoggedIn() == null || !StringUtils.equals(loggedInUser, this.getTwoFactorUserLoggedIn().getLoginid())) {
 
       TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, loggedInUser);
       
@@ -245,14 +268,28 @@ public class TwoFactorRequestContainer {
    * @return the container
    */
   public static TwoFactorRequestContainer retrieveFromRequest() {
+
+    if (storeInThreadLocalForTesting) {
+      
+      TwoFactorRequestContainer twoFactorRequestContainer = twoFactorRequestContainerThreadLocal.get();
+      
+      if (twoFactorRequestContainer == null) {
+        twoFactorRequestContainer = new TwoFactorRequestContainer();
+        twoFactorRequestContainerThreadLocal.set(twoFactorRequestContainer);
+      }
+      return twoFactorRequestContainer;
+    }
+    
+    HttpServletRequest httpServletRequest = TwoFactorFilterJ2ee
+        .retrieveHttpServletRequest();
     
     TwoFactorRequestContainer twoFactorRequestContainer = 
-        (TwoFactorRequestContainer)TwoFactorFilterJ2ee
-        .retrieveHttpServletRequest().getAttribute("twoFactorRequestContainer");
+        (TwoFactorRequestContainer)httpServletRequest.getAttribute("twoFactorRequestContainer");
     
     if (twoFactorRequestContainer == null) {
       twoFactorRequestContainer = new TwoFactorRequestContainer();
-      TwoFactorFilterJ2ee.retrieveHttpServletRequest().setAttribute(
+      
+      httpServletRequest.setAttribute(
           "twoFactorRequestContainer", twoFactorRequestContainer);
     }
     

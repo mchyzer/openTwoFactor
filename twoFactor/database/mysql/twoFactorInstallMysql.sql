@@ -314,7 +314,11 @@ CREATE or replace
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
    DUO_PUSH_PHONE_ID,
-   DUO_PUSH_BY_DEFAULT
+   DUO_PUSH_BY_DEFAULT,
+   OPT_IN_ONLY_IF_REQUIRED,
+   PHONE_OPT_IN,
+   PHONE_AUTO_CALLTEXT,
+   PHONE_AUTO_CALLTEXTS_IN_MONTH
  )
     AS
 (   SELECT tfu.loginid, tfu.uuid,
@@ -502,7 +506,27 @@ CREATE or replace
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
-             AS duo_push_by_default    
+             AS duo_push_by_default,      
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'opt_in_only_if_required')
+             AS opt_in_only_if_required,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_opt_in')
+             AS phone_opt_in,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltext')
+             AS phone_auto_calltext,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltexts_in_month')
+             AS phone_auto_calltexts_in_month    
  FROM two_factor_user tfu);
 
 

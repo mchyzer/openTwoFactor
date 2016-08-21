@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
@@ -27,14 +29,19 @@ public class TextContainer {
    */
   public static TextContainer retrieveFromRequest() {
     
-    TextContainer textContainer = 
-        (TextContainer)TwoFactorFilterJ2ee
-        .retrieveHttpServletRequest().getAttribute("textContainer");
+    HttpServletRequest httpServletRequest = TwoFactorFilterJ2ee.retrieveHttpServletRequest();
+    
+    //this is null if testing
+    TextContainer textContainer = httpServletRequest == null ? null : 
+        (TextContainer)httpServletRequest.getAttribute("textContainer");
     
     if (textContainer == null) {
       textContainer = new TextContainer();
-      TwoFactorFilterJ2ee.retrieveHttpServletRequest().setAttribute(
-          "textContainer", textContainer);
+      
+      if (httpServletRequest != null) {
+        httpServletRequest.setAttribute(
+            "textContainer", textContainer);
+      }
     }
     
     return textContainer;

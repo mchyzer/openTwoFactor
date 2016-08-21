@@ -208,8 +208,38 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     /**
      * email address for notifications
      */
-    email0(TwoFactorUserAttrType.string);
+    email0(TwoFactorUserAttrType.string),
 
+    /**
+     * if opt in for apps that require it, not for other apps
+     */
+    opt_in_only_if_required(TwoFactorUserAttrType.string),
+    
+    /**
+     * if opted in by phone (not phone or fob)
+     */
+    phone_opt_in(TwoFactorUserAttrType.string),
+    
+    /**
+     * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+     */
+    phone_auto_calltext(TwoFactorUserAttrType.string),
+    
+    /**
+     * <pre>
+     * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+     * the json has the month and day in the key, will delete keys older than a month
+     * {
+     * "0101": 2,
+     * "0102": 3,
+     * "0103": 0
+     * ...
+     * }
+     * 
+     * </pre>
+     */
+    phone_auto_calltexts_in_month(TwoFactorUserAttrType.string);
+    
     /**
      * construct with type
      * @param twoFactorUserAttributeType

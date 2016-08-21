@@ -530,7 +530,7 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
   
   
     
-/* Formatted on 7/25/2013 9:45:49 PM (QP5 v5.163.1008.3004) */
+/* Formatted on 8/19/2016 6:28:12 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
 (
    LOGINID,
@@ -570,24 +570,28 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
    DUO_PUSH_PHONE_ID,
-   DUO_PUSH_BY_DEFAULT
+   DUO_PUSH_BY_DEFAULT,
+   OPT_IN_ONLY_IF_REQUIRED,
+   PHONE_OPT_IN,
+   PHONE_AUTO_CALLTEXT,
+   PHONE_AUTO_CALLTEXTS_IN_MONTH
 )
 AS
    SELECT tfu.loginid,
           TFU.UUID,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'opted_in')
              AS opted_in,
           (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'sequential_pass_index')
              AS sequential_pass_index,
           (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'sequential_pass_given_to_user')
              AS sequential_pass_given_to_user,
           (SELECT DECODE (
@@ -595,7 +599,7 @@ AS
                      NULL, NULL,
                      SUBSTR (TFUA.ATTRIBUTE_VALUE_String, 1, 3) || '...')
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'two_factor_secret')
              AS two_factor_secret_abbr,
           (SELECT DECODE (
@@ -603,67 +607,67 @@ AS
                      NULL, NULL,
                      SUBSTR (TFUA.ATTRIBUTE_VALUE_String, 1, 3) || '...')
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'two_factor_secret_temp')
              AS two_factor_secret_temp_abbr,
           (SELECT TFUA.ATTRIBUTE_VALUE_Integer
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'last_totp_timestamp_used')
              AS last_totp_timestamp_used,
           (SELECT TFUA.ATTRIBUTE_VALUE_Integer
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'last_totp60_timestamp_used')
              AS last_totp60_timestamp_used,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone0')
              AS phone0,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_text0')
              AS phone_is_text0,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_voice0')
              AS phone_is_voice0,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone1')
              AS phone1,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_text1')
              AS phone_is_text1,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_voice1')
              AS phone_is_voice1,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone2')
              AS phone2,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_text2')
              AS phone_is_text2,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_is_voice2')
              AS phone_is_voice2,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'colleague_user_uuid0')
              AS colleague_user_uuid0,
           (SELECT TFU1.loginid
@@ -674,7 +678,7 @@ AS
              AS colleague_loginid0,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'colleague_user_uuid1')
              AS colleague_user_uuid1,
           (SELECT TFU1.loginid
@@ -685,7 +689,7 @@ AS
              AS colleague_loginid1,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'colleague_user_uuid2')
              AS colleague_user_uuid2,
           (SELECT TFU1.loginid
@@ -696,7 +700,7 @@ AS
              AS colleague_loginid2,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'colleague_user_uuid3')
              AS colleague_user_uuid3,
           (SELECT TFU1.loginid
@@ -707,7 +711,7 @@ AS
              AS colleague_loginid3,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'colleague_user_uuid4')
              AS colleague_user_uuid4,
           (SELECT TFU1.loginid
@@ -718,12 +722,12 @@ AS
              AS colleague_loginid4,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'email0')
              AS email0,
           (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_invited_colleagues')
              AS date_invited_colleagues,
           (SELECT CASE
@@ -731,21 +735,21 @@ AS
                      THEN
                         NULL
                      ELSE
-                        DATE '1970-01-01'
+                          DATE '1970-01-01'
                         + TFUA.ATTRIBUTE_VALUE_INTEGER / 1000 / 60 / 60 / 24
                   END
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_invited_colleagues')
              AS date_invited_colleagues_date,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_code_encrypted')
              AS phone_code_encrypted,
           (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_phone_code_sent')
              AS date_phone_code_sent,
           (SELECT CASE
@@ -753,34 +757,55 @@ AS
                      THEN
                         NULL
                      ELSE
-                        DATE '1970-01-01'
+                          DATE '1970-01-01'
                         + TFUA.ATTRIBUTE_VALUE_INTEGER / 1000 / 60 / 60 / 24
                   END
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_phone_code_sent')
              AS date_phone_code_sent_date,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_user_id')
              AS duo_user_id,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_transaction_id')
              AS duo_push_transaction_id,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_phone_id')
              AS duo_push_phone_id,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
-            WHERE TFUA.USER_UUID = TFU.UUID
+            WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
-             AS duo_push_by_default
-        FROM two_factor_user tfu;
+             AS duo_push_by_default,      
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'opt_in_only_if_required')
+             AS opt_in_only_if_required,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_opt_in')
+             AS phone_opt_in,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltext')
+             AS phone_auto_calltext,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltexts_in_month')
+             AS phone_auto_calltexts_in_month
+     FROM two_factor_user tfu;
+
 COMMENT ON TABLE TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.LOGINID IS 'loginid that the user used to login to the system';
@@ -856,6 +881,14 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_TRANSACTION_ID IS 'millis since 197
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_PHONE_ID IS 'duo push phone id';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_BY_DEFAULT IS 'if should push when testing an authn that requires authn';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.OPT_IN_ONLY_IF_REQUIRED IS 'if opt in for apps that require it, not for other apps';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_OPT_IN IS 'if opted in by phone (not phone or fob)';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXT IS 'if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXTS_IN_MONTH IS 'keep track in json of how many calls/texts in each day of month, key is day of month, value is count';
 
   
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */

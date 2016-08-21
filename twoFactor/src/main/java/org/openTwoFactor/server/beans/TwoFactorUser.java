@@ -404,6 +404,91 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   * if opt in for apps that require it, not for other apps
+   * @return if opt in only if required
+   */
+  public Boolean getOptInOnlyIfRequired() {
+    return attributeValueBoolean(TwoFactorUserAttrName.opt_in_only_if_required);
+  }
+  
+  /**
+   * if opt in for apps that require it, not for other apps
+   * @param theOptInOnlyIfRequired if should opt in only if required
+   */
+  public void setOptInOnlyIfRequired(Boolean theOptInOnlyIfRequired) {
+    this.attribute(TwoFactorUserAttrName.opt_in_only_if_required, true).setAttributeValueBoolean(theOptInOnlyIfRequired);
+  }
+
+  /**
+   * if opted in by phone (not phone or fob)
+   * @return if phone opt in
+   */
+  public Boolean getPhoneOptIn() {
+    return attributeValueBoolean(TwoFactorUserAttrName.phone_opt_in);
+  }
+  
+  /**
+   * if opted in by phone (not phone or fob)
+   * @param thePhoneOptIn if phone opt in
+   */
+  public void setPhoneOptIn(Boolean thePhoneOptIn) {
+    this.attribute(TwoFactorUserAttrName.phone_opt_in, true).setAttributeValueBoolean(thePhoneOptIn);
+  }
+
+  /**
+   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * @return if phone auto call text
+   */
+  public String getPhoneAutoCalltext() {
+    return attributeValueString(TwoFactorUserAttrName.phone_auto_calltext);
+  }
+  
+  /**
+   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * @param thePhoneAutoCalltext if phone auto call text
+   */
+  public void setPhoneAutoCalltext(String thePhoneAutoCalltext) {
+    this.attribute(TwoFactorUserAttrName.phone_auto_calltext, true).setAttributeValueString(thePhoneAutoCalltext);
+  }
+
+  /**
+   * <pre>
+   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * the json has the month and day in the key, will delete keys older than a month
+   * {
+   * "0101": 2,
+   * "0102": 3,
+   * "0103": 0
+   * ...
+   * }
+   * 
+   * </pre>
+   * @return call texts in month
+   */
+  public String getPhoneAutoCalltextsInMonth() {
+    return attributeValueString(TwoFactorUserAttrName.phone_auto_calltexts_in_month);
+  }
+  
+  /**
+   * <pre>
+   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * the json has the month and day in the key, will delete keys older than a month
+   * {
+   * "0101": 2,
+   * "0102": 3,
+   * "0103": 0
+   * ...
+   * }
+   * 
+   * </pre>
+   * @param thePhoneAutoCalltextsInMonth call texts in month
+   */
+  public void setPhoneAutoCalltextsInMonth(String thePhoneAutoCalltextsInMonth) {
+    this.attribute(TwoFactorUserAttrName.phone_auto_calltexts_in_month, true).setAttributeValueString(thePhoneAutoCalltextsInMonth);
+  }
+
+  
+  /**
    * 
    * @param twoFactorUserAttrName
    * @return the two factor user attribute value as string

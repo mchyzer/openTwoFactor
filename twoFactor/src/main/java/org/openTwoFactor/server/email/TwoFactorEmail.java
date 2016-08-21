@@ -225,6 +225,7 @@ public class TwoFactorEmail {
   public void send() {
     
     try {
+
       //mail.smtp.server = whatever.school.edu
       //#mail.from.address = noreply@school.edu
       String smtpServer = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server");

@@ -46,8 +46,14 @@ public enum TfCheckPasswordResponseCode {
   INVALID_REQUEST,
 
   /**
-   * if the user is allowed
+   * if the user is enrolled
    */
-  USER_NOT_ENROLLED;
+  USER_NOT_ENROLLED,
+  
+
+  /**
+   * if the user is enrolled only for apps which require it 
+   */
+  USER_ENROLLED_FOR_REQUIRED_APPS;
 
 }

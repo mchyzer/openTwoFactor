@@ -76,23 +76,18 @@ public class TwoFactorTextConfig extends ConfigPropertiesCascadeBase {
     HttpServletRequest httpServletRequest = TwoFactorFilterJ2ee.retrieveHttpServletRequest();
     
     //cache this in the request
-    TwoFactorTextConfig twoFactorTextConfig = (TwoFactorTextConfig)httpServletRequest.getAttribute("twoFactorTextConfig");
+    TwoFactorTextConfig twoFactorTextConfig = httpServletRequest == null ? null : 
+      (TwoFactorTextConfig)httpServletRequest.getAttribute("twoFactorTextConfig");
     
     if (twoFactorTextConfig == null) {
       
-      synchronized(httpServletRequest) {
-        
-        if (twoFactorTextConfig == null) {
-          
-          Locale locale = httpServletRequest.getLocale();
-          
-          twoFactorTextConfig = retrieveText(locale);
-          
-          httpServletRequest.setAttribute("twoFactorTextConfig", twoFactorTextConfig);
-        
-        }        
-      }
+      Locale locale = httpServletRequest == null ? null : httpServletRequest.getLocale();
       
+      twoFactorTextConfig = retrieveText(locale);
+      
+      if (httpServletRequest != null) {
+        httpServletRequest.setAttribute("twoFactorTextConfig", twoFactorTextConfig);
+      }
     }
     
     return twoFactorTextConfig;

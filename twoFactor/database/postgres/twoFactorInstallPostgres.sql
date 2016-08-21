@@ -464,7 +464,11 @@ CREATE OR REPLACE VIEW two_factor_user_v
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
    DUO_PUSH_PHONE_ID,
-   DUO_PUSH_BY_DEFAULT
+   DUO_PUSH_BY_DEFAULT,
+   OPT_IN_ONLY_IF_REQUIRED,
+   PHONE_OPT_IN,
+   PHONE_AUTO_CALLTEXT,
+   PHONE_AUTO_CALLTEXTS_IN_MONTH
 )
 AS
    SELECT tfu.loginid,
@@ -674,7 +678,27 @@ AS
              FROM two_factor_user_attr tfua
             WHERE TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
-             AS duo_push_by_default
+             AS duo_push_by_default,      
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'opt_in_only_if_required')
+             AS opt_in_only_if_required,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_opt_in')
+             AS phone_opt_in,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltext')
+             AS phone_auto_calltext,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltexts_in_month')
+             AS phone_auto_calltexts_in_month
      FROM two_factor_user tfu;
 COMMENT ON view TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
 
@@ -754,8 +778,13 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_PHONE_ID IS 'duo push phone id';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.DUO_PUSH_BY_DEFAULT IS 'if should push when testing an authn that requires authn';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.OPT_IN_ONLY_IF_REQUIRED IS 'if opt in for apps that require it, not for other apps';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_OPT_IN IS 'if opted in by phone (not phone or fob)';
   
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXT IS 'if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc';
   
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXTS_IN_MONTH IS 'keep track in json of how many calls/texts in each day of month, key is day of month, value is count';
   
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE VIEW TWO_FACTOR_AUDIT_V
