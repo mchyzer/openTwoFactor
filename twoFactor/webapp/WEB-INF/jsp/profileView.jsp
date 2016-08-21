@@ -30,6 +30,22 @@
 
   <div class="formBox profileFormBox">
     <div class="formRow">
+      <div class="formLabel"><b>${textContainer.text['profileOptinType']}</b></div>
+      <div class="formValue">
+        <input type="radio" name="optinTypeName" value="optinForAll" 
+          id="optinForAllRadioId" disabled="disabled"
+          ${twoFactorRequestContainer.twoFactorProfileContainer.optinForAll == 'true' ? 'checked="checked"' : ''}
+          /> ${textContainer.text['profileOptinRadioForAll'] } <br />
+          
+        <input type="radio" name="optinTypeName" value="optinForApplicationsWhichRequire" 
+          id="optinForApplicationsWhichRequireRadioId" disabled="disabled"
+          ${twoFactorRequestContainer.twoFactorProfileContainer.optinForApplicationsWhichRequire == 'true' ? 'checked="checked"' : ''}
+          /> ${textContainer.text['profileOptinRadioIfRequired'] }
+
+      </div>
+      <div class="formFooter">&nbsp;</div>
+    </div>
+    <div class="formRow">
       <div class="formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
       <div class="formValue">
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 

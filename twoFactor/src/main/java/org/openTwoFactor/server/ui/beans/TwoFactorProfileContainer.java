@@ -23,6 +23,47 @@ import edu.internet2.middleware.subject.Subject;
  */
 public class TwoFactorProfileContainer {
 
+  /**
+   * if the user is optin for all applications as opposed to just applications which require it    
+   */
+  private boolean optinForAll;
+  
+  /**
+   * if the user is optin for all applications as opposed to just applications which require it    
+   * @return true if opt in for all
+   */
+  public boolean isOptinForAll() {
+
+    return this.optinForAll;
+  }
+  
+  /**
+   * if the user is optin for all applications as opposed to just applications which require it    
+   * @param optinForAll1 the optinForAll to set
+   */
+  public void setOptinForAll(boolean optinForAll1) {
+    this.optinForAll = optinForAll1;
+  }
+  
+  /**
+   * if the user is optin for only applications which require it
+   */
+  private boolean optinForApplicationsWhichRequire;
+
+  /**
+   * if the user is optin for only applications which require it
+   * @return true if opt in for only applications which require it
+   */
+  public boolean isOptinForApplicationsWhichRequire() {
+    return this.optinForApplicationsWhichRequire;
+  }
+
+  /**
+   * @param optinForApplicationsWhichRequire1 the optinForApplicationsWhichRequire to set
+   */
+  public void setOptinForApplicationsWhichRequire(boolean optinForApplicationsWhichRequire1) {
+    this.optinForApplicationsWhichRequire = optinForApplicationsWhichRequire1;
+  }
 
   /** account name in QR code, e.g. jsmith@institution.edu */
   private String accountName = null;

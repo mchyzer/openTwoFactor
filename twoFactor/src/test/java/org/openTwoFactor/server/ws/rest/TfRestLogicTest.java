@@ -52,7 +52,8 @@ public class TfRestLogicTest extends TestCase {
         "false");
     TwoFactorServerConfig.retrieveConfig().propertiesOverrideMap().put("mail.smtp.server", 
         "testing");
-    
+    TwoFactorServerConfig.retrieveConfig().propertiesOverrideMap().put("twoFactor.api.readonly", 
+        "false");
     TfMemoryDaoFactory.clear();
   }
 
@@ -69,7 +70,8 @@ public class TfRestLogicTest extends TestCase {
    * @param args
    */
   public static void main(String[] args) {
-    TestRunner.run(new TfRestLogicTest("testCheckPasswordOptSome"));
+    TestRunner.run(new TfRestLogicTest("testCheckPassword"));
+    //TestRunner.run(new TfRestLogicTest("testCheckPasswordOptSome"));
   }
   
   /**
@@ -186,8 +188,7 @@ public class TfRestLogicTest extends TestCase {
   
       tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUsername("mchyzer").assignTwoFactorPassUnencrypted("123456");
       tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
-      tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(
-          daoFactory, tfCheckPasswordRequest);    
+      tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);    
       //let audit happen
       TwoFactorServerUtils.sleep(sleepTimeAfterCall);
       
@@ -1445,13 +1446,15 @@ public class TfRestLogicTest extends TestCase {
   
       }
   
-      //############################ the rest is for opted in, so opt the user mchyzer2 in...
+      //############################ the rest is for opted in, so opt the user harveycg in...
       //first we need to optin step 1
       twoFactorRequestContainer.setError(null);
 
       TwoFactorRequestContainer.storeInThreadLocalForTesting(false);
       TwoFactorRequestContainer.storeInThreadLocalForTesting(true);
 
+      twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+      
       //lets retrieve first
       TwoFactorUser.retrieveByLoginidOrCreate(TfMemoryDaoFactory.getFactory(), "harveycg");
       twoFactorRequestContainer.init(TfMemoryDaoFactory.getFactory(), "harveycg");
@@ -1698,14 +1701,13 @@ public class TfRestLogicTest extends TestCase {
       auditsSize = TfMemoryAuditDao.audits.size();
   
       tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUsername("mchyzer");
+      tfCheckPasswordRequest.assignRequireTwoFactor(true);
       tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
       tfCheckPasswordRequest.assignRequireTwoFactor(true);
-      tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(
-          daoFactory, tfCheckPasswordRequest);    
+      tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);    
       //let audit happen
       TwoFactorServerUtils.sleep(sleepTimeAfterCall);
       
-      assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
       assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
       assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
       assertNull(tfCheckPasswordResponse.getWhenTrusted());
@@ -1720,9 +1722,7 @@ public class TfRestLogicTest extends TestCase {
       assertFalse(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
       assertFalse(tfCheckPasswordResponse.getUserBrowserUuidIsNew());
       assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
-      
-      assertEquals(auditsSize + 1, TfMemoryAuditDao.audits.size());
-      
+            
       //############################ the rest is for opted in, so opt the user in... as opt some
   
       
@@ -1774,10 +1774,6 @@ public class TfRestLogicTest extends TestCase {
     
         assertTrue(twoFactorRequestContainer.getError(), StringUtils.isBlank(twoFactorRequestContainer.getError()));
     
-        assertEquals(TwoFactorAuditAction.OPTIN_TWO_FACTOR.name(), TfMemoryAuditDao.audits.get(auditsSize).getAction());
-        //within the last minute
-        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
-      
         assertTrue(StringUtils.isBlank(twoFactorUserLoggedIn.getTwoFactorSecretTempUnencrypted()));
         assertTrue(!StringUtils.isBlank(twoFactorUserLoggedIn.getTwoFactorSecretUnencrypted()));
       }
@@ -1807,6 +1803,7 @@ public class TfRestLogicTest extends TestCase {
         //lets retrieve first
         twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
         twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setOptInOnlyIfRequired(true);
         twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
         
         pass = StringUtils.leftPad(pass, 6, '0');
@@ -1816,7 +1813,7 @@ public class TfRestLogicTest extends TestCase {
         servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
         
         tfCheckPasswordRequest = new TfCheckPasswordRequest()
-          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass)
+          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass).assignRequireTwoFactor(true)
           .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
         
         tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
@@ -1828,22 +1825,21 @@ public class TfRestLogicTest extends TestCase {
         //let audit happen
         TwoFactorServerUtils.sleep(sleepTimeAfterCall);
   
-        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
         assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
         assertNull(tfCheckPasswordResponse.getWhenTrusted());
         if (i==0) {
           //there are no printed out codes until we print them out
           assertEquals(i + ": " + pass, TfCheckPasswordResponseCode.WRONG_PASSWORD.name(), tfCheckPasswordResponse.getResultCode());
-          new UiMain().showOneTimeCodesLogic(TfMemoryDaoFactory.getFactory(), 
-              twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1);
+          assertTrue(new UiMain().showOneTimeCodesLogic(TfMemoryDaoFactory.getFactory(), 
+              twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1));
   
           tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
           TwoFactorServerUtils.sleep(sleepTimeAfterCall);
           
           
         }
-        assertEquals(i + "", "service does not require two factor, user enrolled in two factor, browser was not previously trusted, password correct",
+        assertEquals(i + "", "service requires two factor, user enrolled in two factor for required applications, browser was not previously trusted, password correct",
             tfCheckPasswordResponse.getResponseMessage());
         assertEquals(i + ": " + pass + ", " + twoFactorUserLoggedIn.getLastTotpTimestampUsed(), 
             TfCheckPasswordResponseCode.CORRECT_PASSWORD.name(), tfCheckPasswordResponse.getResultCode());
@@ -1855,6 +1851,7 @@ public class TfRestLogicTest extends TestCase {
         assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
         assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() != null && tfCheckPasswordResponse.getUserBrowserUuidIsNew());
         assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         
         //i 0 has multiple audits
         if (i != 0) {
@@ -1955,7 +1952,7 @@ public class TfRestLogicTest extends TestCase {
         assertEquals(1, servicesSize);
         
         tfCheckPasswordRequest = new TfCheckPasswordRequest()
-          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass)
+          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass).assignRequireTwoFactor(true)
           .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
         
         tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
@@ -1967,12 +1964,11 @@ public class TfRestLogicTest extends TestCase {
         //let audit happen
         TwoFactorServerUtils.sleep(sleepTimeAfterCall);
   
-        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
         assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
         assertNull(tfCheckPasswordResponse.getWhenTrusted());
         assertEquals(TfCheckPasswordResponseCode.WRONG_PASSWORD.name(), tfCheckPasswordResponse.getResultCode());
-        assertEquals("service does not require two factor, user enrolled in two factor, browser was not previously trusted, password not correct",
+        assertEquals("service requires two factor, user enrolled in two factor for required applications, browser was not previously trusted, password not correct",
             tfCheckPasswordResponse.getResponseMessage());
         assertTrue(tfCheckPasswordResponse.getSuccess());
         assertFalse(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
@@ -1981,6 +1977,7 @@ public class TfRestLogicTest extends TestCase {
         assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
         assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() != null && tfCheckPasswordResponse.getUserBrowserUuidIsNew());
         assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         
         assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
         
@@ -2006,7 +2003,7 @@ public class TfRestLogicTest extends TestCase {
         servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
         
         tfCheckPasswordRequest = new TfCheckPasswordRequest()
-          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass)
+          .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(pass).assignRequireTwoFactor(true)
           .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
         
         tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
@@ -2018,12 +2015,11 @@ public class TfRestLogicTest extends TestCase {
         //let audit happen
         TwoFactorServerUtils.sleep(sleepTimeAfterCall);
   
-        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
         assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
         assertNull(tfCheckPasswordResponse.getWhenTrusted());
         assertEquals(TfCheckPasswordResponseCode.WRONG_PASSWORD.name(), tfCheckPasswordResponse.getResultCode());
-        assertEquals("service does not require two factor, user enrolled in two factor, browser was not previously trusted, password not correct",
+        assertEquals("service requires two factor, user enrolled in two factor for required applications, browser was not previously trusted, password not correct",
             tfCheckPasswordResponse.getResponseMessage());
         assertTrue(tfCheckPasswordResponse.getSuccess());
         assertFalse(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
@@ -2032,6 +2028,7 @@ public class TfRestLogicTest extends TestCase {
         assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
         assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() != null && tfCheckPasswordResponse.getUserBrowserUuidIsNew());
         assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
         
         assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
         
@@ -2048,29 +2045,30 @@ public class TfRestLogicTest extends TestCase {
   
       tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUsername("mchyzer");
       tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+      tfCheckPasswordRequest.assignRequireTwoFactor(true);
 
       tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(
           daoFactory, tfCheckPasswordRequest);    
       //let audit happen
       TwoFactorServerUtils.sleep(sleepTimeAfterCall);
       
-      assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
       assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
       assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
       assertNull(tfCheckPasswordResponse.getWhenTrusted());
       assertEquals(tfCheckPasswordResponse.getResponseMessage(), 
-          "service does not require two factor, user is enrolled in two factor for required apps, password not sent", 
+          "service requires two factor, user enrolled in two factor for required applications, browser was not previously trusted", 
           tfCheckPasswordResponse.getResponseMessage());
-      assertEquals(TfCheckPasswordResponseCode.USER_ENROLLED_FOR_REQUIRED_APPS.name(), tfCheckPasswordResponse.getResultCode());
+      assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
       assertTrue(tfCheckPasswordResponse.getSuccess());
       assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
-      assertFalse(tfCheckPasswordResponse.getTwoFactorRequired());
-      assertTrue(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+      assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+      assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
       assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
-      assertFalse(tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+      assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew());
       assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+      assertNotNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
       
-      assertEquals(auditsSize, TfMemoryAuditDao.audits.size());
+      assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
 
       
       //######################### trust the browser
@@ -2090,9 +2088,7 @@ public class TfRestLogicTest extends TestCase {
   
         auditsSize = TfMemoryAuditDao.audits.size();
         servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
-  
-        assertEquals(2, servicesSize);
-        
+          
         tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
           .assignTrustedBrowser(true).assignRequireTwoFactor(true)
           .assignUsername("mchyzer").assignTwoFactorPassUnencrypted(passString)
@@ -2112,7 +2108,7 @@ public class TfRestLogicTest extends TestCase {
         assertNull(tfCheckPasswordResponse.getWhenTrusted());
         assertEquals(TfCheckPasswordResponseCode.CORRECT_PASSWORD.name(), tfCheckPasswordResponse.getResultCode());
         assertEquals(
-            "service does require two factor, user enrolled in two factor for required apps, browser was not previously trusted, password correct",
+            "service requires two factor, user enrolled in two factor for required applications, browser was not previously trusted, password correct",
             tfCheckPasswordResponse.getResponseMessage());
         assertTrue(tfCheckPasswordResponse.getSuccess());
         assertTrue(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
@@ -2130,8 +2126,6 @@ public class TfRestLogicTest extends TestCase {
         assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
     
         assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
-        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
-        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
   
       }
   
@@ -2147,10 +2141,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
         servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
   
-        assertEquals(2, servicesSize);
-        
         tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
-          .assignUsername("mchyzer").assignTrustedBrowser(true)
+          .assignUsername("mchyzer").assignTrustedBrowser(true).assignRequireTwoFactor(true)
           .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
         
         tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
@@ -2171,7 +2163,7 @@ public class TfRestLogicTest extends TestCase {
             TwoFactorBrowser.retrieveByBrowserTrustedUuid(TfMemoryDaoFactory.getFactory(), browserUserCookieUuid, false).getWhenTrusted());
         
         assertEquals(TfCheckPasswordResponseCode.TRUSTED_BROWSER.name(), tfCheckPasswordResponse.getResultCode());
-        assertEquals("service does not require two factor, user enrolled in two factor for required apps, browser was already trusted",
+        assertEquals("service requires two factor, user enrolled in two factor for required applications, browser was already trusted",
             tfCheckPasswordResponse.getResponseMessage());
         assertTrue(tfCheckPasswordResponse.getSuccess());
         assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
@@ -2189,8 +2181,6 @@ public class TfRestLogicTest extends TestCase {
         assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
     
         assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
-        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
-        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
   
       }
   

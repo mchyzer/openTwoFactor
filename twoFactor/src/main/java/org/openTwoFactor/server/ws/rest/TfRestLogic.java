@@ -365,6 +365,7 @@ public class TfRestLogic {
       boolean twoFactorRequired = false;
       boolean serviceProviderRequiresTwoFactor = false;
       boolean serviceProviderForbidsTwoFactor = false;
+      boolean optedInConsideringRequired = false;
       
       //############## see if serviceId is configured to forbid two factor
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getServiceId())) {
@@ -435,7 +436,7 @@ public class TfRestLogic {
         }
       }
       tfCheckPasswordResponse.setTwoFactorRequired(twoFactorRequired);
-  
+
       StringBuilder responseMessage = new StringBuilder();
 
       if (serviceProviderForbidsTwoFactor) {
@@ -449,14 +450,35 @@ public class TfRestLogic {
       }
       
       tfCheckPasswordResponse.setSuccess(true);
-  
+
+      
       if (twoFactorUser.isOptedIn()) {
         
-        tfCheckPasswordResponse.setUserEnrolledInTwoFactor(true);
-        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user enrolled in two factor", null);
+        boolean optinOnlyForRequiredApplications = TwoFactorServerUtils.booleanValue(twoFactorUser.getOptInOnlyIfRequired(), false);
+
+        if (optinOnlyForRequiredApplications) {
+          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user enrolled in two factor for required applications", null);
+
+        } else {
+          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user enrolled in two factor", null);
+          
+        }
         
-        if (!serviceProviderForbidsTwoFactor) {
-          twoFactorRequired = true;
+        if (!twoFactorRequired && optinOnlyForRequiredApplications) {
+        
+          tfCheckPasswordResponse.setUserEnrolledInTwoFactor(false);
+          optedInConsideringRequired = false;
+          
+        } else {
+          
+          tfCheckPasswordResponse.setUserEnrolledInTwoFactor(true);
+          optedInConsideringRequired = true;
+        }
+
+        if (optedInConsideringRequired) {
+          if (!serviceProviderForbidsTwoFactor) {
+            twoFactorRequired = true;
+          }
         }
         
       } else {
@@ -492,7 +514,7 @@ public class TfRestLogic {
       }
       
       //###############  if not opted in
-      if (!twoFactorUser.isOptedIn()) {
+      if (!optedInConsideringRequired) {
   
         if (twoFactorRequired) {
   
@@ -702,7 +724,7 @@ public class TfRestLogic {
       boolean storeUser = false;
       
       //if not good so far
-      if (twoFactorUser.isOptedIn() && (!browserPreviouslyTrusted || requireReauth) && (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) 
+      if (optedInConsideringRequired && (!browserPreviouslyTrusted || requireReauth) && (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) 
           || !twoFactorPassResult.isPasswordCorrect())) {
         
         //check duo
@@ -1117,7 +1139,7 @@ public class TfRestLogic {
       }
       
       //finally, the service requires two factor, and the pass was not sent, and user opted in
-      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && twoFactorUser.isOptedIn()) {
+      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && optedInConsideringRequired) {
   
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 

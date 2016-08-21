@@ -34,6 +34,22 @@
 
     <div class="formBox profileFormBox">
       <div class="formRow">
+        <div class="formLabel"><b>${textContainer.text['profileOptinType']}</b></div>
+        <div class="formValue">
+          <input type="radio" name="optinTypeName" value="optinForAll" 
+            id="optinForAllRadioId"
+            ${twoFactorRequestContainer.twoFactorProfileContainer.optinForAll == 'true' ? 'checked="checked"' : ''}
+            /> ${textContainer.text['profileOptinRadioForAll'] } <br />
+            
+          <input type="radio" name="optinTypeName" value="optinForApplicationsWhichRequire" 
+            id="optinForApplicationsWhichRequireRadioId"
+            ${twoFactorRequestContainer.twoFactorProfileContainer.optinForApplicationsWhichRequire == 'true' ? 'checked="checked"' : ''}
+            /> ${textContainer.text['profileOptinRadioIfRequired'] }
+  
+        </div>
+        <div class="formFooter">&nbsp;</div>
+      </div>
+      <div class="formRow">
           <c:choose>
             <c:when test="twoFactorRequestContainer.editableEmail" >
               <div class="formLabel"><b><label for="email0">${textContainer.text['profileEmailLabel']}</label></b></div>

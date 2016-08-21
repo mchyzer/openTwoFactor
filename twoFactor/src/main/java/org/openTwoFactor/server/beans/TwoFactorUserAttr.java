@@ -213,12 +213,12 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     /**
      * if opt in for apps that require it, not for other apps
      */
-    opt_in_only_if_required(TwoFactorUserAttrType.string),
+    opt_in_only_if_required(TwoFactorUserAttrType.booleanType),
     
     /**
      * if opted in by phone (not phone or fob)
      */
-    phone_opt_in(TwoFactorUserAttrType.string),
+    phone_opt_in(TwoFactorUserAttrType.booleanType),
     
     /**
      * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc

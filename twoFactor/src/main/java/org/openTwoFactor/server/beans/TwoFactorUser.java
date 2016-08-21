@@ -553,7 +553,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       return null;
     }
     if (twoFactorUserAttr.getAttributeNameEnum().getTheType() != TwoFactorUserAttrType.booleanType) {
-      throw new RuntimeException("Why asking for integer when type is: " 
+      throw new RuntimeException("Why asking for boolean when type is: " 
           + twoFactorUserAttr.getAttributeNameEnum().getTheType());
     }
     return twoFactorUserAttr.getAttributeValueBoolean();

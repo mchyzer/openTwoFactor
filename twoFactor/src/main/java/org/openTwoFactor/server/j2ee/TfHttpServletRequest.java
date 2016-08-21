@@ -77,7 +77,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       //for UI
       "twoFactorCode", "twoFactorCustomCode", "profileForOptin",
       "userIdOperatingOnName", "userIdOperatingOn", "email0", "colleagueLogin0Name", "colleagueLogin1Name",
-      "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "phone0",
+      "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "optinTypeName", "phone0",
       "phoneVoice0", "phoneText0", 
       "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",

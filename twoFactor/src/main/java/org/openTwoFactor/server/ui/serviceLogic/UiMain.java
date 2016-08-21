@@ -2781,6 +2781,11 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorProfileContainer.setPhoneVoice0((twoFactorUser.getPhoneIsVoice0() != null && twoFactorUser.getPhoneIsVoice0()) ? "true" : "");
     twoFactorProfileContainer.setPhoneVoice1((twoFactorUser.getPhoneIsVoice1() != null && twoFactorUser.getPhoneIsVoice1()) ? "true" : "");
     twoFactorProfileContainer.setPhoneVoice2((twoFactorUser.getPhoneIsVoice2() != null && twoFactorUser.getPhoneIsVoice2()) ? "true" : "");
+
+    boolean optinOnlyIfRequired = TwoFactorServerUtils.booleanValue(twoFactorUser.getOptInOnlyIfRequired(), false);
+    
+    twoFactorProfileContainer.setOptinForApplicationsWhichRequire(optinOnlyIfRequired);
+    twoFactorProfileContainer.setOptinForAll(!optinOnlyIfRequired);
     
     {
       String colleagueUserUuid0 = twoFactorUser.getColleagueUserUuid0();
@@ -2896,6 +2901,10 @@ public class UiMain extends UiServiceLogicBase {
     String phone2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phone2");
     String phoneVoice2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneVoice2");
     String phoneText2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneText2");
+
+    String optinTypeName = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optinTypeName");
+
+    boolean optinForApplicationsWhichRequire = StringUtils.equals(optinTypeName, "optinForApplicationsWhichRequire");
     
     boolean profileForOptin = TwoFactorServerUtils.booleanValue(
         TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("profileForOptin"), false);
@@ -2906,7 +2915,7 @@ public class UiMain extends UiServiceLogicBase {
         loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), email0, colleagueLogin0, colleagueLogin1,
         colleagueLogin2, colleagueLogin3, colleagueLogin4, phone0, phoneVoice0, phoneText0, 
-        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin);
+        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin, optinForApplicationsWhichRequire);
   
     if (success) {
       
@@ -2973,6 +2982,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param phoneText2 
    * @param subjectSource 
    * @param profileForOptin 
+   * @param optinForApplicationsWhichRequire
    * @return true if ok, false if not
    */
   public boolean profileSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
@@ -2982,7 +2992,8 @@ public class UiMain extends UiServiceLogicBase {
       final String colleagueLogin2, final String colleagueLogin3, final String colleagueLogin4, 
       final String phone0, final String phoneVoice0, final String phoneText0, 
       final String phone1, final String phoneVoice1, final String phoneText1, final String phone2, 
-      final String phoneVoice2, final String phoneText2, final Source subjectSource, final boolean profileForOptin) {
+      final String phoneVoice2, final String phoneText2, final Source subjectSource, final boolean profileForOptin, 
+      final boolean optinForApplicationsWhichRequire) {
     
     final Set<TwoFactorUser> newColleagues = new HashSet<TwoFactorUser>();
     
@@ -3035,6 +3046,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorProfileContainer.setPhone2(phone2);
         twoFactorProfileContainer.setPhoneText2(phoneText2);
         twoFactorProfileContainer.setPhoneVoice2(phoneVoice2);
+        twoFactorProfileContainer.setOptinForAll(!optinForApplicationsWhichRequire);
+        twoFactorProfileContainer.setOptinForApplicationsWhichRequire(optinForApplicationsWhichRequire);
         
         String errorMessage = null;
         
@@ -3105,6 +3118,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhoneIsVoice1(StringUtils.equals(phoneVoice1, "true") ? true : false);
         twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
 
+        twoFactorUser.setOptInOnlyIfRequired(optinForApplicationsWhichRequire);
+        
         Set<String> previousColleagueUuids = new HashSet<String>();
         
         if (!StringUtils.isBlank(twoFactorUser.getColleagueUserUuid0())) {
