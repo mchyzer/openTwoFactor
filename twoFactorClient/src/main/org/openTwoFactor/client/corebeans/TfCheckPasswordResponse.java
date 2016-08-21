@@ -22,6 +22,27 @@ public class TfCheckPasswordResponse extends TwoFactorResponseBeanBase {
   }
 
   /**
+   * if rate limiting user
+   */
+  private Boolean rateLimitedUser;
+  
+  /**
+   * if rate limiting user
+   * @return the rateLimitedUser
+   */
+  public Boolean getRateLimitedUser() {
+    return this.rateLimitedUser;
+  }
+  
+  /**
+   * if rate limiting user
+   * @param rateLimitedUser1 the rateLimitedUser to set
+   */
+  public void setRateLimitedUser(Boolean rateLimitedUser1) {
+    this.rateLimitedUser = rateLimitedUser1;
+  }
+
+  /**
    * this is the uuid that should be assigned to the browser cookie
    */
   private String changeUserBrowserUuid;
