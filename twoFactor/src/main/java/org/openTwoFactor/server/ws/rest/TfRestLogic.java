@@ -464,7 +464,7 @@ public class TfRestLogic {
           
         }
         
-        if (!twoFactorRequired && optinOnlyForRequiredApplications) {
+        if (!twoFactorRequired && optinOnlyForRequiredApplications && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
         
           tfCheckPasswordResponse.setUserEnrolledInTwoFactor(false);
           optedInConsideringRequired = false;
