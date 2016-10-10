@@ -709,7 +709,9 @@ public class TfRestLogic {
       if (browserPreviouslyTrusted) {
   
         if (tfCheckPasswordRequest.getRequireTwoFactor() != null && tfCheckPasswordRequest.getRequireTwoFactor()) {
-          browserPreviouslyTrusted = false;
+          if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.clientRequireTwoFactorAllowTrustedBrowsers", false)) {
+            browserPreviouslyTrusted = false;
+          }
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "browser was already trusted but two factor code required", null);
           trafficLogMap.put("browserPreviouslyTrustedButTwoFactorCodeRequired", true);
         } else {
