@@ -46,7 +46,7 @@ public class TfValidatePassword extends AsacApiRequestBase {
     TfCheckPasswordResponse tfCheckPasswordResponse = 
       new TfValidatePassword().assignUsername("jsmith").assignBrowserUserAgent("userAgent")
         .assignDebug(true).assignIndent(true).assignRequireReauth(true)
-        .assignRequireTwoFactor(true).assignServiceId("serviceId")
+        .assignRequireTwoFactor(true).assignServiceId("serviceId").assignDontTrustBrowser(false)
         .assignServiceName("serviceName").assignSpRequiredFactors("spRequiredFactors")
         .assignTrustedBrowser(true).assignTwoFactorPass("123456")
         .assignUserBrowserUuid("userBrowserUuid").assignUserIpAddress("1.2.3.4")
@@ -89,6 +89,10 @@ public class TfValidatePassword extends AsacApiRequestBase {
    * true|false if the service is requiring two factor
    */
   private Boolean requireTwoFactor;
+  /**
+   * true|false if the service is not trusting browser
+   */
+  private Boolean dontTrustBrowser;
   /**
    * is some unchanging ID of the service which is requesting authentication
    */
@@ -167,6 +171,9 @@ public class TfValidatePassword extends AsacApiRequestBase {
     }
     if (this.requireTwoFactor != null) {
       params.put("requireTwoFactor", this.requireTwoFactor ? "true" : "false");
+    }
+    if (this.dontTrustBrowser != null) {
+      params.put("dontTrustBrowser", this.dontTrustBrowser ? "true" : "false");
     }
     if (!TwoFactorClientUtils.isBlank(this.serviceId)) {
       params.put("serviceId", this.serviceId);
@@ -251,6 +258,16 @@ public class TfValidatePassword extends AsacApiRequestBase {
    */
   public TfValidatePassword assignRequireTwoFactor(Boolean requireTwoFactor1) {
     this.requireTwoFactor = requireTwoFactor1;
+    return this;
+  }
+
+  /**
+   * true|false if the service is requiring two factor
+   * @param dontTrustBrowser1 the requireTwoFactor to set
+   * @return the request for chaining
+   */
+  public TfValidatePassword assignDontTrustBrowser(Boolean dontTrustBrowser1) {
+    this.dontTrustBrowser = dontTrustBrowser1;
     return this;
   }
 

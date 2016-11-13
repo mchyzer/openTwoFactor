@@ -134,6 +134,14 @@ public class TfRestLogic {
     }
 
     {
+      String dontTrustBrowserString = params.get("dontTrustBrowser");
+      
+      Boolean dontTrustBrowser = TwoFactorServerUtils.booleanObjectValue(dontTrustBrowserString);
+      
+      tfCheckPasswordRequest.assignDontTrustBrowser(dontTrustBrowser);
+    }
+
+    {
       String duoDontPushString = params.get("duoDontPush");
       
       Boolean duoDontPush = TwoFactorServerUtils.booleanObjectValue(duoDontPushString);
@@ -641,6 +649,14 @@ public class TfRestLogic {
 
       //lets get the right user uuid
       String cookieUserUuid = tfCheckPasswordRequest.getUserBrowserUuid();
+      
+      //if not using trusted browser...
+      boolean dontTrustBrowser = tfCheckPasswordRequest.getDontTrustBrowser() != null && tfCheckPasswordRequest.getDontTrustBrowser();
+      
+      if (dontTrustBrowser) {
+        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "dont trust browser", null);
+        trafficLogMap.put("dontTrustBrowser", true);
+      }
       boolean needsNewCookieUuid = false;
       TwoFactorBrowser twoFactorBrowser = null;
 
@@ -651,6 +667,7 @@ public class TfRestLogic {
         needsNewCookieUuid = true;
       } else {
         twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuid(twoFactorDaoFactory, cookieUserUuid, false);
+        
         //if there is no browser
         if (twoFactorBrowser == null) {
           
@@ -699,7 +716,6 @@ public class TfRestLogic {
             if (!browserPreviouslyTrusted && twoFactorBrowser.isTrustedBrowser()) {
               needsNewCookieUuid = true;
             }
-            
           }
         }
       }
@@ -707,19 +723,9 @@ public class TfRestLogic {
       tfCheckPasswordResponse.setUserBrowserUuidIsNew(needsNewCookieUuid);
       boolean requestIsTrusted = tfCheckPasswordRequest.getTrustedBrowser() != null && tfCheckPasswordRequest.getTrustedBrowser();
       if (browserPreviouslyTrusted) {
-  
-        if (tfCheckPasswordRequest.getRequireTwoFactor() != null && tfCheckPasswordRequest.getRequireTwoFactor()) {
-          if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.clientRequireTwoFactorAllowTrustedBrowsers", false)) {
-            browserPreviouslyTrusted = false;
-          }
-          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "browser was already trusted but two factor code required", null);
-          trafficLogMap.put("browserPreviouslyTrustedButTwoFactorCodeRequired", true);
-        } else {
           
-          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "browser was already trusted", null);
-          trafficLogMap.put("browserPreviouslyTrusted", true);
-        }
-        
+        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "browser was already trusted", null);
+        trafficLogMap.put("browserPreviouslyTrusted", true);        
       
       } else {
   
@@ -1091,7 +1097,7 @@ public class TfRestLogic {
       }
   
       //send this back even if require reauth
-      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted) {
+      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted && !dontTrustBrowser) {
         
         //update the browser trust if inactivity date
         if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.browserTrustIsInactivityBased", true)) {
@@ -1128,7 +1134,7 @@ public class TfRestLogic {
       }
       
       //no password sent in, and trusted browser, ok
-      if (!requireReauth && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted) {
+      if (!requireReauth && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted && !dontTrustBrowser) {
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
             TwoFactorAuditAction.AUTHN_TRUSTED_BROWSER, ipAddress, userAgent, 
             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 

@@ -464,5 +464,30 @@ public class TfCheckPasswordRequest {
     return this;
   }
 
+  /**
+   * true|false if not trust browser
+   */
+  private Boolean dontTrustBrowser;
+  
+  
+  /**
+   * true|false if dont trust browser
+   * @return the dontTrustBrowser
+   */
+  public Boolean getDontTrustBrowser() {
+    return this.dontTrustBrowser;
+  }
+
+  
+  /**
+   * true|false if the service should not trust browser
+   * @param dontTrustBrowser1 the dontTrustBrowser to set
+   * @return the request for chaining
+   */
+  public TfCheckPasswordRequest assignDontTrustBrowser(Boolean dontTrustBrowser1) {
+    this.dontTrustBrowser = dontTrustBrowser1;
+    return this;
+  }
+
 
 }

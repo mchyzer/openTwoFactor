@@ -16,7 +16,7 @@ Optional arguments below are in [brackets]
 
 validatePasswordWs web service usage:
 
-  java -jar twoFactorClient.jar --operation=validatePasswordWs --username=jsmith [--twoFactorPass=123456] [--requireReauth=true|false] [--requireTwoFactor=true|false] [--serviceId=someServiceId] [--serviceName=someServiceName] [--spRequiredFactors=ABC,BCD,CDE] [--trustedBrowser=true|false] [--userBrowserUuid=abc123] [--browserUserAgent=chrome_whatever] [--userIpAddress=1.2.3.4] [--outputTemplate=somePattern] [--format=xml|json] [--debug=true] [--indent=true] [--duoDontPush=true]
+  java -jar twoFactorClient.jar --operation=validatePasswordWs --username=jsmith [--twoFactorPass=123456] [--requireReauth=true|false] [--requireTwoFactor=true|false] [--dontTrustBrowser=true|false] [--serviceId=someServiceId] [--serviceName=someServiceName] [--spRequiredFactors=ABC,BCD,CDE] [--trustedBrowser=true|false] [--userBrowserUuid=abc123] [--browserUserAgent=chrome_whatever] [--userIpAddress=1.2.3.4] [--outputTemplate=somePattern] [--format=xml|json] [--debug=true] [--indent=true] [--duoDontPush=true]
   e.g.: java -jar twoFactorClient.jar --operation=defaultResourceWs
   output: twoFactorUserAllowed: false, responseMessage: service does not require two factor, user enrolled in two factor, browser was not previously trusted
 

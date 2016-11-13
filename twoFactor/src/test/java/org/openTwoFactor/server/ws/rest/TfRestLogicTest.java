@@ -70,8 +70,8 @@ public class TfRestLogicTest extends TestCase {
    * @param args
    */
   public static void main(String[] args) {
-    TestRunner.run(new TfRestLogicTest("testCheckPassword"));
-    //TestRunner.run(new TfRestLogicTest("testCheckPasswordOptSome"));
+    //TestRunner.run(new TfRestLogicTest("testCheckPassword"));
+    TestRunner.run(new TfRestLogicTest("testCheckPasswordOptSome"));
   }
   
   /**
@@ -1057,6 +1057,62 @@ public class TfRestLogicTest extends TestCase {
   
       }
   
+      //######################### test that opted in, trusted browser already, dontTrustBrowser=true, and no pass is NOT ok
+      {
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        assertEquals(2, servicesSize);
+        
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertNull(tfCheckPasswordResponse.getWhenTrusted());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals("service does not require two factor, user enrolled in two factor, dont trust browser, browser was already trusted",
+            tfCheckPasswordResponse.getResponseMessage());
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
+        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
+  
+      }
+  
   
       //######################### test that opted in, not trusted browser already, service forbids two factor, and no pass is ok
       {
@@ -1186,6 +1242,65 @@ public class TfRestLogicTest extends TestCase {
   
       }
       
+      //######################### test that opted in, trusted browser already, and service requires two factor, and dont trust browser and no pass is NOT ok
+      {
+        int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        String passString = Integer.toString(pass);
+        passString = StringUtils.leftPad(passString, 6, '0');
+  
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        assertEquals(2, servicesSize);
+        
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignRequireTwoFactor(true).assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals("service requires two factor, user enrolled in two factor, dont trust browser, browser was already trusted",
+            tfCheckPasswordResponse.getResponseMessage());
+    
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
+        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
+  
+      }
+      
       //######################### test that opted in, trusted browser already, and service factors requires two factor, and no pass is ok
       {
         int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
@@ -1251,7 +1366,69 @@ public class TfRestLogicTest extends TestCase {
   
       }
       
-      //######################### test that opted in, trusted browser already, and service requires two factor, and no pass, and reauth, is not ok
+      //######################### test that opted in, trusted browser already, and service factors requires two factor, and dont trust browser, and no pass is NOT ok
+      {
+        int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        String passString = Integer.toString(pass);
+        passString = StringUtils.leftPad(passString, 6, '0');
+  
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        assertEquals(2, servicesSize);
+        
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignSpRequiredFactors("TEST_FACTOR1,TEST_FACTOR_TF2,TEST_FACTOR3").assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals("service requires two factor, user enrolled in two factor, dont trust browser, browser was already trusted",
+            tfCheckPasswordResponse.getResponseMessage());
+  
+        assertNull(tfCheckPasswordResponse.getWhenTrusted());
+        
+  
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
+        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
+  
+      }
+
+      //######################### test that opted in, trusted browser already, and service requires two factor, and no pass, and reauth, is ok
       {
         int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
   
@@ -1316,6 +1493,67 @@ public class TfRestLogicTest extends TestCase {
   
       }
   
+      //######################### test that opted in, trusted browser already, and service requires two factor, and no pass, and reauth, and dont trust browser, is not ok
+      {
+        int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        String passString = Integer.toString(pass);
+        passString = StringUtils.leftPad(passString, 6, '0');
+  
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        assertEquals(2, servicesSize);
+        
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignRequireTwoFactor(true).assignRequireReauth(true).assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals("service requires two factor, user enrolled in two factor, dont trust browser, browser was already trusted, require reauthentication",
+            tfCheckPasswordResponse.getResponseMessage());
+  
+        assertNull(tfCheckPasswordResponse.getWhenTrusted());
+          
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
+        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
+  
+      }
+  
       //######################### test that opted in, trusted browser already, and factors requires two factor, and no pass, and reauth, is not ok
       {
         int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
@@ -1358,6 +1596,68 @@ public class TfRestLogicTest extends TestCase {
         
         assertEquals(TwoFactorServerUtils.convertFromIso8601(tfCheckPasswordResponse.getWhenTrusted()).getTime(), 
             TwoFactorBrowser.retrieveByBrowserTrustedUuid(TfMemoryDaoFactory.getFactory(), browserUserCookieUuid, false).getWhenTrusted());
+        
+  
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+        assertEquals("someTestServiceId", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderId());
+        assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
+  
+      }
+  
+      //######################### test that opted in, trusted browser already, and no pass, and reauth, and dontTrustBrowser is NOT ok
+      {
+        int pass = twoFactorLogic.totpPassword(key, timeDiv30+2);
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        String passString = Integer.toString(pass);
+        passString = StringUtils.leftPad(passString, 6, '0');
+  
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        assertEquals(2, servicesSize);
+        
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignRequireReauth(true).assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals("service does not require two factor, user enrolled in two factor, dont trust browser, browser was already trusted",
+            tfCheckPasswordResponse.getResponseMessage());
+  
+        assertNull(tfCheckPasswordResponse.getWhenTrusted());
         
   
         assertTrue(tfCheckPasswordResponse.getSuccess());
@@ -1445,7 +1745,7 @@ public class TfRestLogicTest extends TestCase {
         assertEquals("someTestServiceName", TfMemoryServiceProviderDao.serviceProviders.get(1).getServiceProviderName());
   
       }
-  
+
       //############################ the rest is for opted in, so opt the user harveycg in...
       //first we need to optin step 1
       twoFactorRequestContainer.setError(null);
@@ -1684,8 +1984,6 @@ public class TfRestLogicTest extends TestCase {
       int sleepTimeAfterCall = 200;
       
       TfCheckPasswordResponse tfCheckPasswordResponse = null;
-      
-      int browserUserAgentSize = -1;
       
       TwoFactorUser twoFactorUserLoggedIn = null;
       
@@ -2176,6 +2474,57 @@ public class TfRestLogicTest extends TestCase {
         assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
         
         assertEquals(TwoFactorAuditAction.AUTHN_TRUSTED_BROWSER.name(), 
+            TfMemoryAuditDao.audits.get(auditsSize).getAction());
+        //within the last minute
+        assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));
+    
+        assertEquals(servicesSize, TfMemoryServiceProviderDao.serviceProviders.size());
+      }
+  
+      //######################### test that opted in, trusted browser already, dont trust browser, and no pass is NOT ok
+      {
+  
+        //lets retrieve first
+        twoFactorUserLoggedIn = TwoFactorUser.retrieveByLoginid(TfMemoryDaoFactory.getFactory(), twoFactorUserLoggedIn.getLoginid());
+        twoFactorUserLoggedIn.setTwoFactorSecretTempUnencrypted(twoFactorSecretTempUnencrypted);
+        twoFactorUserLoggedIn.setLastTotpTimestampUsed(null);
+        twoFactorUserLoggedIn.store(TfMemoryDaoFactory.getFactory());
+        
+        auditsSize = TfMemoryAuditDao.audits.size();
+        servicesSize = TfMemoryServiceProviderDao.serviceProviders.size();
+  
+        tfCheckPasswordRequest = new TfCheckPasswordRequest().assignUserBrowserUuidUnencrypted(browserUserCookieUuid)
+          .assignUsername("mchyzer").assignTrustedBrowser(true).assignRequireTwoFactor(true).assignDontTrustBrowser(true)
+          .assignBrowserUserAgent(userAgent1).assignServiceId("someTestServiceId").assignServiceName("someTestServiceName");
+        
+        tfCheckPasswordRequest.assignSubjectSource(TfSourceUtils.mainSource());
+  
+        tfCheckPasswordResponse = TfRestLogic.checkPasswordLogic(daoFactory, tfCheckPasswordRequest);
+  
+       
+        //let audit happen
+        TwoFactorServerUtils.sleep(sleepTimeAfterCall);
+  
+        assertNull(tfCheckPasswordResponse.getChangeUserBrowserUuid());
+        assertNull(tfCheckPasswordResponse.getDebugMessage(), tfCheckPasswordResponse.getDebugMessage());
+        assertNull(tfCheckPasswordResponse.getErrorMessage(), tfCheckPasswordResponse.getErrorMessage());
+        
+        assertNull(tfCheckPasswordResponse.getWhenTrusted());
+        
+        assertEquals(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name(), tfCheckPasswordResponse.getResultCode());
+        assertEquals(tfCheckPasswordResponse.getResponseMessage(), "service requires two factor, user enrolled in two factor for required applications, dont trust browser, browser was not previously trusted",
+            tfCheckPasswordResponse.getResponseMessage());
+        assertTrue(tfCheckPasswordResponse.getSuccess());
+        assertNull(tfCheckPasswordResponse.getTwoFactorPasswordCorrect());
+        assertTrue(tfCheckPasswordResponse.getTwoFactorRequired());
+        assertFalse(tfCheckPasswordResponse.getTwoFactorUserAllowed());
+        assertTrue(tfCheckPasswordResponse.getUserEnrolledInTwoFactor());
+        assertTrue(tfCheckPasswordResponse.getUserBrowserUuidIsNew() == null || !tfCheckPasswordResponse.getUserBrowserUuidIsNew());
+        assertNull(tfCheckPasswordResponse.getWarning(), tfCheckPasswordResponse.getWarning());
+        
+        assertEquals(auditsSize+1, TfMemoryAuditDao.audits.size());
+        
+        assertEquals(TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name(), 
             TfMemoryAuditDao.audits.get(auditsSize).getAction());
         //within the last minute
         assertTrue(TfMemoryAuditDao.audits.get(auditsSize).getTheTimestamp() > System.currentTimeMillis() - (1000 * 60));

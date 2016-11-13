@@ -241,6 +241,11 @@ public class TwoFactorClient {
       }
 
       {
+        Boolean dontTrustBrowser = TwoFactorClientUtils.argMapBoolean(argMap, argMapNotUsed, "dontTrustBrowser");
+        tfValidatePassword.assignDontTrustBrowser(dontTrustBrowser);
+      }
+
+      {
         String serviceId = TwoFactorClientUtils.argMapString(argMap, argMapNotUsed, "serviceId", false);
         tfValidatePassword.assignServiceId(serviceId);
       }
