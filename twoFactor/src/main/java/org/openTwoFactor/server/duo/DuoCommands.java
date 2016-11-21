@@ -2257,7 +2257,7 @@ public class DuoCommands {
    * @param exceptionIfNotPushable 
    * @param message shown before "Request", default is Login
    * @param timeoutSeconds
-   * @return tx id
+   * @return tx id or null if no capable device
    */
   private static String duoInitiatePush(String userId, boolean exceptionIfNotPushable, String message, Integer timeoutSeconds) {
 
@@ -2296,7 +2296,7 @@ public class DuoCommands {
    * @param duoPushPhoneId
    * @param message
    * @param timeoutSeconds throws runtime httpclient exception if timeout, or null for none
-   * @return tx id
+   * @return tx id or null if no capable device
    */
   public static String duoInitiatePushByPhoneId(String duoUserId, String duoPushPhoneId,
       String message, Integer timeoutSeconds) {
@@ -2329,6 +2329,10 @@ public class DuoCommands {
       JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
   
       if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        if (result.contains("no capable device")) {
+          debugMap.put("noCapableDevice", true);
+          return null;
+        }
         debugMap.put("error", true);
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
