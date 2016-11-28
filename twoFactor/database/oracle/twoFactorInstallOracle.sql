@@ -531,6 +531,7 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
   
     
 /* Formatted on 8/19/2016 6:28:12 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 11/28/2016 1:51:18 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
 (
    LOGINID,
@@ -538,6 +539,7 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    OPTED_IN,
    SEQUENTIAL_PASS_INDEX,
    SEQUENTIAL_PASS_GIVEN_TO_USER,
+   TOKEN_INDEX,
    TWO_FACTOR_SECRET_ABBR,
    TWO_FACTOR_SECRET_TEMP_ABBR,
    LAST_TOTP_TIMESTAMP_USED,
@@ -574,8 +576,11 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    OPT_IN_ONLY_IF_REQUIRED,
    PHONE_OPT_IN,
    PHONE_AUTO_CALLTEXT,
-   PHONE_AUTO_CALLTEXTS_IN_MONTH
+   PHONE_AUTO_CALLTEXTS_IN_MONTH,
+   LAST_EMAIL_NOT_OPTED_IN_USER,
+   LAST_EMAIL_NOT_OPTED_IN_DATE
 )
+   BEQUEATH DEFINER
 AS
    SELECT tfu.loginid,
           TFU.UUID,
@@ -594,6 +599,11 @@ AS
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'sequential_pass_given_to_user')
              AS sequential_pass_given_to_user,
+          (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'token_index')
+             AS token_index,
           (SELECT DECODE (
                      TFUA.ATTRIBUTE_VALUE_String,
                      NULL, NULL,
@@ -783,7 +793,7 @@ AS
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'duo_push_by_default')
-             AS duo_push_by_default,      
+             AS duo_push_by_default,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
@@ -803,7 +813,24 @@ AS
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltexts_in_month')
-             AS phone_auto_calltexts_in_month
+             AS phone_auto_calltexts_in_month,
+	        (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'last_email_not_opted_in_user')
+             AS last_email_not_opted_in_user,
+          (SELECT CASE
+                     WHEN TFUA.ATTRIBUTE_VALUE_INTEGER = 0
+                     THEN
+                        NULL
+                     ELSE
+                          DATE '1970-01-01'
+                        + TFUA.ATTRIBUTE_VALUE_INTEGER / 1000 / 60 / 60 / 24
+                  END
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'last_email_not_opted_in_user')
+             AS last_email_not_opted_in_date
      FROM two_factor_user tfu;
 
 COMMENT ON TABLE TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
@@ -816,7 +843,9 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.OPTED_IN IS 'T or F if the user has opted in
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.SEQUENTIAL_PASS_INDEX IS 'index starting with 1 of the sequential passes';
 
-COMMENT ON COLUMN TWO_FACTOR_USER_V.SEQUENTIAL_PASS_GIVEN_TO_USER IS 'lsat index given to the user as scratch codes';
+COMMENT ON COLUMN TWO_FACTOR_USER_V.SEQUENTIAL_PASS_GIVEN_TO_USER IS 'last index given to the user as scratch codes';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.TOKEN_INDEX IS 'token index HOTP sequential';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.TWO_FACTOR_SECRET_ABBR IS 'abbreviated two factor secret assigned to the user';
 
@@ -890,6 +919,9 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXT IS 'if the web should au
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXTS_IN_MONTH IS 'keep track in json of how many calls/texts in each day of month, key is day of month, value is count';
 
+COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_USER IS 'millis since 1970 of last email sent to not opted in user who is required';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_DATE IS 'date of last email sent to not opted in user who is required';
   
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_AUDIT_V
