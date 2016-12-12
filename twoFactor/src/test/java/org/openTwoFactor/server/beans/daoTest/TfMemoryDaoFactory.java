@@ -13,12 +13,14 @@ import org.openTwoFactor.server.dao.TwoFactorReportDao;
 import org.openTwoFactor.server.dao.TwoFactorReportDataDao;
 import org.openTwoFactor.server.dao.TwoFactorReportPrivilegeDao;
 import org.openTwoFactor.server.dao.TwoFactorReportRollupDao;
+import org.openTwoFactor.server.dao.TwoFactorRequiredUserDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
 import org.openTwoFactor.server.dao.TwoFactorUserDao;
 import org.openTwoFactor.server.dao.TwoFactorUserViewDao;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
+import org.openTwoFactor.server.ws.rest.TfRestLogic;
 
 
 /**
@@ -52,6 +54,8 @@ public class TfMemoryDaoFactory extends TwoFactorDaoFactory {
     TfMemoryUserAgentDao.userAgents.clear();
     TfMemoryUserAttrDao.userAttrs.clear();
     TfMemoryUserDao.users.clear();
+    TfMemoryRequiredUserDao.requiredUsers.clear();
+
   }
 
   /**
@@ -165,6 +169,14 @@ public class TfMemoryDaoFactory extends TwoFactorDaoFactory {
   public TwoFactorReportDataDao getTwoFactorReportData() {
     //need to do something for this at some point
     return null;
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorRequiredUser()
+   */
+  @Override
+  public TwoFactorRequiredUserDao getTwoFactorRequiredUser() {
+    return new TfMemoryRequiredUserDao();
   }
 
 }

@@ -139,24 +139,40 @@
                       value="${textContainer.textEscapeDouble['havingTroubleAllowFriendsLink']}" class="tfBlueButton"
                         style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
                         type="submit" /></form></c:if> ${textContainer.text['havingTroubleAllowFriendsSuffix']}
-                                
+
                 </c:otherwise>
               </c:choose>
               <br /><br />
-  
+
             </c:when>
             <c:otherwise>
               ${textContainer.text['havingTroubleNoFriends']}
             </c:otherwise>
           </c:choose>
           ${textContainer.text['havingTroubleParagraph2end']}    
-  
+
         </c:when>
         <c:otherwise>
           ${textContainer.text['havingTroubleNotEnrolled']}
+          <c:if test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.userRequiredToOptInButIsNot}">
+            <br /><br />
+            ${textContainer.text['havingTroubleRequiredToOptInButIsnt'] }
+
+            <br /><br />
+
+            <form action="../../twoFactorUi/app/UiMain.optin" method="get" style="display: inline">
+              <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
+              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+            </form>
+            &nbsp;
+            <form action="../../twoFactorPublicUi/app/UiMainPublic.stopOptInRequirement" method="post" style="display: inline"><input
+                value="${textContainer.textEscapeDouble['havingTroubleRequiredToOptInButIsntButton']}" class="tfBlueButton"
+                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';"
+                type="submit" /></form>
+          </c:if>
         </c:otherwise>  
       </c:choose>
-      
+
     </div>
     <br /><br />
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">

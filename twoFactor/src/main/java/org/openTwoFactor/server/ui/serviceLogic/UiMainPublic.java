@@ -34,7 +34,10 @@ import org.openTwoFactor.server.ui.beans.TwoFactorPhoneForScreen;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+import org.openTwoFactor.server.ws.rest.TfRestLogic;
 
+import edu.internet2.middleware.grouperClient.api.GcDeleteMember;
+import edu.internet2.middleware.grouperClient.ws.beans.WsSubjectLookup;
 import edu.internet2.middleware.subject.Subject;
 
 
@@ -48,6 +51,108 @@ public class UiMainPublic extends UiServiceLogicBase {
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(UiMainPublic.class);
 
+  
+  
+  /**
+   * if a user wants their colleagues to opt them out
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void stopOptInRequirement(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    stopOptInRequirementLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser,
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+    
+    indexLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    
+    showJsp("nonTwoFactorIndex.jsp");
+
+  }
+
+  /**
+   * 
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress 
+   * @param userAgent 
+   */
+  public void stopOptInRequirementLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+        
+        //make call to grouper to get user out of group
+        GcDeleteMember gcDeleteMember = new GcDeleteMember();
+        
+        //  # dont require two factor source id for grouper
+        //  twoFactorServer.dontRequireTwoFactorGrouperSourceId = 
+        //
+        //  # dont require two factor source id for grouper if use subject id
+        //  twoFactorServer.dontRequireTwoFactorGrouperUseSubjectId = true
+        //
+        //  # dont require two factor source id for grouper if use subject identifier
+        //  twoFactorServer.dontRequireTwoFactorGrouperUseSubjectIdentifier = false
+        //
+        //  # dont require two factor source id for grouper group name
+        //  twoFactorServer.dontRequireTwoFactorGrouperNameOfGroup = 
+
+        String sourceId = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.dontRequireTwoFactorGrouperSourceId");
+        boolean useSubjectId = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.dontRequireTwoFactorGrouperUseSubjectId", true);
+        boolean useSubjectIdentifier = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.dontRequireTwoFactorGrouperUseSubjectIdentifier", false);
+        String nameOfGroup = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.dontRequireTwoFactorGrouperNameOfGroup");
+        
+        WsSubjectLookup wsSubjectLookup = new WsSubjectLookup();
+        
+        if (!TwoFactorServerUtils.isBlank(sourceId)) {
+          wsSubjectLookup.setSubjectSourceId(sourceId);
+        }
+
+        if (useSubjectId) {
+          wsSubjectLookup.setSubjectId(twoFactorUser.getLoginid());
+        }
+        if (useSubjectIdentifier) {
+          wsSubjectLookup.setSubjectIdentifier(twoFactorUser.getLoginid());
+        }
+        
+        gcDeleteMember.addSubjectLookup(wsSubjectLookup);
+
+        gcDeleteMember.assignGroupName(nameOfGroup);
+        
+        //get the user out of that group
+        gcDeleteMember.execute();
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.STOP_OPT_IN_REQUIREMENT, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+            null, null);
+        
+        return null;
+      }
+    });
+
+    setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
+
+    
+  }
+
+  
   /**
    * if a user wants their colleagues to opt them out
    * @param httpServletRequest
@@ -318,6 +423,20 @@ public class UiMainPublic extends UiServiceLogicBase {
       TwoFactorUser twoFactorUser) {
     
     TwoFactorHelpLoggingInContainer twoFactorHelpLoggingInContainer = twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer();
+    
+    //if configured to do this
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+        "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
+      
+      //lets clear this cache
+      TfRestLogic.refreshUsersNotOptedInButRequiredIfNeeded(twoFactorDaoFactory, true, false);
+      
+      //is the user in the list?
+      if (TfRestLogic.usersNotOptedInButRequired().get(twoFactorUser.getLoginid()) != null) {
+        twoFactorHelpLoggingInContainer.setUserRequiredToOptInButIsNot(true);
+      }
+      
+    }
     
     {
       

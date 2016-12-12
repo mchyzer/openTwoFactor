@@ -5,6 +5,7 @@
 package org.openTwoFactor.server.daemon;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -133,6 +134,7 @@ public class DaemonController {
         }
         
         if (runDaemons) {
+          scheduleReports();
           scheduleDaemon(TfAuditClearingJob.class);
           scheduleDaemon(TfDeletedClearingJob.class);
         }
@@ -142,6 +144,60 @@ public class DaemonController {
         LOG.error("Error scheduling jobs once", t);
       }
     }
+  }
+
+  /**
+   * schedule email reports from config file
+   */
+  static void scheduleReports() {
+    
+    //
+    //  # quartz cron for when this job should run
+    //  #twoFactorServer.report.<name>.quartzCron = 
+    //
+    //  # query of the report, can be any number of rows / cols
+    //  #twoFactorServer.report.<name>.query =
+    //
+    //  # if emailing to people in the report, this is the column name of the email address
+    //  # will send one email to each person
+    //  #twoFactorServer.report.<name>.emailToColumn = COLUMN_NAME
+    //  #twoFactorServer.report.<name>.tos =
+    //  #twoFactorServer.report.<name>.ccs =
+    //  #twoFactorServer.report.<name>.bccs =
+    //
+    //  #twoFactorServer.report.<name>.emailSubject =
+    //  #twoFactorServer.report.<name>.emailBody =
+    Map<String, TfReportConfig> tfReportConfigs = TwoFactorServerConfig.retrieveConfig().tfReportConfigs();
+   
+    for (TfReportConfig tfReportConfig : tfReportConfigs.values()) {
+
+      String jobName = TfReportJob.class.getSimpleName() + "_" + tfReportConfig.getName();
+      try {
+        Scheduler scheduler = scheduler();
+    
+        //note, in old versions of quartz, blank group cannot be used
+        String quartzJobName = "report_" + jobName;
+    
+        JobDetail job = JobBuilder.newJob(TfReportJob.class)
+                     .withIdentity(quartzJobName, Scheduler.DEFAULT_GROUP)
+                     .build();
+    
+        String cronString = tfReportConfig.getQuartzCron();
+        
+        TriggerKey triggerKey = TriggerKey.triggerKey(jobName + "_trigger");
+        Trigger trigger = TriggerBuilder.newTrigger() 
+           .withIdentity(triggerKey)
+           .withSchedule(CronScheduleBuilder.cronSchedule(cronString))
+           .build();
+    
+        scheduler.scheduleJob(job, trigger);
+
+      } catch (Throwable t) {
+        LOG.error("Error scheduling " + jobName + " daemon", t);
+      }
+
+    }
+    
   }
   
   /**

@@ -11,6 +11,8 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorReport;
+import org.openTwoFactor.server.daemon.TfReportConfig;
+import org.openTwoFactor.server.daemon.TfReportData;
 import org.openTwoFactor.server.dao.TwoFactorReportDao;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -87,6 +89,13 @@ public class TfMemoryReportDao implements TwoFactorReportDao {
    */
   public List<TwoFactorReport> retrieveAll() {
     return new ArrayList<TwoFactorReport>(reports);
+  }
+
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorReportDao#retrieveReportByConfig(org.openTwoFactor.server.daemon.TfReportConfig)
+   */
+  public TfReportData retrieveReportByConfig(TfReportConfig tfReportConfig) {
+    throw new RuntimeException("Not implemented");
   }
 
 }

@@ -23,6 +23,28 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
 public class TwoFactorRequestContainer {
   
   /**
+   * 
+   */
+  private TwoFactorWsRequestContainer twoFactorWsRequestContainer;
+  
+  /**
+   * @return the twoFactorWsRequestContainer
+   */
+  public TwoFactorWsRequestContainer getTwoFactorWsRequestContainer() {
+    if (this.twoFactorWsRequestContainer == null) {
+      this.twoFactorWsRequestContainer = new TwoFactorWsRequestContainer();
+    }
+    return this.twoFactorWsRequestContainer;
+  }
+  
+  /**
+   * @param twoFactorWsRequestContainer1 the twoFactorWsRequestContainer to set
+   */
+  public void setTwoFactorWsRequestContainer(TwoFactorWsRequestContainer twoFactorWsRequestContainer1) {
+    this.twoFactorWsRequestContainer = twoFactorWsRequestContainer1;
+  }
+
+  /**
    * there is no request so store in threadlocal for testing
    */
   private static boolean storeInThreadLocalForTesting = false;

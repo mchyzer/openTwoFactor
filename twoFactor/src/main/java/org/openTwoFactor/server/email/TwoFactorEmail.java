@@ -3,20 +3,26 @@
  */
 package org.openTwoFactor.server.email;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.activation.DataHandler;
+import javax.activation.FileDataSource;
 import javax.mail.Authenticator;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
+import javax.mail.Multipart;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -31,6 +37,11 @@ import edu.internet2.middleware.morphString.Morph;
  */
 public class TwoFactorEmail {
 
+  /**
+   * 
+   */
+  private List<File> attachments = new ArrayList<File>();
+  
   /**
    * List of blind carbon copy addresses to send the email to.
    */
@@ -82,6 +93,16 @@ public class TwoFactorEmail {
     return this;
   }
 
+  /**
+   * add attachment
+   * @param file
+   * @return this for chaining
+   */
+  public TwoFactorEmail addAttachment(File file) {
+    this.attachments.add(file);
+    return this;
+  }
+  
   /**
    * Add a carbon copy address to the email.
    * Use either a single adress or a comma delimited list of addresses.
@@ -259,6 +280,7 @@ public class TwoFactorEmail {
         properties.setProperty("mail.smtp.auth", "true");
         
         authenticator = new Authenticator() {
+          @Override
           protected PasswordAuthentication getPasswordAuthentication() {
             return new PasswordAuthentication(SMTP_USER, SMTP_PASS);
           }
@@ -339,12 +361,33 @@ public class TwoFactorEmail {
       String theSubject = StringUtils.defaultString(subjectPrefix) + this.subject;
       message.setSubject(theSubject);
       
-      message.setContent(this.body, "text/plain");
       
       testingEmailCount++;
       
       //if you dont have a server, but want to test, then set this
       if (!StringUtils.equals("testing", smtpServer)) {
+        // Deal with the attachments.
+        if (this.attachments.size() == 0) {
+          message.setContent(this.body, "text/plain");
+        } else {
+
+          MimeBodyPart messagePart = new MimeBodyPart();
+          messagePart.setContent(this.getBody(), "text/plain");
+
+          Multipart entireMessage = new MimeMultipart();
+          entireMessage.addBodyPart(messagePart);
+
+          MimeBodyPart mimeBodyPart = null;
+          for (File attachmentFile : this.attachments) {
+            mimeBodyPart = new MimeBodyPart();
+            mimeBodyPart.setDataHandler(new DataHandler(new FileDataSource(attachmentFile
+                .getAbsolutePath())));
+            mimeBodyPart.setFileName(attachmentFile.getName());
+            entireMessage.addBodyPart(mimeBodyPart);
+          }
+          message.setContent(entireMessage);
+        }
+
         Transport.send(message);
       } else {
         LOG.error("Not sending email since smtp server is 'testing'. \nFROM: " + theFrom + "\nSUBJECT: " + theSubject + "\nBODY: " + this.body + "\n");

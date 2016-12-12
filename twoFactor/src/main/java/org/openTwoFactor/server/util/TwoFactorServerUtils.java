@@ -7,6 +7,7 @@ package org.openTwoFactor.server.util;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -2189,6 +2190,16 @@ public class TwoFactorServerUtils {
    * timestamp format, make sure to synchronize
    */
   final static SimpleDateFormat timestampFileFormat = new SimpleDateFormat(TIMESTAMP_FILE_FORMAT);
+
+  /**
+   * string format of dates for file names yyyy_MM_dd__HH_mm_ss
+   */
+  public static final String DATETIME_FILE_FORMAT = "yyyy_MM_dd__HH_mm_ss";
+
+  /**
+   * datetime format, make sure to synchronize yyyy_MM_dd__HH_mm_ss
+   */
+  final static SimpleDateFormat datetimeFileFormat = new SimpleDateFormat(DATETIME_FILE_FORMAT);
 
   /**
    * string format of dates
@@ -5455,6 +5466,23 @@ public class TwoFactorServerUtils {
   }
 
   /**
+   * create a new file
+   * @param file
+   */
+  public static void fileCreateNewFile(File file) {
+    if (file.exists() && file.isFile()) {
+      return;
+    }
+    
+    try {
+      file.createNewFile();
+    } catch (IOException ioe) {
+      throw new RuntimeException("Cant create file: " + file.getAbsolutePath());
+    }
+    
+  }
+  
+  /**
    * convert a string date into a long date (e.g. for xml export)
    * @param date
    * @return the long or null if the date was null or blank
@@ -6016,6 +6044,18 @@ public class TwoFactorServerUtils {
       return null;
     }
     return timestampFileFormat.format(timestamp);
+  }
+
+  /**
+   * Convert a timestamp into a string: yyyy_MM_dd__HH_mm_ss
+   * @param datetime
+   * @return the string representation
+   */
+  public synchronized static String datetimeToFileString(Date datetime) {
+    if (datetime == null) {
+      return null;
+    }
+    return datetimeFileFormat.format(datetime);
   }
 
   /**
@@ -6790,6 +6830,20 @@ public class TwoFactorServerUtils {
     if (writer != null) {
       try {
         writer.close();
+      } catch (IOException e) {
+        //swallow, its ok
+      }
+    }
+  }
+
+  /**
+   * close a writer quietly
+   * @param closeable
+   */
+  public static void closeQuietly(Closeable closeable) {
+    if (closeable != null) {
+      try {
+        closeable.close();
       } catch (IOException e) {
         //swallow, its ok
       }

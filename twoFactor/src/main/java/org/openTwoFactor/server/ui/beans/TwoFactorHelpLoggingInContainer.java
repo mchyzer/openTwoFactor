@@ -15,6 +15,27 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 public class TwoFactorHelpLoggingInContainer {
 
   /**
+   * if user is required to opt in but is not opted in
+   */
+  private boolean userRequiredToOptInButIsNot;
+  
+  /**
+   * if user is required to opt in but is not opted in
+   * @return the userRequiredToOptInButIsNot
+   */
+  public boolean isUserRequiredToOptInButIsNot() {
+    return this.userRequiredToOptInButIsNot;
+  }
+  
+  /**
+   * if user is required to opt in but is not opted in
+   * @param userRequiredToOptInButIsNot1 the userRequiredToOptInButIsNot to set
+   */
+  public void setUserRequiredToOptInButIsNot(boolean userRequiredToOptInButIsNot1) {
+    this.userRequiredToOptInButIsNot = userRequiredToOptInButIsNot1;
+  }
+
+  /**
    * friend object for sending email
    */
   private TwoFactorUser twoFactorUserFriend;

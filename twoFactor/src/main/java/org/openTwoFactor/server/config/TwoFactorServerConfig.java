@@ -18,6 +18,7 @@ import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
 import org.openTwoFactor.server.TwoFactorCheckPass;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.contact.TwoFactorContactInterface;
+import org.openTwoFactor.server.daemon.TfReportConfig;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 import edu.internet2.middleware.grouperClient.config.ConfigPropertiesCascadeBase;
@@ -479,6 +480,146 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
     
     
   }
+
+  /**
+   * report configs, name to config
+   */
+  private Map<String, TfReportConfig> tfReportConfigs = null;
+  
+  /**
+   * 
+   * @return the map, name to config
+   */
+  public Map<String, TfReportConfig> tfReportConfigs() {
+    
+    if (this.tfReportConfigs == null) {
+      
+      synchronized (this) {
+        
+        if (this.tfReportConfigs == null) {
+          
+          Map<String, TfReportConfig> tempTfReportConfigs = new HashMap<String, TfReportConfig>();
+          
+          //  # quartz cron for when this job should run
+          //  #twoFactorServer.report.<name>.quartzCron = 
+          Pattern pattern = Pattern.compile("^twoFactorServer\\.report\\.(.*)\\.quartzCron$");
+          
+          for (Object keyObject : this.properties().keySet()) {
+            String key = (String)keyObject;
+            Matcher matcher = pattern.matcher(key);
+            if (matcher.matches()) {
+              
+              String reportName = matcher.group(1);
+              
+              TfReportConfig tfReportConfig = new TfReportConfig();
+              tfReportConfig.setName(reportName);
+              if(StringUtils.isBlank(reportName)) {
+                LOG.error("Report name cant be blank!!!");
+                continue;
+              }
+
+              {
+                String quartzCron = this.propertyValueString(key);
+                if(StringUtils.isBlank(quartzCron)) {
+                  LOG.error("Report quartzCron cant be blank for report " + reportName + "!!!");
+                  continue;
+                }
+                tfReportConfig.setQuartzCron(quartzCron);
+              }
+              
+              //
+              //  # query of the report, can be any number of rows / cols
+              //  #twoFactorServer.report.<name>.query =
+              {
+                String query = this.propertyValueString("twoFactorServer.report." + reportName + ".query");
+                if(StringUtils.isBlank(query)) {
+                  LOG.error("Report query cant be blank for report " + reportName + "!!!");
+                  continue;
+                }
+                tfReportConfig.setQuery(query);
+              }
+              
+              //
+              //  # if emailing to people in the report, this is the column name of the email address
+              //  # will send one email to each person
+              //  #twoFactorServer.report.<name>.emailToColumn = COLUMN_NAME
+              {
+                String emailToColumn = this.propertyValueString("twoFactorServer.report." + reportName + ".emailToColumn");
+                if(!StringUtils.isBlank(emailToColumn)) {
+                  tfReportConfig.setEmailToColumn(emailToColumn);
+                }
+              }
+              
+              
+              //  #twoFactorServer.report.<name>.tos =
+              {
+                String tos = this.propertyValueString("twoFactorServer.report." + reportName + ".tos");
+                if(!StringUtils.isBlank(tos)) {
+                  tfReportConfig.setTos(tos);
+                }
+              }
+
+              //  #twoFactorServer.report.<name>.ccs =
+              {
+                String ccs = this.propertyValueString("twoFactorServer.report." + reportName + ".ccs");
+                if(!StringUtils.isBlank(ccs)) {
+                  tfReportConfig.setCcs(ccs);
+                }
+              }
+
+              //  #twoFactorServer.report.<name>.bccs =
+              {
+                String bccs = this.propertyValueString("twoFactorServer.report." + reportName + ".bccs");
+                if(!StringUtils.isBlank(bccs)) {
+                  tfReportConfig.setBccs(bccs);
+                }
+              }
+
+              //
+              //  #twoFactorServer.report.<name>.emailSubject =
+              {
+                String emailToSubject = this.propertyValueString("twoFactorServer.report." + reportName + ".emailSubject");
+                if(StringUtils.isBlank(emailToSubject)) {
+                  LOG.error("Report emailSubject cant be blank for report " + reportName + "!!!");
+                  continue;
+                }
+                tfReportConfig.setEmailSubject(emailToSubject);
+              }
+
+              //  #twoFactorServer.report.<name>.emailBody =
+              {
+                String emailBody = this.propertyValueString("twoFactorServer.report." + reportName + ".emailBody");
+                if(StringUtils.isBlank(emailBody)) {
+                  LOG.error("Report query cant be blank for report " + reportName + "!!!");
+                  continue;
+                }
+                tfReportConfig.setEmailBody(emailBody);
+              }
+
+              //  # you can use $date_time$ to subsitute the current date/time
+              {
+                String reportFileName = this.propertyValueString("twoFactorServer.report." + reportName + ".reportFileName");
+                if(!StringUtils.isBlank(reportFileName)) {
+                  tfReportConfig.setReportFileName(reportFileName);
+                }
+              }
+              
+              tempTfReportConfigs.put(reportName, tfReportConfig);
+              
+            }
+          }
+          this.tfReportConfigs = Collections.unmodifiableMap(tempTfReportConfigs);
+
+        }
+      }
+    }
+    
+    return this.tfReportConfigs;
+    
+    
+  }
+  
+
   
   /**
    * retrieve a config from the config file or from cache

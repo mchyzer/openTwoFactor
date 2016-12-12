@@ -394,6 +394,22 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * stop opt in requirement temporarily
+   */
+  STOP_OPT_IN_REQUIREMENT {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsStopOptInRequirement";
+    }
+    
+  }, 
+  
+  /**
    * optin to two factor registering a fob serial number
    */
   REGISTER_FOB_SERIAL_NUMBER {

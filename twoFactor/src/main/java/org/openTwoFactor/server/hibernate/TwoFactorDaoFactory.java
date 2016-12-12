@@ -12,6 +12,7 @@ import org.openTwoFactor.server.dao.TwoFactorReportDao;
 import org.openTwoFactor.server.dao.TwoFactorReportDataDao;
 import org.openTwoFactor.server.dao.TwoFactorReportPrivilegeDao;
 import org.openTwoFactor.server.dao.TwoFactorReportRollupDao;
+import org.openTwoFactor.server.dao.TwoFactorRequiredUserDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
@@ -81,6 +82,12 @@ public abstract class TwoFactorDaoFactory {
    */
   public abstract TwoFactorAuditDao getTwoFactorAudit();
 
+  /**
+   * 
+   * @return required user
+   */
+  public abstract TwoFactorRequiredUserDao getTwoFactorRequiredUser();
+  
   /**
    * @return device serial
    */

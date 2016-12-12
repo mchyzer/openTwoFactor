@@ -7,6 +7,8 @@ package org.openTwoFactor.server.dao;
 import java.util.List;
 
 import org.openTwoFactor.server.beans.TwoFactorReport;
+import org.openTwoFactor.server.daemon.TfReportConfig;
+import org.openTwoFactor.server.daemon.TfReportData;
 
 
 
@@ -53,5 +55,12 @@ public interface TwoFactorReportDao {
    * @return all reports
    */
   public List<TwoFactorReport> retrieveAll();
+  
+  /**
+   * get report by config
+   * @param tfReportConfig
+   * @return the report data
+   */
+  public TfReportData retrieveReportByConfig(TfReportConfig tfReportConfig);
 
 }

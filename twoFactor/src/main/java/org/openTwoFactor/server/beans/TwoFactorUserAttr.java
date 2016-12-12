@@ -224,7 +224,12 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
      * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
      */
     phone_auto_calltext(TwoFactorUserAttrType.string),
-    
+
+    /**
+     * millis since 1970 of last email sent to not opted in user who is required
+     */
+    last_email_not_opted_in_user(TwoFactorUserAttrType.integer),
+
     /**
      * <pre>
      * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc

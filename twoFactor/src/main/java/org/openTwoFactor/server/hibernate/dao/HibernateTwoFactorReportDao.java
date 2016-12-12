@@ -7,6 +7,8 @@ package org.openTwoFactor.server.hibernate.dao;
 import java.util.List;
 
 import org.openTwoFactor.server.beans.TwoFactorReport;
+import org.openTwoFactor.server.daemon.TfReportConfig;
+import org.openTwoFactor.server.daemon.TfReportData;
 import org.openTwoFactor.server.dao.TwoFactorReportDao;
 import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -99,5 +101,27 @@ public class HibernateTwoFactorReportDao implements TwoFactorReportDao {
     return twoFactorReports;
   }
 
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorReportDao#retrieveReportByConfig(org.openTwoFactor.server.daemon.TfReportConfig)
+   */
+  public TfReportData retrieveReportByConfig(TfReportConfig tfReportConfig) {
+    
+    TfReportData tfReportData = new TfReportData();
+
+    //lets parse the query:
+    String headersString = tfReportConfig.getQuery();
+    headersString = headersString.substring("select ".length());
+    
+    headersString = headersString.substring(0, headersString.toLowerCase().indexOf(" from "));
+    
+    List<String> headers = TwoFactorServerUtils.splitTrimToList(headersString, ", ");
+    
+    List<String[]> data = HibernateSession.bySqlStatic().listSelect(String[].class, tfReportConfig.getQuery(), null);
+
+    tfReportData.setHeaders(headers);
+    tfReportData.setData(data);
+    return tfReportData;
+    
+  }
 
 }

@@ -3,6 +3,7 @@ package org.openTwoFactor.server.ws.rest;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -21,12 +22,14 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.duo.DuoLog;
+import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.exceptions.TfStaleObjectStateException;
 import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
 import org.openTwoFactor.server.ui.beans.TextContainer;
+import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -34,6 +37,7 @@ import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordRequest;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordResponse;
 import org.openTwoFactor.server.ws.corebeans.TfCheckPasswordResponseCode;
 
+import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
 import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 
 
@@ -273,6 +277,8 @@ public class TfRestLogic {
     
     try {
       
+      refreshUsersNotOptedInButRequiredIfNeeded(twoFactorDaoFactory);
+
       trafficLogMap.put("originalUsername", tfCheckPasswordRequest.getOriginalUsername());
       
       //if set for everyone, or set for this request
@@ -373,6 +379,7 @@ public class TfRestLogic {
       boolean twoFactorRequired = false;
       boolean serviceProviderRequiresTwoFactor = false;
       boolean serviceProviderForbidsTwoFactor = false;
+      boolean serviceProviderDoesntRequireOptIn = false;
       boolean optedInConsideringRequired = false;
       
       //############## see if serviceId is configured to forbid two factor
@@ -387,6 +394,24 @@ public class TfRestLogic {
             trafficLogMap.put("serviceIdForbidsTwoFactorInConfig", true);
             if (debug) {
               tfCheckPasswordResponse.appendDebug("serviceId forbids two factor in config");
+            }
+
+          }
+        }
+      }
+
+      //############## see if serviceId is configured to forbid two factor
+      if (!StringUtils.isBlank(tfCheckPasswordRequest.getServiceId())) {
+        String serviceProviderIdsThatDontRequireUsersToOptIn = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+            "twoFactorServer.ws.serviceProviderIdsThatDontRequireUsersToOptIn");
+        if (!StringUtils.isBlank(serviceProviderIdsThatDontRequireUsersToOptIn)) {
+          Set<String> serviceProviderIdsThatDontRequireUsersToOptInSet = TwoFactorServerUtils.splitTrimToSet(serviceProviderIdsThatDontRequireUsersToOptIn, ",");
+          if (serviceProviderIdsThatDontRequireUsersToOptInSet.contains(tfCheckPasswordRequest.getServiceId())) {
+            serviceProviderDoesntRequireOptIn = true;
+            
+            trafficLogMap.put("serviceProviderDoesntRequireOptIn", true);
+            if (debug) {
+              tfCheckPasswordResponse.appendDebug("serviceId does not require optin from config");
             }
 
           }
@@ -521,6 +546,27 @@ public class TfRestLogic {
         
       }
       
+      boolean userNotOptedInButRequiredToBeOptedIn = false;
+
+      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && !optedInConsideringRequired) {
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn")
+            || TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn")
+            ) {
+          
+          //lets see if the user is required
+          TfRestRequiredUser tfRestRequiredUser = userRequiredInTwoStepNotEnrolled.get(twoFactorUser.getLoginid());
+
+          if (tfRestRequiredUser != null) {
+            userNotOptedInButRequiredToBeOptedIn = true;
+            if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn")) {
+              TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user required to be enrolled and is not", null);
+              trafficLogMap.put("userRequiredToBeEnrolledAndIsNot", true);
+            }
+            emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+          }
+        }
+      }
+
       //###############  if not opted in
       if (!optedInConsideringRequired) {
   
@@ -555,6 +601,42 @@ public class TfRestLogic {
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "password was sent", null);
   
         }
+
+        if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
+            && userNotOptedInButRequiredToBeOptedIn
+                && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+                    "twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
+
+          emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+          
+        }
+
+        if (!serviceProviderDoesntRequireOptIn
+            && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
+            && (userNotOptedInButRequiredToBeOptedIn
+                && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+                    "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn"))) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+            TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
+            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+            null);
+          tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
+          tfCheckPasswordResponse.setErrorMessage(null);
+          tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
+          tfCheckPasswordResponse.setTwoFactorUserAllowed(false);
+          //it is required to use two factor for this user
+          tfCheckPasswordResponse.setTwoFactorRequired(true);
+          
+          tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
+          
+          trafficLogMap.put("userAllowed", false);
+          trafficLogMap.put("success", true);
+          trafficLogMap.put("resultCode", TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
+          trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED.name());
+          
+          return tfCheckPasswordResponse;
+        }
+        
         
         //lets see if password is sent
         if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
@@ -576,7 +658,7 @@ public class TfRestLogic {
           return tfCheckPasswordResponse;
   
         }
-  
+
         //not opted in, service doesnt require two factor
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
@@ -1153,10 +1235,24 @@ public class TfRestLogic {
         return tfCheckPasswordResponse;
         
       }
-      
+
+      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) 
+          && userNotOptedInButRequiredToBeOptedIn
+                  && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+                      "twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
+        
+        emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+
+      }
+
       //finally, the service requires two factor, and the pass was not sent, and user opted in
-      if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && optedInConsideringRequired) {
-  
+      if (!serviceProviderDoesntRequireOptIn 
+          && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) 
+          && (optedInConsideringRequired 
+              || (userNotOptedInButRequiredToBeOptedIn
+                  && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+                      "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn", false)))) {
+
         TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
              TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
@@ -1165,6 +1261,8 @@ public class TfRestLogic {
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
         tfCheckPasswordResponse.setTwoFactorUserAllowed(false);
+        //it is required to use two factor for this user
+        tfCheckPasswordResponse.setTwoFactorRequired(true);
 
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
 
@@ -1243,7 +1341,171 @@ public class TfRestLogic {
 
     }
   }
+  
+  /**
+   * email user periodically if not opted in but required
+   * @param twoFactorDaoFactory
+   * @param twoFactorUser
+   * @param trafficLogMap 
+   * @param responseMessage 
+   */
+  private static void emailUserPeriodicallyIfNotOptedInButRequired(TwoFactorDaoFactory twoFactorDaoFactory, 
+      TwoFactorUser twoFactorUser, Map<String, Object> trafficLogMap, StringBuilder responseMessage) {
+    
+    TfRestRequiredUser tfRestRequiredUser = userRequiredInTwoStepNotEnrolled.get(twoFactorUser.getLoginid());
 
+    //we good, not required
+    if (tfRestRequiredUser == null) {
+      return;
+    }
+    
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn")) {
+      
+      if (!TwoFactorServerUtils.isBlank(tfRestRequiredUser.getEmail())) {
+        
+        long daysBetweenEmails = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedInEveryDays", 1);
+
+        long lastEmailNotOptedInUser = TwoFactorServerUtils.defaultIfNull(twoFactorUser.getLastEmailNotOptedInUser(), 0L);
+
+        if (System.currentTimeMillis() - lastEmailNotOptedInUser >  daysBetweenEmails * 24 * 60 * 60 * 1000) {
+          
+          trafficLogMap.put("emailingUserWhoShouldBeOptedIn", true);
+          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "emailed user who should be opted in", null);
+
+          TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorWsRequestContainer().setTfRestRequiredUser(tfRestRequiredUser);
+          
+          //set the default text container...
+          String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailUsersRequiredToBeOptedInSubject");
+          subject = TextContainer.massageText("emailUsersRequiredToBeOptedInSubject", subject);
+
+          String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailUsersRequiredToBeOptedInBody");
+          body = TextContainer.massageText("emailUsersRequiredToBeOptedInBody", body);
+          
+          String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedInEveryDaysBcc");
+          
+          TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+          
+          twoFactorMail.addTo(tfRestRequiredUser.getEmail());
+          twoFactorMail.addBcc(bccsString);
+          
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+          
+          twoFactorUser.setLastEmailNotOptedInUser(System.currentTimeMillis());
+          twoFactorUser.store(twoFactorDaoFactory);
+        } else {
+          trafficLogMap.put("notEmailingUserSinceRecentlyEmailedShouldBeOptedIn", true);
+        }
+      }
+    }
+
+  }
+  
+  /**
+   * refresh cache if needed
+   * @param twoFactorDaoFactory
+   */
+  private static void refreshUsersNotOptedInButRequiredIfNeeded(final TwoFactorDaoFactory twoFactorDaoFactory) {
+    refreshUsersNotOptedInButRequiredIfNeeded(twoFactorDaoFactory, false, true);
+  }
+  
+  /**
+   * map of loginid to required user (user required to opt in but is not opted in)
+   * @return the map
+   */
+  public static Map<String, TfRestRequiredUser> usersNotOptedInButRequired() {
+    return userRequiredInTwoStepNotEnrolled;
+  }
+  
+  /**
+   * refresh cache if needed
+   * @param twoFactorDaoFactory
+   * @param clearFirst if the cache should be cleared and repopulated (for testing only)
+   * @param runInThread if should run in thread (only false in testing)
+   */
+  public static void refreshUsersNotOptedInButRequiredIfNeeded(final TwoFactorDaoFactory twoFactorDaoFactory, boolean clearFirst, boolean runInThread) {
+    if (clearFirst) {
+      userRequiredInTwoStepNotEnrolledLastRefreshMillis1970 = -1;
+    }
+    if (userRequiredInTwoStepNotEnrolledRunning) {
+      return;
+    }
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn")
+        || TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn")
+        ) {
+      
+      final int secondsRefresh = TwoFactorServerConfig.retrieveConfig().propertyValueInt(
+          "twoFactorServer.ws.restrictUsersQueryRefreshSeconds", 500);
+      
+      //hmmm, we need a refresh
+      if ((System.currentTimeMillis() - userRequiredInTwoStepNotEnrolledLastRefreshMillis1970) / 1000 > secondsRefresh) {
+        
+        if (runInThread) {
+          //run this in thread so it doesnt affect response time
+          Thread thread = new Thread(new Runnable() {
+  
+            public void run() {
+              synchronized (TfRestLogic.class) {
+                refreshUsersNotOptedInButRequiredHelper(twoFactorDaoFactory);
+              }
+            }
+            
+          });
+          thread.start();
+        } else {
+          refreshUsersNotOptedInButRequiredHelper(twoFactorDaoFactory);
+        }
+      }
+    }
+  }
+  
+  /**
+   * 
+   * @param twoFactorDaoFactory
+   */
+  private static void refreshUsersNotOptedInButRequiredHelper(TwoFactorDaoFactory twoFactorDaoFactory) {
+    final int secondsRefresh = TwoFactorServerConfig.retrieveConfig().propertyValueInt(
+        "twoFactorServer.ws.restrictUsersQueryRefreshSeconds", 500);
+
+    if ((System.currentTimeMillis() - userRequiredInTwoStepNotEnrolledLastRefreshMillis1970) / 1000 > secondsRefresh) {
+
+      userRequiredInTwoStepNotEnrolledLastRefreshMillis1970 = System.currentTimeMillis();
+
+      try {
+        if (userRequiredInTwoStepNotEnrolledRunning) {
+          return;
+        }
+        userRequiredInTwoStepNotEnrolledRunning = true;
+
+        
+        Map<String, TfRestRequiredUser> userRequiredInTwoStepNotEnrolledLocal = new HashMap<String, TfRestRequiredUser>(
+            twoFactorDaoFactory.getTwoFactorRequiredUser().retrieveRequiredUsers());
+
+        userRequiredInTwoStepNotEnrolled = userRequiredInTwoStepNotEnrolledLocal;
+        
+      } catch (Exception e) {
+        LOG.error("Error refreshing user required cache", e);
+      } finally {
+        userRequiredInTwoStepNotEnrolledRunning = false;
+      }
+    }
+
+  }
+  
+  /**
+   * when was last refresh
+   */
+  private static boolean userRequiredInTwoStepNotEnrolledRunning = false;
+
+  /**
+   * when was last refresh
+   */
+  private static long userRequiredInTwoStepNotEnrolledLastRefreshMillis1970 = -1;
+  
+  /** keep cache of users required to be in two step who arent, by loginid */
+  private static Map<String, TfRestRequiredUser> userRequiredInTwoStepNotEnrolled = new HashMap<String, TfRestRequiredUser>();
+  
   /**
    * logic to trust a browser
    * @param twoFactorDaoFactory

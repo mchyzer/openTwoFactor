@@ -15,6 +15,7 @@ import org.openTwoFactor.server.dao.TwoFactorReportDao;
 import org.openTwoFactor.server.dao.TwoFactorReportDataDao;
 import org.openTwoFactor.server.dao.TwoFactorReportPrivilegeDao;
 import org.openTwoFactor.server.dao.TwoFactorReportRollupDao;
+import org.openTwoFactor.server.dao.TwoFactorRequiredUserDao;
 import org.openTwoFactor.server.dao.TwoFactorServiceProviderDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAgentDao;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
@@ -164,6 +165,14 @@ public class HibernateDaoFactory extends TwoFactorDaoFactory {
   @Override
   public TwoFactorReportDataDao getTwoFactorReportData() {
     return new HibernateTwoFactorReportDataDao();
+  }
+
+  /**
+   * @see org.openTwoFactor.server.hibernate.TwoFactorDaoFactory#getTwoFactorRequiredUser()
+   */
+  @Override
+  public TwoFactorRequiredUserDao getTwoFactorRequiredUser() {
+    return new HibernateTwoFactorRequiredUserDao();
   }
 
 }

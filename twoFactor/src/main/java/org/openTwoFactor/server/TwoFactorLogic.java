@@ -153,17 +153,17 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 //      return;
 //    }
     
-//    if (true) {
-//      
-//      String secret = "S5OEBQNJ55UKL3QKRX3VEFxxxxxxxx";
-//      System.out.println(new Date(23820173L*60));
-//      
-//      //findTimePeriodFob(secret, 551960, 305783);
-//      
-//      printPasswordsForSecret(secret, 
-//          null, null, System.currentTimeMillis(), false);
-//      return;
-//    }
+    if (true) {
+      
+      String secret = "2PFJT2DNP4JAHETT";
+      //System.out.println(new Date(23820173L*60));
+      
+      //findTimePeriodFob(secret, 551960, 305783);
+      
+      printPasswordsForSecret(secret, 
+          null, null, System.currentTimeMillis(), false);
+      return;
+    }
     
     if (true) {
     

@@ -452,6 +452,24 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   *  millis since 1970 of last email sent to not opted in user who is required
+   * @return if phone auto call text
+   */
+  public Long getLastEmailNotOptedInUser() {
+    return attributeValueInteger(TwoFactorUserAttrName.last_email_not_opted_in_user);
+  }
+  
+  /**
+   *  millis since 1970 of last email sent to not opted in user who is required
+   * @param theLastEmailNotOptedInUser if phone auto call text
+   */
+  public void setLastEmailNotOptedInUser(Long theLastEmailNotOptedInUser) {
+    this.attribute(TwoFactorUserAttrName.last_email_not_opted_in_user, true).setAttributeValueInteger(theLastEmailNotOptedInUser);
+  }
+
+  
+  
+  /**
    * <pre>
    * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
    * the json has the month and day in the key, will delete keys older than a month
