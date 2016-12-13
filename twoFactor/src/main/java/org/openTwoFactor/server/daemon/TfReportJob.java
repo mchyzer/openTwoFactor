@@ -188,6 +188,11 @@ public class TfReportJob implements Job {
       }
     }
 
+    if (!TwoFactorServerUtils.isBlank(tfReportConfig.getFrom())) {
+      
+      twoFactorMail.assignFrom(tfReportConfig.getFrom());
+      
+    }
     twoFactorMail.assignBody(tfReportConfig.getEmailBody());
     twoFactorMail.assignSubject(tfReportConfig.getEmailSubject());
     

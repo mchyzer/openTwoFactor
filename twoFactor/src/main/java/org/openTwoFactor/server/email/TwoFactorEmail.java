@@ -76,7 +76,9 @@ public class TwoFactorEmail {
   /** subject of email */
   private String subject;
   
-  /** email address this is from */
+  /**
+   * email address this is from, there is a default if this is not filled in
+   */
   private String from;
   
   /** body of email (currently HTML is not supported, only plain text) */
@@ -238,6 +240,14 @@ public class TwoFactorEmail {
    */
   public static void main(String[] args) {
     new TwoFactorEmail().assignBody("hey").assignSubject("subject").addTo("mchyzer@yahoo.com").send();
+  }
+
+  /**
+   * from in email address
+   * @param theFrom
+   */
+  public void setFrom(String theFrom) {
+    this.from = theFrom;
   }
   
   /**

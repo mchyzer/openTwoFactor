@@ -604,6 +604,16 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
                 }
               }
               
+              //  # from has a default if not filled in
+              //  #twoFactorServer.report.<name>.from =
+
+              {
+                String from = this.propertyValueString("twoFactorServer.report." + reportName + ".from");
+                if(!StringUtils.isBlank(from)) {
+                  tfReportConfig.setFrom(from);
+                }
+              }
+              
               tempTfReportConfigs.put(reportName, tfReportConfig);
               
             }

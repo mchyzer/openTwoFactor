@@ -141,6 +141,33 @@ public class TfReportConfig {
   }
 
   /**
+   * email address this is from
+   * # from has a default if not filled in
+   * #twoFactorServer.report.<name>.from =
+   */
+  private String from;
+  
+  /**
+   * email address this is from
+   * # from has a default if not filled in
+   * #twoFactorServer.report.<name>.from =
+   * @return the from
+   */
+  public String getFrom() {
+    return this.from;
+  }
+  
+  /**
+   * email address this is from
+   * # from has a default if not filled in
+   * #twoFactorServer.report.<name>.from =
+   * @param from1 the from to set
+   */
+  public void setFrom(String from1) {
+    this.from = from1;
+  }
+
+  /**
    * #twoFactorServer.report.<name>.tos =
    */
   private String tos;
