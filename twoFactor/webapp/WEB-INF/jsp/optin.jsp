@@ -41,11 +41,12 @@
         <div id="otherOptions">
           <div style="border: 1px solid #95956F; padding: 3px">
 
+            <%-- Activate a hardware token --%>
             <div class="alignleft"><b>${textContainer.text['optinStep2activateToken']}</b></div>
             <div class="alignright">
-              
+
                 <a href="#" onclick="$('#activateTokenContentDiv').hide(); $('#activateTokenLinkDiv').show(); $('#secretRadioId').click(); return false;">${textContainer.text['optinStepClose']}</a>
-                  
+
             </div> 
             <div class="clearboth"></div> 
             <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.allowSerialNumberRegistration}">
@@ -106,10 +107,12 @@
           </div>
         </div>
       </div>
+
       <br />
 
       <div class="secretClass">
         <div id="activateAppLinkDiv">
+          <%-- Activate an app --%>
           <a href="#" onclick="$('#activateAppContentDiv').show(); $('#activateAppLinkDiv').hide(); return false;">${textContainer.text['optinStep2activateApp']}</a>
         </div>
         <div id="activateAppContentDiv" style="display: none" >
@@ -126,8 +129,92 @@
             ${textContainer.text['optinStep2activateContent']}
           </div>  
         </div>
-        <br /><br />
       </div>
+      
+      <c:if test="${twoFactorRequestContainer.canOptinByPhone}">
+      
+        <br />
+        
+        <div class="secretClass">
+          <div id="optinPhoneLinkDiv">
+            <%-- Activate an app --%>
+            <a href="#" onclick="$('#optinPhoneContentDiv').show(); $('#optinPhoneLinkDiv').hide(); return false;">${textContainer.text['optinStep2optinPhone']}</a>
+          </div>
+          <div id="optinPhoneContentDiv" style="display: none" >
+            <div style="border: 1px solid #95956F; padding: 3px">
+              <div class="alignleft"><b>${textContainer.text['optinStep2optinPhone']}</b></div>
+              <div class="alignright">
+                
+                  <a href="#" onclick="$('#optinPhoneContentDiv').hide(); $('#optinPhoneLinkDiv').show(); return false;">${textContainer.text['optinStepClose']}</a>
+                    
+              </div> 
+              <div class="clearboth"></div> 
+              
+              <br />
+              <c:choose>
+                <%-- see if the user has any phones --%> 
+                <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.hasPhoneNumbers}">
+                  ${textContainer.text['optinStep2phoneContent']}          
+                  <br /><br />
+                  <c:set var="i" value="0" />
+                  <c:forEach items="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.phonesForScreen}" 
+                      var="twoFactorPhoneForScreen"  >
+                    <c:if test="${twoFactorPhoneForScreen.hasPhone}">
+      
+                      <div class="formBox" style="width: 28em; margin-bottom: 1em">
+                        <div class="formRow" style="height: 2em">
+                          <div class="formValue" style="width: 12em">
+                            <c:choose>
+                              
+                              <c:when test="${twoFactorPhoneForScreen.voice}">
+                                <form action="UiMain.optinPhoneCode" method="post" style="display: inline">
+                                  <input value="${textContainer.textEscapeDouble['havingTroubleVoicePrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
+                                    onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                                     />
+                                  <input type="hidden" name="phoneIndex" 
+                                    value="${i}" />
+                                  <input type="hidden" name="phoneType" 
+                                    value="voice" />
+                                </form>
+                              </c:when>         
+                              <c:otherwise>
+                                &nbsp;
+                              </c:otherwise>
+                            </c:choose>
+                          </div>
+                          <div class="formValue" style="width: 12em">
+                            <c:if test="${twoFactorPhoneForScreen.text}">
+                              <form action="UiMain.optinPhoneCode" method="post" style="display: inline">
+                                <input value="${textContainer.textEscapeDouble['havingTroubleTextPrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
+                                  onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                                   />
+                                <input type="hidden" name="phoneIndex" 
+                                  value="${i}" />
+                                <input type="hidden" name="phoneType" 
+                                  value="text" />
+                              </form>
+                            </c:if>                  
+                          </div>
+                        </div>
+                      </div>
+      
+      
+                    </c:if>
+                    <c:set var="i" value="${i+1}" />
+                  </c:forEach>
+                      
+                  
+                  
+                </c:when>            
+                <c:otherwise>
+                  ${textContainer.text['optinStep2phoneNoPhone']}          
+                </c:otherwise>
+              </c:choose>
+            </div>  
+          </div>
+          <br /><br />
+        </div>
+      </c:if>      
     </div>
     <div  class="secretClass">
       <a id="step3"></a>

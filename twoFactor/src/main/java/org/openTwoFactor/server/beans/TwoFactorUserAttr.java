@@ -221,7 +221,7 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     phone_opt_in(TwoFactorUserAttrType.booleanType),
     
     /**
-     * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+     * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
      */
     phone_auto_calltext(TwoFactorUserAttrType.string),
 
@@ -233,11 +233,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     /**
      * <pre>
      * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
-     * the json has the month and day in the key, will delete keys older than a month
+     * the json has the month (0 indexed) and day in the key, will delete keys older than a month
      * {
-     * "0101": 2,
-     * "0102": 3,
-     * "0103": 0
+     * "0001": 2,
+     * "0002": 3,
+     * "0003": 0
      * ...
      * }
      * 

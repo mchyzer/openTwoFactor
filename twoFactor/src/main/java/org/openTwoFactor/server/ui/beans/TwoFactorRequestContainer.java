@@ -106,6 +106,14 @@ public class TwoFactorRequestContainer {
   
   /**
    * 
+   * @return if user can optin by phone
+   */
+  public boolean isCanOptinByPhone() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.canOptinByPhone", true);
+  }
+  
+  /**
+   * 
    * @return true if editable email
    */
   public boolean isEditableEmail() {

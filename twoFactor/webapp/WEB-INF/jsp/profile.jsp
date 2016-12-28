@@ -106,11 +106,45 @@
           ${textContainer.text['profilePhoneTextOptionLabel']} </div>
         <div class="formFooter">&nbsp;</div>
       </div>
+      <%-- if we are auto calling / texting and if the user is opted in by phone --%>
+      <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.enableAutoCallText && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneOptIn != null && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneOptIn == true}">
+        <div class="formRow">
+          <div class="formLabel">
+          <span style="font-size: 0.8em">&nbsp;</span><br />
+          <b><label for="phone0">${textContainer.text['profilePhoneAutoVoiceText']}</label></b></div>
+          <div class="formValue">
+            <span style="font-size: 0.8em">${textContainer.text['profilePhoneAutoVoiceSubtext']}</span><br />
+            <select name="phoneAutoVoiceText">
+              <%-- this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc --%>
+              <option value="" ></option>
+              <option value="0t"
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '0t' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoText1']}</option>
+              <option value="0v"
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '0v' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoVoice1']}</option>
+              <option value="1t"
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '1t' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoText2']}</option>
+              <option value="1v"
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '1v' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoVoice2']}</option>
+              <option value="2t"
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '2t' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoText3']}</option>
+              <option value="2v" 
+                  ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '2v' ? 'selected="selected"' : ''}
+                >${textContainer.text['profilePhoneAutoVoice3']}</option>
+            </select>
+          </div>
+          <div class="formFooter">&nbsp;</div>
+        </div>
+      </c:if>
       <div class="formRow">
         <div class="formLabel"><span style="font-size: 0.8em">&nbsp;</span><br />
            <b><label for="colleagueLogin0">${textContainer.text['profileFriendLabel1']}</label></b></div>
         <div class="formValue">
-           <span style="font-size: 0.8em">Enter a name to search for a friend</span><br />
+           <span style="font-size: 0.8em">${textContainer.text['profileFriendComboSubtext']}</span><br />
            <twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
              idBase="colleagueLogin0" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin0) }"
              /></div>

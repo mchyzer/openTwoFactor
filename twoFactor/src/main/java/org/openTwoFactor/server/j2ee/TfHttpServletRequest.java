@@ -79,7 +79,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "userIdOperatingOnName", "userIdOperatingOn", "email0", "colleagueLogin0Name", "colleagueLogin1Name",
       "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "optinTypeName", "phone0",
       "phoneVoice0", "phoneText0", 
-      "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2",
+      "phone1", "phoneVoice1", "phoneText1", "phone2", "phoneVoice2", "phoneText2", "phoneAutoVoiceText",
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
       "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId", "serialNumbers", "serialNumber",
       "reportUuid", "reportType", "reportNameSystem", "reportNameDisplay", "reportNameSystemSelect",

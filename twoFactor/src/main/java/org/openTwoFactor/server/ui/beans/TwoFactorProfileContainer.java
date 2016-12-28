@@ -24,6 +24,27 @@ import edu.internet2.middleware.subject.Subject;
 public class TwoFactorProfileContainer {
 
   /**
+   * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
+   */
+  private String phoneAutoCalltext;
+  
+  /**
+   * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
+   * @return the phoneAutoCalltext
+   */
+  public String getPhoneAutoCalltext() {
+    return this.phoneAutoCalltext;
+  }
+  
+  /**
+   * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
+   * @param phoneAutoCalltext1 the phoneAutoCalltext to set
+   */
+  public void setPhoneAutoCalltext(String phoneAutoCalltext1) {
+    this.phoneAutoCalltext = phoneAutoCalltext1;
+  }
+
+  /**
    * if the user is optin for all applications as opposed to just applications which require it    
    */
   private boolean optinForAll;

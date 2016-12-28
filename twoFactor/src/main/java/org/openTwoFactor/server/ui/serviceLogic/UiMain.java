@@ -1461,6 +1461,10 @@ public class UiMain extends UiServiceLogicBase {
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final Source subjectSource) {
     
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    new UiMainPublic().setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+    
     return optinSetup(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, 
         TwoFactorOath.twoFactorGenerateTwoFactorPass(), subjectSource);
   }
@@ -2025,8 +2029,6 @@ public class UiMain extends UiServiceLogicBase {
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
 
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
-      
-        
         
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
         
@@ -2121,6 +2123,21 @@ public class UiMain extends UiServiceLogicBase {
         //no need to validate the password, the password checker will do that
         TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
             twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
+
+        twoFactorUser.setPhoneOptIn(false);
+        
+        if (!twoFactorPassResult.isPasswordCorrect()) {
+          
+          String phonePassword = twoFactorUser.getPhoneCodeUnencryptedIfNotExpired();
+          if (StringUtils.equals(twoFactorPass, phonePassword)) {
+            twoFactorPassResult.setPasswordCorrect(true);
+            
+            //keep track of the phone opt in
+            twoFactorUser.setPhoneOptIn(true);
+          }
+          
+        }
+        
         if (!twoFactorPassResult.isPasswordCorrect()) {
 
           String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
@@ -2136,6 +2153,8 @@ public class UiMain extends UiServiceLogicBase {
         }
         
         //set the object
+        twoFactorUser.setDatePhoneCodeSent(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
         twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
         twoFactorUser.setTwoFactorSecretTemp(null);
         twoFactorUser.setOptedIn(true);
@@ -2774,6 +2793,8 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorProfileContainer.setPhone1(twoFactorUser.getPhone1());
     twoFactorProfileContainer.setPhone2(twoFactorUser.getPhone2());
 
+    twoFactorProfileContainer.setPhoneAutoCalltext(twoFactorUser.getPhoneAutoCalltext());
+    
     twoFactorProfileContainer.setPhoneText0((twoFactorUser.getPhoneIsText0() != null && twoFactorUser.getPhoneIsText0()) ? "true" : "");
     twoFactorProfileContainer.setPhoneText1((twoFactorUser.getPhoneIsText1() != null && twoFactorUser.getPhoneIsText1()) ? "true" : "");
     twoFactorProfileContainer.setPhoneText2((twoFactorUser.getPhoneIsText2() != null && twoFactorUser.getPhoneIsText2()) ? "true" : "");
@@ -2786,6 +2807,8 @@ public class UiMain extends UiServiceLogicBase {
     
     twoFactorProfileContainer.setOptinForApplicationsWhichRequire(optinOnlyIfRequired);
     twoFactorProfileContainer.setOptinForAll(!optinOnlyIfRequired);
+    
+    twoFactorProfileContainer.setPhoneAutoCalltext(twoFactorUser.getPhoneAutoCalltext());
     
     {
       String colleagueUserUuid0 = twoFactorUser.getColleagueUserUuid0();
@@ -2902,6 +2925,8 @@ public class UiMain extends UiServiceLogicBase {
     String phoneVoice2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneVoice2");
     String phoneText2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneText2");
 
+    String phoneAutoVoiceText = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneAutoVoiceText");
+    
     String optinTypeName = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optinTypeName");
 
     boolean optinForApplicationsWhichRequire = StringUtils.equals(optinTypeName, "optinForApplicationsWhichRequire");
@@ -2915,7 +2940,8 @@ public class UiMain extends UiServiceLogicBase {
         loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), email0, colleagueLogin0, colleagueLogin1,
         colleagueLogin2, colleagueLogin3, colleagueLogin4, phone0, phoneVoice0, phoneText0, 
-        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin, optinForApplicationsWhichRequire);
+        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin, optinForApplicationsWhichRequire,
+        phoneAutoVoiceText);
   
     if (success) {
       
@@ -2983,6 +3009,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param subjectSource 
    * @param profileForOptin 
    * @param optinForApplicationsWhichRequire
+   * @param phoneAutoVoiceText
    * @return true if ok, false if not
    */
   public boolean profileSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
@@ -2993,7 +3020,7 @@ public class UiMain extends UiServiceLogicBase {
       final String phone0, final String phoneVoice0, final String phoneText0, 
       final String phone1, final String phoneVoice1, final String phoneText1, final String phone2, 
       final String phoneVoice2, final String phoneText2, final Source subjectSource, final boolean profileForOptin, 
-      final boolean optinForApplicationsWhichRequire) {
+      final boolean optinForApplicationsWhichRequire, final String phoneAutoVoiceText) {
     
     final Set<TwoFactorUser> newColleagues = new HashSet<TwoFactorUser>();
     
@@ -3048,6 +3075,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorProfileContainer.setPhoneVoice2(phoneVoice2);
         twoFactorProfileContainer.setOptinForAll(!optinForApplicationsWhichRequire);
         twoFactorProfileContainer.setOptinForApplicationsWhichRequire(optinForApplicationsWhichRequire);
+        twoFactorProfileContainer.setPhoneAutoCalltext(phoneAutoVoiceText);
         
         String errorMessage = null;
         
@@ -3101,11 +3129,42 @@ public class UiMain extends UiServiceLogicBase {
             phone0, phone1, phone2) < 2) {
           errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
         }
+
+        if (StringUtils.isBlank(errorMessage) && !StringUtils.isBlank(phoneAutoVoiceText)) {
+          if (StringUtils.equals("0t", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneText0, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else if (StringUtils.equals("0v", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneVoice0, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else if (StringUtils.equals("1t", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneText1, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneVoice1, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else if (StringUtils.equals("2t", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneText2, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
+            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneVoice2, "true") ) {
+              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+            }
+          } else {
+            throw new RuntimeException("Invalid value for phoneAutoVoiceText!!!!! '" + phoneAutoVoiceText + "'");
+          }
+        }
+
         if (!StringUtils.isBlank(errorMessage) ) {
           twoFactorRequestContainer.setError(errorMessage);
           return false;
         }
-        
+
         twoFactorUser.setEmail0(localEmail0);
 
         twoFactorUser.setPhone0(phone0);
@@ -3118,6 +3177,8 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhoneIsVoice1(StringUtils.equals(phoneVoice1, "true") ? true : false);
         twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
 
+        twoFactorUser.setPhoneAutoCalltext(phoneAutoVoiceText);
+        
         twoFactorUser.setOptInOnlyIfRequired(optinForApplicationsWhichRequire);
         
         Set<String> previousColleagueUuids = new HashSet<String>();
@@ -3739,6 +3800,30 @@ public class UiMain extends UiServiceLogicBase {
     showJsp(optinTestSubmitView.getJsp());
   
   }
+
+  /**
+   * optin phone code
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinPhoneCode(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    int phoneIndex = Integer.parseInt(httpServletRequest.getParameter("phoneIndex"));
+    String phoneType = httpServletRequest.getParameter("phoneType");
+  
+    new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, false);
+        
+    showJsp("optin.jsp");
+  
+  }
+
+
   
   /**
    * optin to the service

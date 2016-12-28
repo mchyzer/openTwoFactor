@@ -436,7 +436,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
-   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
    * @return if phone auto call text
    */
   public String getPhoneAutoCalltext() {
@@ -444,7 +444,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
-   * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
+   * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
    * @param thePhoneAutoCalltext if phone auto call text
    */
   public void setPhoneAutoCalltext(String thePhoneAutoCalltext) {
@@ -472,11 +472,11 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   /**
    * <pre>
    * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
-   * the json has the month and day in the key, will delete keys older than a month
+   * the json has the month (0 indexed) and day in the key, will delete keys older than a month
    * {
-   * "0101": 2,
-   * "0102": 3,
-   * "0103": 0
+   * "0001": 2,
+   * "0002": 3,
+   * "0003": 0
    * ...
    * }
    * 
@@ -490,11 +490,11 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   /**
    * <pre>
    * if the web should autocall or autotext the user, this is 1v (first phone voice), 1t (first phone text), 2v (second phone voice), etc
-   * the json has the month and day in the key, will delete keys older than a month
+   * the json has the month (0 indexed) and day in the key, will delete keys older than a month
    * {
-   * "0101": 2,
-   * "0102": 3,
-   * "0103": 0
+   * "0001": 2,
+   * "0002": 3,
+   * "0003": 0
    * ...
    * }
    * 

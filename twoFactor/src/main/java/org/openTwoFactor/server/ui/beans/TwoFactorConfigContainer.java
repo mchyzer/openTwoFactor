@@ -25,4 +25,12 @@ public class TwoFactorConfigContainer {
     return TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.appUrlFriendly");
   }
   
+  /**
+   * 
+   * @return if auto call / text is enabled via web service
+   */
+  public boolean isEnableAutoCallText() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true);
+  }
+
 }

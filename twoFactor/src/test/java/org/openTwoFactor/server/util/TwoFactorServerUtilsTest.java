@@ -1,7 +1,10 @@
 package org.openTwoFactor.server.util;
 
+import java.util.Date;
+
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
+import net.sf.json.JSONObject;
 
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 
@@ -18,7 +21,7 @@ public class TwoFactorServerUtilsTest extends TestCase {
    */
   public static void main(String[] args) {
     
-    TestRunner.run(new TwoFactorServerUtilsTest("testObscureName"));
+    TestRunner.run(new TwoFactorServerUtilsTest("testHistogramDaysAutoFalloff"));
     
 //    int secretSize = 10;
 //    int numOfScratchCodes = 5;
@@ -100,4 +103,87 @@ public class TwoFactorServerUtilsTest extends TestCase {
     
   }
   
+  /**
+   * 
+   */
+  public void testHistogramDaysIncrement() {
+    
+    String histogramJson = null;
+    
+    assertEquals(0, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson));
+    
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson);
+
+    assertEquals(1, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson));
+    
+    JSONObject jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(1, jsonObject.size());
+
+    //month is 0 indexed
+    assertEquals(1, jsonObject.getInt("0001"));
+
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson);
+
+    assertEquals(2, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson));
+    
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(1, jsonObject.size());
+
+    assertEquals(2, jsonObject.getInt("0001"));
+  
+  
+  }
+  
+  
+  /**
+   * 
+   */
+  public void testHistogramDaysAutoFalloff() {
+    
+    String histogramJson = null;
+    
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000101"), histogramJson);
+    JSONObject jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(1, jsonObject.size());
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000102"), histogramJson);
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000102"), histogramJson);
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(2, jsonObject.size());
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000103"), histogramJson);
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000103"), histogramJson);
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000103"), histogramJson);
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(3, jsonObject.size());
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000104"), histogramJson);
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(4, jsonObject.size());
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000105"), histogramJson);
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(5, jsonObject.size());
+    histogramJson = TwoFactorServerUtils.histogramIncrementForDate(TwoFactorServerUtils.toTimestamp("20000106"), histogramJson);
+    jsonObject = JSONObject.fromObject( histogramJson );
+    assertEquals(5, jsonObject.size());
+
+    assertFalse(jsonObject.containsKey("0001"));
+    assertTrue(jsonObject.containsKey("0002"));
+    assertTrue(jsonObject.containsKey("0003"));
+    assertTrue(jsonObject.containsKey("0004"));
+    assertTrue(jsonObject.containsKey("0005"));
+    assertTrue(jsonObject.containsKey("0006"));
+    
+    assertEquals(2, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000102"), histogramJson));
+    assertEquals(3, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000103"), histogramJson));
+    assertEquals(1, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000104"), histogramJson));
+    assertEquals(1, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000105"), histogramJson));
+    assertEquals(1, TwoFactorServerUtils.histogramValueForDate(TwoFactorServerUtils.toTimestamp("20000106"), histogramJson));
+    
+    //month is 0 indexed
+    assertEquals(2, jsonObject.getInt("0002"));
+    assertEquals(3, jsonObject.getInt("0003"));
+    assertEquals(1, jsonObject.getInt("0004"));
+    assertEquals(1, jsonObject.getInt("0005"));
+    assertEquals(1, jsonObject.getInt("0006"));
+
+  }
+
 }

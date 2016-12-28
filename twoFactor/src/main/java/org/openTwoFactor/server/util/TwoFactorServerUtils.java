@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -6956,6 +6957,30 @@ public class TwoFactorServerUtils {
   }
 
   /**
+   * input: 215-123-3456
+   * return: 2151233456
+   * @param input
+   * @return the digits string
+   */
+  public static String digitsFromString(String input) {
+    
+    if (input == null) {
+      return null;
+    }
+    
+    StringBuilder result = new StringBuilder();
+    
+    for (int i=0;i<input.length();i++) {
+      if (Character.isDigit(input.charAt(i))) {
+        result.append(input.charAt(i));
+      }
+    }
+
+    return result.toString();
+    
+  }
+  
+  /**
    * convert a long to a string by converting it to base 62 (26 lower, 26 upper,
    * 10 digits)
    * 
@@ -12540,4 +12565,105 @@ public class TwoFactorServerUtils {
   
   }
 
+  /**
+   * <pre>
+   * {
+   * "0001": 2,
+   * "0002": 3,
+   * "0003": 0
+   * ...
+   * }
+   * 
+   * </pre>
+   * Note: keep 5 days of values only
+   * @param today if null just use current date
+   * @param previousHistogramJson
+   * @return the new json string
+   */
+  public static String histogramIncrementForDate(Date today, String previousHistogramJson) {
+    
+    JSONObject jsonObject = isBlank(previousHistogramJson) ? new JSONObject() : JSONObject.fromObject( previousHistogramJson);
+    
+    String key = histogramKey(today);
+    
+    int currentValue = jsonObject.has(key) ? jsonObject.getInt(key) : 0;
+    
+    currentValue++;
+    
+    jsonObject.put(key, currentValue);
+
+    //prune out old values
+    if (jsonObject.size() > 5) {
+
+      int keyCount = 0;
+      Calendar calendar = new GregorianCalendar();
+      calendar.setTime(today);
+
+      //loop backwards and go through keys, deleting the oldest ones
+      OUTER: for (int i=0;i<364;i++) {
+       
+        String currentKey = histogramKey(calendar.getTime());
+        if (jsonObject.containsKey(currentKey)) {
+          keyCount++;
+          //if we have already seen 5 keys, delete the older ones
+          if (keyCount > 5) {
+            jsonObject.remove(currentKey);
+            if (jsonObject.size() <= 5) {
+              break OUTER;
+            }
+          }
+        }
+
+        calendar.add(Calendar.DAY_OF_YEAR, -1);
+        
+      }      
+    }
+    
+    String newHistogramJson = jsonObject.toString();
+    
+    return newHistogramJson;
+  }
+
+  /**
+   * mmdd date formate
+   */
+  private static SimpleDateFormat mmDdDateFormat = new SimpleDateFormat("MMdd");
+  
+  /**
+   * 
+   * @param today
+   * @return the string
+   */
+  private static String histogramKey(Date today) {
+    if (today == null) {
+      today = new Date();
+    }
+    
+    String key = mmDdDateFormat.format(today);
+    return key;
+  }
+  
+  /**
+   * <pre>
+   * {
+   * "0101": 2,
+   * "0102": 3,
+   * "0103": 0
+   * ...
+   * }
+   * </pre>
+   * @param today
+   * @param histogramJson
+   * @return the histogram value of today
+   */
+  public static int histogramValueForDate(Date today, String histogramJson) {
+    JSONObject jsonObject = isBlank(histogramJson) ? new JSONObject() : JSONObject.fromObject( histogramJson );
+    
+    String key = histogramKey(today);
+    
+    int currentValue = jsonObject.has(key) ? jsonObject.getInt(key) : 0;
+    
+    return currentValue;
+  }
+  
 }

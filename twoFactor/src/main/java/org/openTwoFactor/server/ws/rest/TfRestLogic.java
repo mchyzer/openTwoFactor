@@ -30,6 +30,7 @@ import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.j2ee.TwoFactorRestServlet;
 import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
+import org.openTwoFactor.server.ui.serviceLogic.UiMainPublic;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorPassResult;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
@@ -267,7 +268,7 @@ public class TfRestLogic {
    * @return the response
    */
   public static TfCheckPasswordResponse checkPasswordLogic(
-      TwoFactorDaoFactory twoFactorDaoFactory, TfCheckPasswordRequest tfCheckPasswordRequest) {
+      TwoFactorDaoFactory twoFactorDaoFactory, final TfCheckPasswordRequest tfCheckPasswordRequest) {
 
     Map<String, Object> trafficLogMap = new LinkedHashMap<String, Object>();
     
@@ -729,6 +730,97 @@ public class TfRestLogic {
         twoFactorUser.store(twoFactorDaoFactory);
       }
 
+      //send a phone code?
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.wsSendsPhoneCodesFromPhoneNumber", true)
+          && !twoFactorPassResult.isPasswordCorrect() && !StringUtils.isBlank(twoFactorPassUnencrypted)) {
+        
+        int phoneIndex = -1;
+        //voice or text
+        String phoneType = null;
+
+        //get digits
+        if (!StringUtils.isBlank(twoFactorUser.getPhone0())) {
+          
+          String phone = TwoFactorServerUtils.digitsFromString(twoFactorUser.getPhone0());
+          
+          //allow 5 digits on office phones
+          if (phone.endsWith(twoFactorPassUnencrypted)) {
+            
+            if (twoFactorUser.getPhoneIsText0() != null && twoFactorUser.getPhoneIsText0()) {
+              phoneIndex = 0;
+              phoneType = "text";
+            } else if (twoFactorUser.getPhoneIsVoice0() != null && twoFactorUser.getPhoneIsVoice0()) {
+              phoneIndex = 0;
+              phoneType = "voice";
+            }
+          }
+        }
+        if (phoneIndex == -1 && !StringUtils.isBlank(twoFactorUser.getPhone1())) {
+          String phone = TwoFactorServerUtils.digitsFromString(twoFactorUser.getPhone1());
+          
+          //allow 5 digits on office phones
+          if (phone.endsWith(twoFactorPassUnencrypted)) {
+            
+            if (twoFactorUser.getPhoneIsText1() != null && twoFactorUser.getPhoneIsText1()) {
+              phoneIndex = 1;
+              phoneType = "text";
+            } else if (twoFactorUser.getPhoneIsVoice1() != null && twoFactorUser.getPhoneIsVoice1()) {
+              phoneIndex = 1;
+              phoneType = "voice";
+            }
+          }
+        }
+        if (phoneIndex == -1 && !StringUtils.isBlank(twoFactorUser.getPhone2())) {
+          String phone = TwoFactorServerUtils.digitsFromString(twoFactorUser.getPhone2());
+          
+          //allow 5 digits on office phones
+          if (phone.endsWith(twoFactorPassUnencrypted)) {
+            
+            if (twoFactorUser.getPhoneIsText2() != null && twoFactorUser.getPhoneIsText2()) {
+              phoneIndex = 2;
+              phoneType = "text";
+            } else if (twoFactorUser.getPhoneIsVoice2() != null && twoFactorUser.getPhoneIsVoice2()) {
+              phoneIndex = 2;
+              phoneType = "voice";
+            }
+          }
+        }
+        
+        if (phoneIndex != -1) {
+          
+          final TwoFactorUser TWO_FACTOR_USER = twoFactorUser;
+          final int PHONE_INDEX = phoneIndex;
+          final String PHONE_TYPE = phoneType;
+
+          TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "send " + phoneType + " to " + twoFactorPassUnencrypted, null);
+          trafficLogMap.put("send_" + phoneType, twoFactorPassUnencrypted);
+
+          //run this in a thread so it doesnt slow things down
+          Thread thread = new Thread(new Runnable() {
+
+            public void run() {
+              
+              try {
+                TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
+                
+                twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
+                
+                new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+                    TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
+                    tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
+              } catch (RuntimeException re) {
+                LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
+                throw re;
+              }
+            }
+            
+          });
+          
+          thread.start();
+          
+        }        
+      }
+      
       //lets get the right user uuid
       String cookieUserUuid = tfCheckPasswordRequest.getUserBrowserUuid();
       
@@ -851,6 +943,96 @@ public class TfRestLogic {
             storeUser = true;
           }
           
+        }
+
+        //maybe autocall
+        if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
+            && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true)) {
+          if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn()) {
+            if (!StringUtils.isBlank(twoFactorUser.getPhoneAutoCalltext() )) {
+
+              //lets see if we are over the limit
+              String autoVoiceTextHistogram = twoFactorUser.getPhoneAutoCalltextsInMonth();
+              
+              int numberToday = TwoFactorServerUtils.histogramValueForDate(null, autoVoiceTextHistogram);
+              
+              autoVoiceTextHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, autoVoiceTextHistogram);
+
+              twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
+              twoFactorUser.store(twoFactorDaoFactory);
+              
+              //if we havent done too many
+              if (numberToday < TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxAutoCallsTextsPerDayPerUser", 5)) {
+
+                int phoneIndex = -1;
+                String phoneType = null;
+                
+                if (StringUtils.equals("0t", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone0()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsText0(), false)) {
+                    phoneIndex = 0;
+                    phoneType = "text";
+                  }
+                } else if (StringUtils.equals("0v", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone0()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsVoice0(), false)) {
+                    phoneIndex = 0;
+                    phoneType = "voice";
+                  }
+                } else if (StringUtils.equals("1t", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone1()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsText1(), false)) {
+                    phoneIndex = 1;
+                    phoneType = "text";
+                  }
+                } else if (StringUtils.equals("1v", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone1()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsVoice1(), false)) {
+                    phoneIndex = 1;
+                    phoneType = "voice";
+                  }
+                } else if (StringUtils.equals("2t", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone2()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsText2(), false)) {
+                    phoneIndex = 2;
+                    phoneType = "text";
+                  }
+                } else if (StringUtils.equals("2v", twoFactorUser.getPhoneAutoCalltext())) {
+                  if (!StringUtils.isBlank(twoFactorUser.getPhone2()) && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneIsVoice2(), false)) {
+                    phoneIndex = 2;
+                    phoneType = "voice";
+                  }
+                }
+                
+                if (phoneIndex != -1) {
+                  final TwoFactorUser TWO_FACTOR_USER = twoFactorUser;
+                  final int PHONE_INDEX = phoneIndex;
+                  final String PHONE_TYPE = phoneType;
+    
+                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "autosend " + phoneType + " to index " + phoneIndex, null);
+                  trafficLogMap.put("autosendToIndex_" + phoneType, phoneIndex);
+    
+                  //run this in a thread so it doesnt slow things down
+                  Thread thread = new Thread(new Runnable() {
+    
+                    public void run() {
+                      
+                      try {
+                        TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
+                        
+                        twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
+                        
+                        new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+                            TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
+                            tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
+                      } catch (RuntimeException re) {
+                        LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
+                        throw re;
+                      }
+                    }
+                    
+                  });
+                  
+                  thread.start();
+                }
+              }
+            }
+          }
         }
         
         if (duoRegisterUsers && duoPushByDefaultEnabled 

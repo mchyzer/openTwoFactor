@@ -205,7 +205,34 @@ public class UiMainPublic extends UiServiceLogicBase {
       final String userAgent, final int phoneIndex, final String phoneType) {
 
     final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    sendPhoneCode(twoFactorDaoFactory,
+        twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, phoneIndex, phoneType, true);
+
+    setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
+
     
+  }
+
+  /**
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param phoneIndex
+   * @param phoneType
+   * @param useDuoForPasscode 
+   */
+  public void sendPhoneCode(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer, final String loggedInUser,
+      final String ipAddress, final String userAgent, final int phoneIndex, 
+      final String phoneType, final boolean useDuoForPasscode) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
     HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -273,7 +300,7 @@ public class UiMainPublic extends UiServiceLogicBase {
 
         //maybe going from duo
         //opt in to duo
-        if (UiMain.duoRegisterUsers()) {
+        if (useDuoForPasscode && UiMain.duoRegisterUsers()) {
 
           secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
           
@@ -311,7 +338,6 @@ public class UiMainPublic extends UiServiceLogicBase {
           throw new RuntimeException("Not text or voice???");
         }
 
-        
         twoFactorUser.store(twoFactorDaoFactory);
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
@@ -324,9 +350,6 @@ public class UiMainPublic extends UiServiceLogicBase {
       }
     });
 
-    setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
-
-    
   }
 
   
@@ -418,7 +441,7 @@ public class UiMainPublic extends UiServiceLogicBase {
    * @param twoFactorRequestContainer 
    * @param twoFactorUser
    */
-  private void setupNonFactorIndex(TwoFactorDaoFactory twoFactorDaoFactory, 
+  public void setupNonFactorIndex(TwoFactorDaoFactory twoFactorDaoFactory, 
       TwoFactorRequestContainer twoFactorRequestContainer, 
       TwoFactorUser twoFactorUser) {
     

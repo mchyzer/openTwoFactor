@@ -153,9 +153,9 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
 //      return;
 //    }
     
-    if (true) {
+    if (false) {
       
-      String secret = "2PFJT2DNP4JAHETT";
+      String secret = "2PFJTXXXXXXXXXXXXXX";
       //System.out.println(new Date(23820173L*60));
       
       //findTimePeriodFob(secret, 551960, 305783);
