@@ -33,4 +33,12 @@ public class TwoFactorConfigContainer {
     return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true);
   }
 
+  /**
+   * 
+   * @return if allow admins to generate codes for users
+   */
+  public boolean isAllowAdminsToGenerateCodesforUsers() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.allowAdminsToGenerateCodesforUsers", true);
+  }
+  
 }

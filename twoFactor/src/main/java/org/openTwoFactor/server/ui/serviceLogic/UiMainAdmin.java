@@ -7,6 +7,7 @@ package org.openTwoFactor.server.ui.serviceLogic;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2159,6 +2160,232 @@ public class UiMainAdmin extends UiServiceLogicBase {
     twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportsRollupsDeleteSuccess"));
       
   
+  }
+
+
+  /**
+   * opt out a user from the admin console
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void generateCodeSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.allowAdminsToGenerateCodesforUsers", true)) {
+      throw new RuntimeException("twoFactorServer.allowAdminsToGenerateCodesforUsers is set to false in config file which disables this feature!");
+    }
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    AdminSubmitView adminSubmitView = generateCodeSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn, subjectSource);
+
+    showJsp(adminSubmitView.getJsp());
+    
+  }
+
+  /**
+   * opt out a user
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param userIdOperatingOn 
+   * @param subjectSource
+   * @return page to go to
+   */
+  public AdminSubmitView generateCodeSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
+  
+    final boolean[] success = new boolean[]{false};
+  
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+    
+    final TwoFactorUser[] twoFactorUserGeneratingCode = new TwoFactorUser[1];
+  
+    AdminSubmitView adminSubmitView = (AdminSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp[0].isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return AdminSubmitView.index;
+        }
+  
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(userIdOperatingOn)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
+          return AdminSubmitView.admin;
+        }
+  
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false, true);
+  
+        String theUserIdOperatingOn = userIdOperatingOn;
+        
+        if (subject != null) {
+          
+          theUserIdOperatingOn = subject.getId();
+          
+        }
+        
+        twoFactorUserGeneratingCode[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        
+        if (twoFactorUserGeneratingCode[0] == null) {
+          
+          if (subject == null) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotFound"));
+            return AdminSubmitView.admin;
+  
+          }
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotInSystem"));
+          return AdminSubmitView.admin;
+        }
+        
+        //we found a user!
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserGeneratingCode[0]);
+  
+        //store code and when sent
+        String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
+        
+        //make this since 9 since thats what duo is
+        secretCode = StringUtils.leftPad(secretCode, 9, '0');
+
+        //maybe going from duo
+        //opt in to duo
+        if (UiMain.duoRegisterUsers()) {
+
+          secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUserGeneratingCode[0].getLoginid());
+          
+        }
+        
+        twoFactorUserGeneratingCode[0].setPhoneCodeUnencrypted(secretCode);
+        twoFactorUserGeneratingCode[0].setDatePhoneCodeSent(System.currentTimeMillis());
+        twoFactorUserGeneratingCode[0].store(twoFactorDaoFactory);
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_GENERATE_CODE, ipAddress, 
+            userAgent, twoFactorUserGeneratingCode[0].getUuid(),
+            twoFactorUserUsingApp[0].getUuid(), null, null);
+        
+        success[0] = true;
+        
+        return AdminSubmitView.admin;
+      }
+    });
+    
+    //send emails if successful
+    String userEmailLoggedIn = null;
+    String userEmailColleague = null;
+    try {
+      
+      twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+      twoFactorUserGeneratingCode[0].setSubjectSource(subjectSource);
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (success[0] && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForGenerateCodeByAdmin", true)) {
+        
+        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+        Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            twoFactorUserGeneratingCode[0].getLoginid(), true, false, true);
+        
+        String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+        String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
+  
+        String emailAddressFromSubjectPersonPicked = TfSourceUtils.retrieveEmail(sourceSubjectPersonPicked);
+        String emailAddressFromDatabasePersonPicked = twoFactorUserGeneratingCode[0].getEmail0();
+  
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdminSubject");
+        subject = TextContainer.massageText("emailGenerateCodeByAdminSubject", subject);
+  
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdminBody");
+        body = TextContainer.massageText("emailGenerateCodeByAdminBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.adminGenerateCodes");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
+          emailAddressFromDatabaseLoggedIn = null;
+        }
+        
+        userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectPersonPicked, emailAddressFromDatabasePersonPicked)) {
+          emailAddressFromDatabasePersonPicked = null;
+        }
+        
+        userEmailColleague = emailAddressFromSubjectPersonPicked + ", " + emailAddressFromDatabasePersonPicked;
+        
+        boolean sendEmail = true;
+        boolean sendToFriend = true;
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubjectPersonPicked) && StringUtils.isBlank(emailAddressFromDatabasePersonPicked)) {
+          sendToFriend = false;
+          LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubjectPersonPicked).addTo(emailAddressFromDatabasePersonPicked);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+        } else {
+          twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmailColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+    }
+  
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminGenerateCodeForUserSuccess"));
+    
+    if (adminSubmitView == AdminSubmitView.admin) {
+      UiMain.auditHelper(twoFactorDaoFactory, twoFactorRequestContainer, 
+          twoFactorUserGeneratingCode[0], subjectSource);
+    }
+    return adminSubmitView;
+    
   }
 
 

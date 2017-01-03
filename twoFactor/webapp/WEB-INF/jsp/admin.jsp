@@ -80,7 +80,17 @@
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
         
         <br /><br />
-        
+        <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.allowAdminsToGenerateCodesforUsers">
+          <form action="UiMainAdmin.generateCodeSubmit" method="post" style="display: inline">
+            <input value="${textContainer.textEscapeDouble['adminGenerateCodeFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
+              class="tfBlueButton"
+              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+              onclick="return confirm('${textContainer.textEscapeSingleDouble['adminGenerateCodeConfirm']}');" />
+            <input type="hidden" name="userIdOperatingOn" 
+              value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
+          </form>
+          &nbsp;&nbsp;
+        </c:if>
         <form action="UiMainAdmin.optOutSubmit" method="post" style="display: inline">
           <input value="${textContainer.textEscapeDouble['adminOptOutPerson']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
             class="tfBlueButton"

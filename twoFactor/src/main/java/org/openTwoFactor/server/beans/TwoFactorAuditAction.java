@@ -522,6 +522,23 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * admin generate code for user
+   */
+  ADMIN_GENERATE_CODE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAdminGenerateCode";
+    }
+    
+  },
+
+
+  /**
    * view report
    */
   REPORT_VIEW {
