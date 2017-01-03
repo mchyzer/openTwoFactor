@@ -311,7 +311,7 @@ public class UiMainPublic extends UiServiceLogicBase {
 
         //send code to phone
         if (isText) {
-          String message = "Your verification code is: " + secretCode;
+          String message = TextContainer.retrieveFromRequest().getText().get("havingTroubleTextPrefix") + " " + secretCode;
           TwoFactorServerConfig.retrieveConfig().twoFactorContact().text(phoneNumber, message);
           
         } else if (isVoice) {
@@ -326,10 +326,15 @@ public class UiMainPublic extends UiServiceLogicBase {
               secretCodeCommaSeparated.append(".");
             }
           }
-          String message = "Your verification code is: " + secretCodeCommaSeparated.toString() + "  " +
-            "Again, your verification code is: " + secretCodeCommaSeparated.toString() + "  Again, your " +
-            "verification code is: " + secretCodeCommaSeparated.toString() + "  Again, your " +
-            "verification code is: " + secretCodeCommaSeparated.toString() + "  ";
+            
+          String message = 
+              TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePrefix") + " " + secretCodeCommaSeparated.toString() 
+              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePrefix") + " " + secretCodeCommaSeparated.toString() 
+              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePrefix") + " " + secretCodeCommaSeparated.toString() 
+              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePrefix") + " " + secretCodeCommaSeparated.toString() + "  ";
 
           TwoFactorServerConfig.retrieveConfig().twoFactorContact().voice(phoneNumber, message);
           
