@@ -80,7 +80,7 @@
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
         
         <br /><br />
-        <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.allowAdminsToGenerateCodesforUsers">
+        <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.allowAdminsToGenerateCodesforUsers}">
           <form action="UiMainAdmin.generateCodeSubmit" method="post" style="display: inline">
             <input value="${textContainer.textEscapeDouble['adminGenerateCodeFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
               class="tfBlueButton"
