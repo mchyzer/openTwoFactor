@@ -234,20 +234,21 @@
       <br /><br />
       <form action="UiMain.optinTestSubmit" method="post">
         <div class="substep">
+
+          <%-- see if we are checking bday --%>
+          <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.requireBirthdayOnOptin}">
+            ${textContainer.text['optinStep3enterBday']}
+
+            <%@ include file="../assetsJsp/birthdayForm.jsp"%>
+            <br /><br />
+          
+          </c:if>
+
           ${textContainer.text['optinStep3substep']} <br /><br />
 
-            <%-- see if we are checking bday --%>
-            <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.requireBirthdayOnOptin}">
-              ${textContainer.text['optinStep3enterBday']}
-
-              <%@ include file="../assetsJsp/birthdayForm.jsp"%>
-              <br /><br />
-            
-            </c:if>
-
-            ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
-            <br /><br />
-              <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"
+          ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
+          <br /><br />
+          <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"
             onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
             type="submit" onclick="if (document.getElementById('twoFactorCustomCodeId').value != null && document.getElementById('twoFactorCustomCodeId').value != '') {alert('If you enter a custom secret, you must click the button: Submit custom secret'); return false; }" />
             

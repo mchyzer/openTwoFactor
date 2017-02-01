@@ -2315,6 +2315,14 @@ public class UiMain extends UiServiceLogicBase {
     });
     
     if (result == OptinTestSubmitView.optinSuccess) {
+      
+      //opt in to duo
+      if (duoRegisterUsers()) {
+
+        DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false);
+
+      }
+      
       String userEmail = null;
       try {
         
@@ -2375,13 +2383,6 @@ public class UiMain extends UiServiceLogicBase {
       }
     }    
 
-    //opt in to duo
-    if (duoRegisterUsers()) {
-
-      DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false);
-
-    }
-    
     return result;
   }
 
