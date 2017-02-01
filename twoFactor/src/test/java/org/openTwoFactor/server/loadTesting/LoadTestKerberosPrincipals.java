@@ -116,7 +116,7 @@ public class LoadTestKerberosPrincipals extends TestCase {
           twoFactorRequestContainer.setError(null);
       
           OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(daoFactory, 
-              twoFactorRequestContainer, userId, ipAddress, userAgent1, passString, TfSourceUtils.mainSource(), null, false);
+              twoFactorRequestContainer, userId, ipAddress, userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
         
           assertEquals(optinTestSubmitView.name() 
               + ", " + twoFactorRequestContainer.getError() + ", " + passString, 

@@ -243,7 +243,22 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
      * 
      * </pre>
      */
-    phone_auto_calltexts_in_month(TwoFactorUserAttrType.string);
+    phone_auto_calltexts_in_month(TwoFactorUserAttrType.string),
+    
+    /**
+     * <pre>
+     * if the user has had wrong birthday attempts in month
+     * the json has the month (0 indexed) and day in the key, will delete keys older than a month
+     * {
+     * "0001": 2,
+     * "0002": 3,
+     * "0003": 0
+     * ...
+     * }
+     * 
+     * </pre>
+     */
+    wrong_bday_attempts_in_month(TwoFactorUserAttrType.string);
     
     /**
      * construct with type

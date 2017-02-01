@@ -6,7 +6,12 @@ package org.openTwoFactor.server.beans;
 
 
 import java.security.SecureRandom;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -388,6 +393,148 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * 
+   * @return true if require bday on optin
+   */
+  public boolean isRequireBirthdayOnOptin() {
+    
+    // if not configured to do this, then dont
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.promptForBirthdayOnOptin", true)) {
+      return false;
+    }
+
+    //if cant find bday so dont worry about it, oh well
+    return this.getBirthDate() != null;
+  }
+  
+  /**
+   * 
+   */
+  private Date birthDate = null;
+  
+  /**
+   * if we have looked for bday
+   */
+  private boolean birthDateSearched = false;
+  
+  /**
+   * 
+   * @return the date
+   */
+  public Date getBirthDate() {
+    
+    if (!this.birthDateSearched) {
+      
+      // get the subject, should be found but ok if not i guess
+      Source theSource = this.subjectSource;
+      
+      if (theSource == null) {
+        theSource = TfSourceUtils.mainSource();
+      }
+      
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(theSource, this.getLoginid(), false, false, true);
+      if (subject != null) {
+        
+        //'YYYY-MM-DD'
+        String birthDateString = subject.getAttributeValue("birthDate");
+        
+        //if we dont know the bday then dont prompt for it
+        if (!StringUtils.isBlank(birthDateString)) {
+          
+          SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+          try {
+
+            this.birthDate = formatter.parse(birthDateString);
+
+          } catch (ParseException pe) {
+
+            throw new RuntimeException("Cant parse: '" + birthDateString + "'", pe);
+            
+          }
+        }
+      }
+      
+      this.birthDateSearched = true;
+      
+    }
+    
+    return this.birthDate;
+    
+  }
+  
+  /**
+   * 
+   * @return the date submitted from the page
+   */
+  public Date getSubmittedBirthDate() {
+    
+    return null;
+  }
+  
+  /**
+   * cache the birth month.  -1 means dont know
+   * @return 1-12 or -1
+   */
+  public int getBirthMonth() {
+    
+    //init
+    Date theBirthDate = this.getBirthDate();
+    
+    if (theBirthDate == null) {
+      return -1;
+    }
+    
+    Calendar calendar = new GregorianCalendar();
+    calendar.setTimeInMillis(theBirthDate.getTime());
+    
+    //this returns 0 indexed, so add 1
+    return calendar.get(Calendar.MONTH) + 1;
+    
+  }
+  
+  /**
+   * cache the birth year.  -1 means dont know
+   * @return 1900-2025 or -1
+   */
+  public int getBirthYear() {
+    
+    //init
+    Date theBirthDate = this.getBirthDate();
+    
+    if (theBirthDate == null) {
+      return -1;
+    }
+    
+    Calendar calendar = new GregorianCalendar();
+    calendar.setTimeInMillis(theBirthDate.getTime());
+    
+    //this returns 0 indexed, so add 1
+    return calendar.get(Calendar.YEAR);
+    
+  }
+  
+  /**
+   * cache the birth day.  -1 means dont know
+   * @return 1-31 or -1
+   */
+  public int getBirthDay() {
+    
+    //init
+    Date theBirthDate = this.getBirthDate();
+    
+    if (theBirthDate == null) {
+      return -1;
+    }
+    
+    Calendar calendar = new GregorianCalendar();
+    calendar.setTimeInMillis(theBirthDate.getTime());
+    
+    return calendar.get(Calendar.DAY_OF_MONTH);
+    
+  }
+  
+  /**
    * if the user has opted in to two factor
    * @param optedIn1 the optedIn to set
    */
@@ -467,7 +614,43 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     this.attribute(TwoFactorUserAttrName.last_email_not_opted_in_user, true).setAttributeValueInteger(theLastEmailNotOptedInUser);
   }
 
+  /**
+   * <pre>
+   * if the user has had wrong birthday attempts
+   * the json has the month (0 indexed) and day in the key, will delete keys older than a month
+   * {
+   * "0001": 2,
+   * "0002": 3,
+   * "0003": 0
+   * ...
+   * }
+   * 
+   * </pre>
+   * @return call texts in month
+   */
+  public String getWrongBdayAttemptsInMonth() {
+    return attributeValueString(TwoFactorUserAttrName.wrong_bday_attempts_in_month);
+  }
   
+  /**
+   * <pre>
+   * if the user has had wrong birthday attempts
+   * the json has the month (0 indexed) and day in the key, will delete keys older than a month
+   * {
+   * "0001": 2,
+   * "0002": 3,
+   * "0003": 0
+   * ...
+   * }
+   * 
+   * </pre>
+   * @param theWrongBdayAttemptsInMonth call texts in month
+   */
+  public void setWrongBdayAttemptsInMonth(String theWrongBdayAttemptsInMonth) {
+    this.attribute(TwoFactorUserAttrName.wrong_bday_attempts_in_month, true).setAttributeValueString(theWrongBdayAttemptsInMonth);
+  }
+
+
   
   /**
    * <pre>

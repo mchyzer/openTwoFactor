@@ -16,3 +16,6 @@
 /twoFactor.hibernate.properties.dev
 /twoFactor.hibernate.properties.prod
 /twoFactor.server.local.properties.prod
+/morphString.properties.dev
+/sources.xml.dev
+/sources.xml.prod

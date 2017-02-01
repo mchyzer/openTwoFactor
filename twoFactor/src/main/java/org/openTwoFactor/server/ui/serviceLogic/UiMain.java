@@ -2004,13 +2004,17 @@ public class UiMain extends UiServiceLogicBase {
    * @param subjectSource
    * @param serialNumber if opting in by serial number, this is the serial number
    * @param optinBySerialNumber true to optin by serial number
+   * @param submittedBirthMonthString 
+   * @param submittedBirthDayString 
+   * @param submittedBirthYearString 
    * @return error message if there is one and jsp
    */
   public OptinTestSubmitView optinTestSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String twoFactorPass, final Source subjectSource, 
-      final String serialNumber, final boolean optinBySerialNumber) {
+      final String serialNumber, final boolean optinBySerialNumber, final String submittedBirthMonthString,
+      final String submittedBirthDayString, final String submittedBirthYearString) {
     
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
     
@@ -2036,11 +2040,126 @@ public class UiMain extends UiServiceLogicBase {
         
         String twoFactorSecret = null;
 
+        if (optinBySerialNumber) {
+          twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
+        }
+
+        //check birthday
+        if (twoFactorUser.isRequireBirthdayOnOptin()) {
+          
+          Integer submittedBirthMonth = null;
+          
+          {
+            submittedBirthMonth = TwoFactorServerUtils.intObjectValue(submittedBirthMonthString, true);
+          }
+
+          Integer submittedBirthDay = null;
+
+          {
+            submittedBirthDay = TwoFactorServerUtils.intObjectValue(submittedBirthDayString, true);
+          }
+          
+          Integer submittedBirthYear = null;
+
+          {
+            submittedBirthYear = TwoFactorServerUtils.intObjectValue(submittedBirthYearString, true);
+          }
+
+          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthDaySubmitted(submittedBirthDay == null ? -1 : submittedBirthDay);
+          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthMonthSubmitted(submittedBirthMonth == null ? -1 : submittedBirthMonth);
+          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthYearSubmitted(submittedBirthYear == null ? -1 : submittedBirthYear);
+
+          
+          if (submittedBirthDay == null || submittedBirthMonth == null || submittedBirthYear == null) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayRequired"));
+            return OptinTestSubmitView.optin;
+          }
+          
+          //lets see if we are over the limit
+          String wrongBdayHistogram = twoFactorUser.getWrongBdayAttemptsInMonth();
+          
+          int numberToday = TwoFactorServerUtils.histogramValueForDate(null, wrongBdayHistogram);
+          
+          //was the user incorrect?
+          boolean wrongBirthday = submittedBirthDay != twoFactorUser.getBirthDay() || submittedBirthMonth != twoFactorUser.getBirthMonth()
+                        || submittedBirthYear != twoFactorUser.getBirthYear();
+
+          //if we havent done too many or wrong bday
+          boolean passedThreshold = numberToday >= TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxWrongBdaysPerDayPerUser", 5);
+          
+          if (passedThreshold || wrongBirthday) {
+            
+            //if not right increment the histogram
+            if (wrongBirthday) {
+              wrongBdayHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, wrongBdayHistogram);
+              twoFactorUser.setWrongBdayAttemptsInMonth(wrongBdayHistogram);
+              twoFactorUser.store(twoFactorDaoFactory);
+              
+              //audit this
+              TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+                  TwoFactorAuditAction.WRONG_BIRTHDAY, ipAddress, 
+                  userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+                  submittedBirthYear + "/" + submittedBirthMonth + "/" + submittedBirthDay, null);
+              
+            }
+
+            // might need to send email
+            if (passedThreshold) {
+              
+              if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+                  && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdays", true)) {
+                
+                Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+                
+                String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+
+                //set the default text container...
+                String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdaySubject");
+                subject = TextContainer.massageText("emailWrongBdaySubject", subject);
+
+                String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdayBody");
+                body = TextContainer.massageText("emailWrongBdayBody", body);
+                
+                String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdaysBcc");
+                
+                TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+                
+                boolean sendEmail = true;
+                //there is no email address????
+                if (StringUtils.isBlank(emailAddressFromSubjectLoggedIn)) {
+                  LOG.warn("Did not send email to logged in user: " + sourceSubjectLoggedIn + ", no email address...");
+                  if (StringUtils.isBlank(bccsString)) {
+                    sendEmail = false;
+                  } else {
+                    twoFactorMail.addTo(bccsString);
+                  }
+                } else {
+                  twoFactorMail.addTo(emailAddressFromSubjectLoggedIn);
+                  twoFactorMail.addBcc(bccsString);
+                }
+                
+                if (sendEmail) {
+                  twoFactorMail.assignBody(body);
+                  twoFactorMail.assignSubject(subject);
+                  twoFactorMail.send();
+                }
+                
+              }
+              
+            }            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayInvalid"));
+            return OptinTestSubmitView.optin;
+          }
+          
+        }
+        
         if (StringUtils.isBlank(twoFactorPass)) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
-          if (optinBySerialNumber) {
-            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
-          }
+          return OptinTestSubmitView.optin;
+        }
+
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
           return OptinTestSubmitView.optin;
         }
 
@@ -2114,9 +2233,6 @@ public class UiMain extends UiServiceLogicBase {
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
-          if (optinBySerialNumber) {
-            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
-          }
           return OptinTestSubmitView.optin;
         }
         
@@ -2146,9 +2262,6 @@ public class UiMain extends UiServiceLogicBase {
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
-          if (optinBySerialNumber) {
-            twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
-          }
           return OptinTestSubmitView.optin;
         }
         
@@ -3790,12 +3903,17 @@ public class UiMain extends UiServiceLogicBase {
   
     String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
     String serialNumber = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumber");
+
+    String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
+    String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
+    String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
     
     Source subjectSource = TfSourceUtils.mainSource();
     
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, serialNumber, true);
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, serialNumber, true,
+        birthMonthString, birthDayString, birthYearString);
   
     showJsp(optinTestSubmitView.getJsp());
   
@@ -3840,9 +3958,14 @@ public class UiMain extends UiServiceLogicBase {
   
     Source subjectSource = TfSourceUtils.mainSource();
     
+    String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
+    String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
+    String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
+    
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, null, false);
+        httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, null, false,
+        birthMonthString, birthDayString, birthYearString);
   
     showJsp(optinTestSubmitView.getJsp());
   

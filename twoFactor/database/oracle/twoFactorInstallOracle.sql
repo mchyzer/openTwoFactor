@@ -530,8 +530,7 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
   
   
     
-/* Formatted on 8/19/2016 6:28:12 PM (QP5 v5.252.13127.32847) */
-/* Formatted on 11/28/2016 1:51:18 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 1/31/2017 8:47:45 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
 (
    LOGINID,
@@ -578,7 +577,8 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    PHONE_AUTO_CALLTEXT,
    PHONE_AUTO_CALLTEXTS_IN_MONTH,
    LAST_EMAIL_NOT_OPTED_IN_USER,
-   LAST_EMAIL_NOT_OPTED_IN_DATE
+   LAST_EMAIL_NOT_OPTED_IN_DATE,
+   WRONG_BDAY_ATTEMPTS_IN_MONTH
 )
    BEQUEATH DEFINER
 AS
@@ -814,7 +814,7 @@ AS
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'phone_auto_calltexts_in_month')
              AS phone_auto_calltexts_in_month,
-	        (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
+          (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'last_email_not_opted_in_user')
@@ -830,7 +830,12 @@ AS
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'last_email_not_opted_in_user')
-             AS last_email_not_opted_in_date
+             AS last_email_not_opted_in_date,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'wrong_bday_attempts_in_month')
+             AS wrong_bday_attempts_in_month
      FROM two_factor_user tfu;
 
 COMMENT ON TABLE TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
@@ -922,7 +927,10 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_CALLTEXTS_IN_MONTH IS 'keep track
 COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_USER IS 'millis since 1970 of last email sent to not opted in user who is required';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_DATE IS 'date of last email sent to not opted in user who is required';
-  
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.WRONG_BDAY_ATTEMPTS_IN_MONTH IS 'if the user has had wrong birthday attempts in month, keep track, the json has the month (0 indexed) and day in the key, value is amount, will delete keys older than a month';
+
+
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_AUDIT_V
 (

@@ -169,6 +169,22 @@ public class TwoFactorRequestContainer {
   }
   
   /**
+   * optin container
+   */
+  private TwoFactorOptinContainer twoFactorOptinContainer;
+  
+  /**
+   * optin container
+   * @return two factor optin container
+   */
+  public TwoFactorOptinContainer getTwoFactorOptinContainer() {
+    if (this.twoFactorOptinContainer == null) {
+      this.twoFactorOptinContainer = new TwoFactorOptinContainer();
+    }
+    return this.twoFactorOptinContainer;
+  }
+  
+  /**
    * two factor help logging in container
    */
   private TwoFactorHelpLoggingInContainer twoFactorHelpLoggingInContainer;

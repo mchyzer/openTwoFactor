@@ -18,6 +18,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.encryption.EncryptionKey;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 
 import com.google.zxing.BarcodeFormat;
@@ -149,19 +150,19 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
   public static void main(String[] args) {
 
 //    if (true) {
-//      System.out.println(EncryptionKey.decrypt("1402052898545__c4cDa++3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXbaaaaaaaaaaaaaSpkHong=="));
+//      System.out.println(EncryptionKey.decrypt("1473868252981__ar3DWJXXXXXXXXXXXXXXXXXXXXXX"));
 //      return;
 //    }
     
-    if (false) {
+    if (true) {
       
-      String secret = "2PFJTXXXXXXXXXXXXXX";
+      String secret = "4OIBW25HIEEEJ6XXXXXXXXXXXXXXXXXX";
       //System.out.println(new Date(23820173L*60));
       
       //findTimePeriodFob(secret, 551960, 305783);
       
       printPasswordsForSecret(secret, 
-          null, null, System.currentTimeMillis(), false);
+          null, null, 1485462359000L, false);
       return;
     }
     

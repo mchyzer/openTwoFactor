@@ -75,6 +75,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "userIpAddress", "username", "duoDontPush", "dontTrustBrowser",
       
       //for UI
+      "birthMonth", "birthDay", "birthYear",
       "twoFactorCode", "twoFactorCustomCode", "profileForOptin",
       "userIdOperatingOnName", "userIdOperatingOn", "email0", "colleagueLogin0Name", "colleagueLogin1Name",
       "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "optinTypeName", "phone0",

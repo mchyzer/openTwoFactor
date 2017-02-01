@@ -65,6 +65,18 @@
               <hr />
               <form action="UiMain.optinBySerialAndTest" method="post">
                 <table>
+                  <%-- see if we are checking bday --%>
+                  <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.requireBirthdayOnOptin}">
+      
+                    <tr valign="top">
+                      <td style="padding: 0.5em; padding-right: 2em"><b><label for="birthMonthId">${textContainer.text['optinStep2labelBirthday'] }</label></b></td>
+                      <td style="padding: 0.5em;">
+                        <%@ include file="../assetsJsp/birthdayForm.jsp"%>
+                      </td>
+                    </tr>
+                  
+                  </c:if>
+                                
                   <tr valign="top">
                     <td style="padding: 0.5em; padding-right: 2em"><b><label for="serialNumber">${textContainer.text['optinStep2labelSerialNumber'] }</label></b></td>
                     <td style="padding: 0.5em;"><input type="text" name="serialNumber" size="12" autocomplete="off" class="textfield" /><br />
@@ -223,6 +235,16 @@
       <form action="UiMain.optinTestSubmit" method="post">
         <div class="substep">
           ${textContainer.text['optinStep3substep']} <br /><br />
+
+            <%-- see if we are checking bday --%>
+            <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.requireBirthdayOnOptin}">
+              ${textContainer.text['optinStep3enterBday']}
+
+              <%@ include file="../assetsJsp/birthdayForm.jsp"%>
+              <br /><br />
+            
+            </c:if>
+
             ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
             <br /><br />
               <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"

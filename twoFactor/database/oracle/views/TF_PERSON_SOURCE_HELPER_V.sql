@@ -1,4 +1,4 @@
-/* Formatted on 1/6/2017 12:24:37 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 1/8/2017 8:41:23 AM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_HELPER_V
 (
    PENN_ID,
@@ -34,7 +34,7 @@ AS
              ELSE 'F'
           END
              AS active,
-          cpv.BIRTH_DATE
+          TO_CHAR(cpv.BIRTH_DATE, 'YYYY-MM-DD')
      /* (select 'T' from authzadm.PROJECT_TF_ACTIVE_USERS_V ptauv where ptauv.penn_id = cpv.penn_id) as active */
      FROM pcdadmin.computed_person_v cpv, tf_source_make_active tsma
     WHERE     kerberos_principal IS NOT NULL
@@ -62,4 +62,4 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.EMAIL IS 'email of user';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.ACTIVE IS 'T if active, F if not';
 
-COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.BIRTH_DATE IS 'birth date if we have it';
+COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.BIRTH_DATE IS 'birth date if we have it: yyyy-mm-dd';

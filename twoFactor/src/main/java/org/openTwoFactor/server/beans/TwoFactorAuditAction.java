@@ -23,6 +23,21 @@ public enum TwoFactorAuditAction {
 
   }, 
   /**
+   * wrong bday
+   */
+  WRONG_BIRTHDAY {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsWrongBirthday";
+    }
+
+  }, 
+  /**
    * send a code to a phone
    */
   SEND_EMAIL_TO_ALL_USERS {

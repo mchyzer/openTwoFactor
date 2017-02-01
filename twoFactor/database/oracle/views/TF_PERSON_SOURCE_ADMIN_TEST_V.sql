@@ -1,4 +1,4 @@
-/* Formatted on 1/6/2017 2:10:44 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 1/8/2017 8:45:42 AM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_TEST_V
 (
    PENN_ID,
@@ -29,5 +29,5 @@ AS
           NAME,
           EMAIL,
           ACTIVE,
-          BIRTH_DATE
+          TO_CHAR(BIRTH_DATE, 'YYYY-MM-DD')
      FROM TF_TEST_PERSON;
