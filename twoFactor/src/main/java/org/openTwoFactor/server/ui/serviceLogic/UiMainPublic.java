@@ -323,7 +323,8 @@ public class UiMainPublic extends UiServiceLogicBase {
             if (i < secretCodeCharArray.length-1) {
               secretCodeCommaSeparated.append(",");
             } else {
-              secretCodeCommaSeparated.append(".");
+              //note if it is a period, they actually say "period"... weird
+              secretCodeCommaSeparated.append(",");
             }
           }
             
