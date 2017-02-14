@@ -23,3 +23,6 @@ AS
      FROM tf_person_source_admin_v;
 
 COMMENT ON TABLE TF_PERSON_SOURCE_ADMIN_ALL_V IS 'all view for testing where everyone is active';
+
+
+GRANT SELECT ON TF_PERSON_SOURCE_ADMIN_ALL_V TO TWO_FACTOR_ADMIN WITH GRANT OPTION;
