@@ -241,6 +241,11 @@ public class TwoFactorClient {
       }
 
       {
+        Boolean asyncAuth = TwoFactorClientUtils.argMapBoolean(argMap, argMapNotUsed, "asyncAuth");
+        tfValidatePassword.assignAsyncAuth(asyncAuth);
+      }
+
+      {
         Boolean dontTrustBrowser = TwoFactorClientUtils.argMapBoolean(argMap, argMapNotUsed, "dontTrustBrowser");
         tfValidatePassword.assignDontTrustBrowser(dontTrustBrowser);
       }

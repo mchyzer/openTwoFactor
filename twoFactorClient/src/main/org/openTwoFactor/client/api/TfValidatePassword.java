@@ -175,6 +175,9 @@ public class TfValidatePassword extends AsacApiRequestBase {
     if (this.dontTrustBrowser != null) {
       params.put("dontTrustBrowser", this.dontTrustBrowser ? "true" : "false");
     }
+    if (this.asyncAuth != null) {
+      params.put("asyncAuth", this.asyncAuth ? "true" : "false");
+    }
     if (!TwoFactorClientUtils.isBlank(this.serviceId)) {
       params.put("serviceId", this.serviceId);
     }
@@ -261,6 +264,21 @@ public class TfValidatePassword extends AsacApiRequestBase {
     return this;
   }
 
+  /**
+   * true|false if the service is being queried asynchronously from a browser (e.g. dont clear state)
+   */
+  private Boolean asyncAuth;
+  
+  /**
+   * true|false if the service is being queried asynchronously from a browser (e.g. dont clear state)
+   * @param asyncAuth1
+   * @return the request for chaining
+   */
+  public TfValidatePassword assignAsyncAuth(Boolean asyncAuth1) {
+    this.asyncAuth = asyncAuth1;
+    return this;
+  }
+  
   /**
    * true|false if the service is requiring two factor
    * @param dontTrustBrowser1 the requireTwoFactor to set
