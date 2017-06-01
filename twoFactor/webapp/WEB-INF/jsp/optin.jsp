@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -22,10 +22,10 @@
   </div> 
   <div class="paragraphs">
   
-    <br />
-    <b>${textContainer.text['optinSubheader']}</b>
+    <h2>${textContainer.text['optinSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
+    <br />
     ${textContainer.text['optinStep1description']}
     <br /><br />
     
@@ -91,7 +91,7 @@
                   <tr>
                     <td></td>
                     <td style="padding: 0.5em; padding-top: 1em"><input value="${textContainer.textEscapeDouble['optinStep2serialNumberButton'] }" class="tfBlueButton"
-                    onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
+                     
                     type="submit" /></td>
                   </tr>
                 </table>
@@ -181,7 +181,7 @@
                               <c:when test="${twoFactorPhoneForScreen.voice}">
                                 <form action="UiMain.optinPhoneCode" method="post" style="display: inline">
                                   <input value="${textContainer.textEscapeDouble['havingTroubleVoicePrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
-                                    onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                                     type="submit"
                                      />
                                   <input type="hidden" name="phoneIndex" 
                                     value="${i}" />
@@ -198,7 +198,7 @@
                             <c:if test="${twoFactorPhoneForScreen.text}">
                               <form action="UiMain.optinPhoneCode" method="post" style="display: inline">
                                 <input value="${textContainer.textEscapeDouble['havingTroubleTextPrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
-                                  onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                                   type="submit"
                                    />
                                 <input type="hidden" name="phoneIndex" 
                                   value="${i}" />
@@ -249,7 +249,7 @@
           ${textContainer.text['optinStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
           <br /><br />
           <input value="${textContainer.textEscapeDouble['optinStep3codeButton']}" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
+             
             type="submit" onclick="if (document.getElementById('twoFactorCustomCodeId').value != null && document.getElementById('twoFactorCustomCodeId').value != '') {alert('If you enter a custom secret, you must click the button: Submit custom secret'); return false; }" />
             
           <br /><br />       
@@ -266,6 +266,8 @@
       <img src="UiMain.qrCode.gif?key=${twoFactorRequestContainer.twoFactorUserLoggedIn.lastUpdated}" height="300" width="300" />
       
   </div>
+  <br />
+  <br /> 
   <br />
   <br /> 
   <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp;

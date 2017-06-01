@@ -307,6 +307,8 @@ public class DuoCommands {
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
       boolean validCode = verifyDuoCodeBySomeId(args[1], args[2]);
       System.out.println("Valid code? " + validCode);
+    } else if (args.length == 3 && StringUtils.equals("duoInitiatePhoneCallByNumber", args[0])) {
+      duoInitiatePhoneCallBySomeId(args[1], args[2], false, 30);
     } else if (args.length == 1 && StringUtils.equals("deleteAllTokensFromDuo", args[0])) {
       deleteAllTokensFromDuo();
     } else if (args.length == 2 && StringUtils.equals("deleteTokensByUserFromDuo", args[0])) {
@@ -353,9 +355,9 @@ public class DuoCommands {
       String txid = duoInitiatePushBySomeId(userLookupId, true, message, null);
       System.out.println(txid);
 
-    } else if (args.length == 2 && StringUtils.equals("duoPushSuccess", args[0])) {
+    } else if (args.length == 2 && StringUtils.equals("duoPushOrPhoneSuccess", args[0])) {
       String txId = args[1];
-      boolean allowed = duoPushSuccess(txId, null);
+      boolean allowed = duoPushOrPhoneSuccess(txId, null);
       System.out.println("Allowed? " + allowed);
 
     } else if (args.length == 3 && StringUtils.equals("duoPushByDefault", args[0])) {
@@ -2354,6 +2356,62 @@ public class DuoCommands {
   }
 
   /**
+   * @param duoUserId 
+   * @param duoPhoneId
+   * @param timeoutSeconds throws runtime httpclient exception if timeout, or null for none
+   * @return tx id or null if no capable device
+   */
+  public static String duoInitiatePhoneCallByPhoneId(String duoUserId, String duoPhoneId,
+      Integer timeoutSeconds) {
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "duoInitiatePhoneCallByPhoneId");
+    long startTime = System.nanoTime();
+    try {
+
+      String path = "/auth/v2/auth";
+      debugMap.put("POST", path);
+      Http request = httpAuth("POST", path, timeoutSeconds);
+
+      request.addParam("user_id", duoUserId);
+      debugMap.put("user_id", duoUserId);
+      request.addParam("factor", "phone");
+      request.addParam("async", "1");
+      request.addParam("device", duoPhoneId);
+      debugMap.put("device", duoPhoneId);
+  
+      signHttpAuth(request);
+      
+      String result = executeRequestRaw(request);
+      
+      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+  
+      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        if (result.contains("no capable device")) {
+          debugMap.put("noCapableDevice", true);
+          return null;
+        }
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+      
+      jsonObject = (JSONObject)jsonObject.get("response");
+  
+      String txid = jsonObject.getString("txid");
+
+      debugMap.put("txid", txid);
+
+      return txid;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+
+  /**
    * set the push by default flag 
    * @param someId
    * @param pushByDefault
@@ -2373,11 +2431,11 @@ public class DuoCommands {
    * @param timeoutSeconds
    * @return if success
    */
-  public static boolean duoPushSuccess(String txId, Integer timeoutSeconds) {
+  public static boolean duoPushOrPhoneSuccess(String txId, Integer timeoutSeconds) {
     
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
-    debugMap.put("method", "duoPushSuccess");
+    debugMap.put("method", "duoPushOrPhoneSuccess");
     debugMap.put("txId", txId);
     long startTime = System.nanoTime();
     try {
@@ -3213,6 +3271,55 @@ public class DuoCommands {
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
+    
+  }
+
+  /**
+   * initiate a push
+   * @param someId
+   * @param phoneIdOrNumber
+   * @param isIdOrNumber
+   * @param timeoutSeconds
+   * 
+   * @return tx id
+   */
+  private static String duoInitiatePhoneCallBySomeId(String someId, String phoneIdOrNumber, boolean isIdOrNumber, Integer timeoutSeconds) {
+  
+    String userId = retrieveDuoUserIdBySomeId(someId);
+    JSONObject duoPhone = duoPhoneByIdOrNumber(phoneIdOrNumber, isIdOrNumber);
+    if (duoPhone == null) {
+      throw new RuntimeException("Cant find duo phone: " + phoneIdOrNumber + ", (isId? " + isIdOrNumber + ")");
+    }
+    String phoneId = duoPhone.getString("phone_id");
+    return duoInitiatePhoneCall(userId, phoneId, timeoutSeconds);
+
+  }
+
+  /**
+   * initiate a push
+   * @param userId
+   * @param duoPhoneId
+   * @param timeoutSeconds
+   * @return tx id or null if no capable device
+   */
+  private static String duoInitiatePhoneCall(String userId, String duoPhoneId, Integer timeoutSeconds) {
+  
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("userId is required");
+    }
+  
+    long start = System.nanoTime();
+    
+    long millisElapsed = (System.nanoTime() - start) / 1000000;
+    
+    if (timeoutSeconds != null) {
+      timeoutSeconds = timeoutSeconds - (int)millisElapsed;
+      if (timeoutSeconds < 0) {
+        timeoutSeconds = 1;
+      }
+    }
+    
+    return duoInitiatePhoneCallByPhoneId(userId, duoPhoneId, timeoutSeconds);
     
   }
 }

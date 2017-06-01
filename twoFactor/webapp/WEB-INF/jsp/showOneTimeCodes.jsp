@@ -5,7 +5,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -20,8 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['codesSubheader']}</b>
+  <h2>${textContainer.text['codesSubheader']}</h2>
   <br />
   <br />
   <div class="paragraphs">
@@ -44,6 +43,9 @@
     <c:forEach items="${twoFactorRequestContainer.oneTimePassRows}" var="oneTimePassRow">
   ${oneTimePassRow.oneTimePassCol1}   ${oneTimePassRow.oneTimePassCol2}</c:forEach>
   </pre>  
+  <br />
+  <br />
+  <br />
   <br />
   <div class="tfPrinterFriendlyNot">
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">

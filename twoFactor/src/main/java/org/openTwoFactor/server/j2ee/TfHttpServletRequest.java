@@ -73,9 +73,10 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "serviceId", "serviceName", "spRequiredFactors", "trustedBrowser", 
       "twoFactorPass", "userBrowserUuid",
       "userIpAddress", "username", "duoDontPush", "dontTrustBrowser",
+      "asyncAuth",
       
       //for UI
-      "birthMonth", "birthDay", "birthYear",
+      "birthMonth", "birthDay", "birthYear", "birthdayTextfield", "optInTypeName",
       "twoFactorCode", "twoFactorCustomCode", "profileForOptin",
       "userIdOperatingOnName", "userIdOperatingOn", "email0", "colleagueLogin0Name", "colleagueLogin1Name",
       "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "optinTypeName", "phone0",
@@ -169,7 +170,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       
       if (enumeration != null) {
         while(enumeration.hasMoreElements()) {
-          String paramName = (String)enumeration.nextElement();
+          String paramName = enumeration.nextElement();
           
           if (!validParamNames.contains(paramName)) {
             if (!paramsToIgnore.contains(paramName)) {

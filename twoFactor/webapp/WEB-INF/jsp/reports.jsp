@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -20,14 +20,14 @@
     </div> 
     <div class="clearboth"></div> 
   </div>
-  <br />
-  <b>${textContainer.text['viewReportsSubheader']}</b>
+  <h2>${textContainer.text['viewReportsSubheader']}</h2>
   <br />
   ${textContainer.text['viewReportsInstructions']}
 
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
+  <br />
 
     <form action="UiMain.reports" method="get">
 
@@ -55,8 +55,8 @@
             <div class="formValue">
             
               <input value="${textContainer.textEscapeDouble['viewReportsButtonViewReport']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" 
-                onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+                 
+                 type="submit" />
             </div>
             <div class="formFooter">&nbsp;</div>
           </div>
@@ -121,6 +121,8 @@
     <br />
     ${textContainer.text['viewReportsOptedOutUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedOutUsers}
 
+    <br />
+    <br /> 
     <br />
     <br /> 
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">

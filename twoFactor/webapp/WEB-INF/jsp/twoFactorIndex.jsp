@@ -10,7 +10,7 @@
 <!-- twoFactorIndex.jsp -->
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -24,22 +24,22 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <%@ include file="../assetsJsp/commonError.jsp"%>
   
     <div class="paragraphs">
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
-          <b>${textContainer.text['indexOptedInSubheader'] }</b>
+          <h2>${textContainer.text['indexOptedInSubheader'] }</h2>
           <br />
           <br />
+  <%@ include file="../assetsJsp/commonError.jsp"%>
+  <br />
           
           ${textContainer.text['indexOptedInSubtext'] }
           
         </c:when>
       <c:otherwise>
   
-          <b>${textContainer.text['indexNotOptedInSubheader']}</b>
+          <h2>${textContainer.text['indexNotOptedInSubheader']}</h2>
           <br />
           <br />
           ${textContainer.text['indexNotOptedInSubtext1']}
@@ -63,30 +63,31 @@
     
       <form action="../../twoFactorUi/app/UiMain.optout" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonOptOut']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+         type="submit"
         onclick="return confirm('${textContainer.textEscapeSingleDouble['buttonOptOutConfirm']}');" />
       </form>
       &nbsp;
     
       <form action="../../twoFactorUi/app/UiMain.addPhoneOrDevice" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonChangeDevice']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+         type="submit"
         />
       </form>
       &nbsp;
     
     </c:if>
+    <%-- TODO change this back --%>
     <c:if test="${!twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
-      <form action="../../twoFactorUi/app/UiMain.optin" method="get" style="display: inline">
+      <form action="../../twoFactorUi/app/UiMain.optinWizard" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+         type="submit" />
       </form>
       &nbsp;
     </c:if>
     
     <form action="../../twoFactorUi/app/UiMain.profileView" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonProfile']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+       type="submit" />
     </form>
     &nbsp;
 
@@ -94,13 +95,13 @@
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
           <form action="../../twoFactorUi/app/UiMain.showOneTimeCodes" method="get" style="display: inline">
             <input value="${textContainer.textEscapeDouble['buttonGenerateCodes']}" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+             type="submit" />
           </form>
           &nbsp;
           <c:if test="${twoFactorRequestContainer.twoFactorDuoPushContainer.duoEnabled}">
             <form action="../../twoFactorUi/app/UiMain.duoPush" method="get" style="display: inline">
               <input value="${textContainer.textEscapeDouble['buttonDuoPush']}" class="tfBlueButton"
-              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+               type="submit" />
             </form>
             &nbsp;
           </c:if>
@@ -108,14 +109,14 @@
             <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.trustedBrowserCount > 0}">
               <form action="../../twoFactorUi/app/UiMain.untrustBrowsers" method="get" style="display: inline">
                 <input value="${textContainer.textEscapeDouble['buttonUntrustBrowsers']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                 type="submit"
                 onclick="return confirm('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersConfirm']}');" />
               </form>
               &nbsp;
             </c:when>
             <c:otherwise>
               <input value="${textContainer.textEscapeDouble['buttonUntrustBrowsers']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                 type="submit"
                 onclick="alert('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersNone']}'); return false;" />
             &nbsp;
             
@@ -126,12 +127,12 @@
       </c:choose>
       <form action="../../twoFactorUi/app/UiMain.userAudits" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonActivity']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+         type="submit" />
       </form>
       &nbsp;
       <form action="../../twoFactorUi/app/UiMain.helpColleague" method="get" style="display: inline">
         <input value="${textContainer.textEscapeDouble['buttonHelpFriend']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+         type="submit" />
       </form>
       &nbsp;
 
@@ -139,7 +140,7 @@
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.admin}">
           <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminIndex" method="get" style="display: inline">
             <input value="${textContainer.textEscapeDouble['buttonAdminConsole']}" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+             type="submit" />
           </form>
           &nbsp;
 
@@ -149,7 +150,7 @@
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.hasReportPrivilege}">
           <form action="../../twoFactorUi/app/UiMain.reports" method="get" style="display: inline">
             <input value="${textContainer.textEscapeDouble['buttonViewReports']}" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+             type="submit" />
           </form>
           &nbsp;
 

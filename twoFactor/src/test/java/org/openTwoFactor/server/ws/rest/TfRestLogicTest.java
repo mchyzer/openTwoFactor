@@ -664,7 +664,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
     
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
+            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, 
+            passString, TfSourceUtils.mainSource(), null, false, null, null, null, null);
       
         assertEquals(optinTestSubmitView.name() 
             + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -1817,7 +1818,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
     
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-            twoFactorRequestContainer, "harveycg", "130.91.219.176", userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
+            twoFactorRequestContainer, "harveycg", "130.91.219.176", userAgent1, 
+            passString, TfSourceUtils.mainSource(), null, false, null, null, null, null);
       
         assertEquals(optinTestSubmitView.name() 
             + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -2084,7 +2086,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
     
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
+            twoFactorRequestContainer, "mchyzer", "130.91.219.176", 
+            userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null, null);
       
         assertEquals(optinTestSubmitView.name() 
             + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -2914,7 +2917,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
     
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
+            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, 
+            passString, TfSourceUtils.mainSource(), null, false, null, null, null, null);
       
         assertEquals(optinTestSubmitView.name() 
             + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -3696,7 +3700,8 @@ public class TfRestLogicTest extends TestCase {
         auditsSize = TfMemoryAuditDao.audits.size();
     
         OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-            twoFactorRequestContainer, "mchyzer", "130.91.219.176", userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null);
+            twoFactorRequestContainer, "mchyzer", "130.91.219.176", 
+            userAgent1, passString, TfSourceUtils.mainSource(), null, false, null, null, null, null);
       
         assertEquals(optinTestSubmitView.name() 
             + ", " + twoFactorRequestContainer.getError() + ", " + passString, 

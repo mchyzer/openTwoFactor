@@ -666,7 +666,7 @@ public class UiMain extends UiServiceLogicBase {
     
       TwoFactorServerUtils.sleep(1000);
 
-      if (DuoCommands.duoPushSuccess(txId, null)) {
+      if (DuoCommands.duoPushOrPhoneSuccess(txId, null)) {
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushTestSuccess"));
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
@@ -1983,6 +1983,45 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * 
+   */
+  public static enum OptinWizardWelcomeView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+
+    /**
+     */
+    profile("profile.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardWelcomeView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
    * matcher for numbers and whitespace
    */
   private static Pattern numberMatcher = Pattern.compile("^[0-9 ]+$");
@@ -1992,7 +2031,6 @@ public class UiMain extends UiServiceLogicBase {
    */
   private static Pattern alphaNumericMatcher = Pattern.compile("^[0-9a-zA-Z ]+$");
 
-  
   /**
    * optin to two factor
    * @param twoFactorDaoFactory
@@ -2004,20 +2042,21 @@ public class UiMain extends UiServiceLogicBase {
    * @param subjectSource
    * @param serialNumber if opting in by serial number, this is the serial number
    * @param optinBySerialNumber true to optin by serial number
-   * @param submittedBirthMonthString 
-   * @param submittedBirthDayString 
-   * @param submittedBirthYearString 
+   * @param SUBMITTED_BIRTHDAY_MONTH 
+   * @param SUBMITTED_BIRTHDAY_DAY 
+   * @param SUBMITTED_BIRTHDAY_YEAR 
+   * @param birthdayTextfield 
    * @return error message if there is one and jsp
    */
   public OptinTestSubmitView optinTestSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final String twoFactorPass, final Source subjectSource, 
-      final String serialNumber, final boolean optinBySerialNumber, final String submittedBirthMonthString,
-      final String submittedBirthDayString, final String submittedBirthYearString) {
-    
+      final String serialNumber, final boolean optinBySerialNumber, final String SUBMITTED_BIRTHDAY_MONTH,
+      final String SUBMITTED_BIRTHDAY_DAY, final String SUBMITTED_BIRTHDAY_YEAR, final String birthdayTextfield) {
+
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
-    
+
     if (userOk) {
       userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
     }
@@ -2028,12 +2067,12 @@ public class UiMain extends UiServiceLogicBase {
 
     OptinTestSubmitView result =  (OptinTestSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
-      
+
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
 
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
-        
+
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
         
         twoFactorUser.setSubjectSource(subjectSource);
@@ -2043,114 +2082,12 @@ public class UiMain extends UiServiceLogicBase {
         if (optinBySerialNumber) {
           twoFactorRequestContainer.getTwoFactorAdminContainer().setShowSerialSection(true);
         }
-
-        //check birthday
-        if (twoFactorUser.isRequireBirthdayOnOptin()) {
-          
-          Integer submittedBirthMonth = null;
-          
-          {
-            submittedBirthMonth = TwoFactorServerUtils.intObjectValue(submittedBirthMonthString, true);
-          }
-
-          Integer submittedBirthDay = null;
-
-          {
-            submittedBirthDay = TwoFactorServerUtils.intObjectValue(submittedBirthDayString, true);
-          }
-          
-          Integer submittedBirthYear = null;
-
-          {
-            submittedBirthYear = TwoFactorServerUtils.intObjectValue(submittedBirthYearString, true);
-          }
-
-          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthDaySubmitted(submittedBirthDay == null ? -1 : submittedBirthDay);
-          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthMonthSubmitted(submittedBirthMonth == null ? -1 : submittedBirthMonth);
-          twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthYearSubmitted(submittedBirthYear == null ? -1 : submittedBirthYear);
-
-          
-          if (submittedBirthDay == null || submittedBirthMonth == null || submittedBirthYear == null) {
-            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayRequired"));
+        
+        if (!checkBirthday(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, 
+            userAgent, subjectSource, twoFactorUser, 
+            SUBMITTED_BIRTHDAY_MONTH, SUBMITTED_BIRTHDAY_DAY, 
+            SUBMITTED_BIRTHDAY_YEAR, birthdayTextfield)) {
             return OptinTestSubmitView.optin;
-          }
-          
-          //lets see if we are over the limit
-          String wrongBdayHistogram = twoFactorUser.getWrongBdayAttemptsInMonth();
-          
-          int numberToday = TwoFactorServerUtils.histogramValueForDate(null, wrongBdayHistogram);
-          
-          //was the user incorrect?
-          boolean wrongBirthday = submittedBirthDay != twoFactorUser.getBirthDay() || submittedBirthMonth != twoFactorUser.getBirthMonth()
-                        || submittedBirthYear != twoFactorUser.getBirthYear();
-
-          //if we havent done too many or wrong bday
-          boolean passedThreshold = numberToday >= TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxWrongBdaysPerDayPerUser", 5);
-          
-          if (passedThreshold || wrongBirthday) {
-            
-            //if not right increment the histogram
-            if (wrongBirthday) {
-              wrongBdayHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, wrongBdayHistogram);
-              twoFactorUser.setWrongBdayAttemptsInMonth(wrongBdayHistogram);
-              twoFactorUser.store(twoFactorDaoFactory);
-              
-              //audit this
-              TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-                  TwoFactorAuditAction.WRONG_BIRTHDAY, ipAddress, 
-                  userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
-                  submittedBirthYear + "/" + submittedBirthMonth + "/" + submittedBirthDay, null);
-              
-            }
-
-            // might need to send email
-            if (passedThreshold) {
-              
-              if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-                  && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdays", true)) {
-                
-                Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
-                
-                String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
-
-                //set the default text container...
-                String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdaySubject");
-                subject = TextContainer.massageText("emailWrongBdaySubject", subject);
-
-                String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdayBody");
-                body = TextContainer.massageText("emailWrongBdayBody", body);
-                
-                String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdaysBcc");
-                
-                TwoFactorEmail twoFactorMail = new TwoFactorEmail();
-                
-                boolean sendEmail = true;
-                //there is no email address????
-                if (StringUtils.isBlank(emailAddressFromSubjectLoggedIn)) {
-                  LOG.warn("Did not send email to logged in user: " + sourceSubjectLoggedIn + ", no email address...");
-                  if (StringUtils.isBlank(bccsString)) {
-                    sendEmail = false;
-                  } else {
-                    twoFactorMail.addTo(bccsString);
-                  }
-                } else {
-                  twoFactorMail.addTo(emailAddressFromSubjectLoggedIn);
-                  twoFactorMail.addBcc(bccsString);
-                }
-                
-                if (sendEmail) {
-                  twoFactorMail.assignBody(body);
-                  twoFactorMail.assignSubject(subject);
-                  twoFactorMail.send();
-                }
-                
-              }
-              
-            }            
-            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayInvalid"));
-            return OptinTestSubmitView.optin;
-          }
-          
         }
         
         if (StringUtils.isBlank(twoFactorPass)) {
@@ -2384,6 +2321,185 @@ public class UiMain extends UiServiceLogicBase {
     }    
 
     return result;
+  }
+  
+  /**
+   * return true if ok and false if problem
+   * @param twoFactorDaoFactory 
+   * @param twoFactorRequestContainer 
+   * @param loggedInUser 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param subjectSource 
+   * @param twoFactorUser user
+   * @param submittedBirthYearString year 
+   * @param submittedBirthMonthString month
+   * @param submittedBirthDayString day
+   * @param birthdayTextfield
+   * @return true if ok and false if problem
+   */
+  private boolean checkBirthday(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, TwoFactorUser twoFactorUser, 
+      String submittedBirthMonthString, String submittedBirthDayString, 
+      String submittedBirthYearString, String birthdayTextfield) {
+
+    boolean showBirthdayOnScreen = true;
+    
+    //check birthday
+    if (twoFactorUser.isRequireBirthdayOnOptin()) {
+      
+      if (!StringUtils.isBlank(birthdayTextfield)) {
+        //try yyyy/mm/dd
+        Pattern birthdayPattern = Pattern.compile("^(\\d{4})[^\\d]+(\\d{1,2})[^\\d]+(\\d{1,2})$");
+        Matcher matcher = birthdayPattern.matcher(birthdayTextfield);
+        
+        if (matcher.matches()) {
+          submittedBirthYearString = matcher.group(1);
+          submittedBirthMonthString = matcher.group(2);
+          submittedBirthDayString = matcher.group(3);
+          showBirthdayOnScreen = false;
+        } else {
+        
+          //try mm/dd/yyyy
+          birthdayPattern = Pattern.compile("^(\\d{1,2})[^\\d]+(\\d{1,2})[^\\d]+(\\d{4})$");
+          matcher = birthdayPattern.matcher(birthdayTextfield);
+
+          if (matcher.matches()) {
+            submittedBirthMonthString = matcher.group(1);
+            submittedBirthDayString = matcher.group(2);
+            submittedBirthYearString = matcher.group(3);
+            showBirthdayOnScreen = false;
+          }
+        }
+      }
+      
+      Integer submittedBirthMonth = null;
+      
+      {
+        submittedBirthMonth = TwoFactorServerUtils.intObjectValue(submittedBirthMonthString, true);
+      }
+
+      Integer submittedBirthDay = null;
+
+      {
+        submittedBirthDay = TwoFactorServerUtils.intObjectValue(submittedBirthDayString, true);
+      }
+      
+      Integer submittedBirthYear = null;
+
+      {
+        submittedBirthYear = TwoFactorServerUtils.intObjectValue(submittedBirthYearString, true);
+      }
+
+      if (showBirthdayOnScreen) {
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthDaySubmitted(submittedBirthDay == null ? -1 : submittedBirthDay);
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthMonthSubmitted(submittedBirthMonth == null ? -1 : submittedBirthMonth);
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setBirthYearSubmitted(submittedBirthYear == null ? -1 : submittedBirthYear);
+      }
+      
+      if (submittedBirthDay == null || submittedBirthMonth == null || submittedBirthYear == null) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayRequired"));
+        return false;
+      }
+      
+      //lets see if we are over the limit
+      String wrongBdayHistogram = twoFactorUser.getWrongBdayAttemptsInMonth();
+      
+      int numberToday = TwoFactorServerUtils.histogramValueForDate(null, wrongBdayHistogram);
+      
+      //was the user incorrect?
+      boolean wrongBirthday = !TwoFactorServerUtils.equals(submittedBirthDay, twoFactorUser.getBirthDay()) 
+          || !TwoFactorServerUtils.equals(submittedBirthMonth, twoFactorUser.getBirthMonth())
+          || !TwoFactorServerUtils.equals(submittedBirthYear, twoFactorUser.getBirthYear());
+
+      //if we havent done too many or wrong bday
+      boolean passedThreshold = numberToday >= TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxWrongBdaysPerDayPerUser", 5);
+      
+      if (passedThreshold || wrongBirthday) {
+        
+        //if not right increment the histogram
+        if (wrongBirthday) {
+          wrongBdayHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, wrongBdayHistogram);
+          twoFactorUser.setWrongBdayAttemptsInMonth(wrongBdayHistogram);
+          twoFactorUser.store(twoFactorDaoFactory);
+          
+          //audit this
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.WRONG_BIRTHDAY, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+              submittedBirthYear + "/" + submittedBirthMonth + "/" + submittedBirthDay, null);
+          
+        }
+
+        // might need to send email
+        if (passedThreshold) {
+          
+          if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+              && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdays", true)) {
+            
+            Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+            
+            String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+
+            //set the default text container...
+            String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdaySubject");
+            subject = TextContainer.massageText("emailWrongBdaySubject", subject);
+
+            String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdayBody");
+            body = TextContainer.massageText("emailWrongBdayBody", body);
+            
+            String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.emailUsersPassedThresholdOfWrongBirthdaysBcc");
+            
+            TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+            
+            boolean sendEmail = true;
+            //there is no email address????
+            if (StringUtils.isBlank(emailAddressFromSubjectLoggedIn)) {
+              LOG.warn("Did not send email to logged in user: " + sourceSubjectLoggedIn + ", no email address...");
+              if (StringUtils.isBlank(bccsString)) {
+                sendEmail = false;
+              } else {
+                twoFactorMail.addTo(bccsString);
+              }
+            } else {
+              twoFactorMail.addTo(emailAddressFromSubjectLoggedIn);
+              twoFactorMail.addBcc(bccsString);
+            }
+            
+            if (sendEmail) {
+              twoFactorMail.assignBody(body);
+              twoFactorMail.assignSubject(subject);
+              twoFactorMail.send();
+            }
+            
+          }
+          
+        }            
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayInvalid"));
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * return true if ok and false if problem
+   * @param twoFactorRequestContainer 
+   * @param twoFactorUser user
+   * @param birthDayUuid if they have a birthDay submitted successfully
+   * @return true if ok and false if problem
+   */
+  private boolean checkBirthday(final TwoFactorRequestContainer twoFactorRequestContainer,
+      TwoFactorUser twoFactorUser, 
+      String birthDayUuid) {
+
+    if (StringUtils.isBlank(birthDayUuid) || !StringUtils.equals(twoFactorUser.getBirthDayUuid(), birthDayUuid)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinNeedsBirthDayUuid"));
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -3138,19 +3254,20 @@ public class UiMain extends UiServiceLogicBase {
     
     final Set<TwoFactorUser> newColleagues = new HashSet<TwoFactorUser>();
     
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+
     boolean result = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
   
-        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
-    
         String localEmail0 = email0;
         
         //generate the codes
-        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-        
         twoFactorUser.setSubjectSource(subjectSource);
         
         TwoFactorProfileContainer twoFactorProfileContainer = twoFactorRequestContainer.getTwoFactorProfileContainer();
@@ -3292,7 +3409,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
 
         twoFactorUser.setPhoneAutoCalltext(phoneAutoVoiceText);
-        
+                
         twoFactorUser.setOptInOnlyIfRequired(optinForApplicationsWhichRequire);
         
         Set<String> previousColleagueUuids = new HashSet<String>();
@@ -3393,8 +3510,6 @@ public class UiMain extends UiServiceLogicBase {
     
     if (result) {
       
-      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-      
       twoFactorUser.setSubjectSource(subjectSource);
       
       
@@ -3493,8 +3608,29 @@ public class UiMain extends UiServiceLogicBase {
       //if user is registered, edit phone
       if (!StringUtils.isBlank(duoUserId)) {
         DuoCommands.migratePhonesToDuoBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid(), false);
+        
+        String newPhoneAutoDuoPhoneId = null;
+        
+        String phoneNumber = null;
+        if (StringUtils.equals("0v", phoneAutoVoiceText)) {
+          phoneNumber = phone0;
+        } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
+          phoneNumber = phone1;
+        } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
+          phoneNumber = phone2;
+        }
+
+        if (!StringUtils.isBlank(phoneNumber)) {
+          JSONObject duoPhone = DuoCommands.duoPhoneByIdOrNumber(phoneNumber, false);
+          
+          newPhoneAutoDuoPhoneId = StringUtils.trimToNull(duoPhone == null ? null : duoPhone.getString("phone_id"));
+        }
+        
+        if (!StringUtils.equals(newPhoneAutoDuoPhoneId, twoFactorUser.getPhoneAutoDuoPhoneId())) {
+          twoFactorUser.setPhoneAutoDuoPhoneId(newPhoneAutoDuoPhoneId);
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
-      
     }
     
     return result;
@@ -3908,13 +4044,15 @@ public class UiMain extends UiServiceLogicBase {
     String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
     String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
     String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
-    
+
+    String birthdayTextfield = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
     Source subjectSource = TfSourceUtils.mainSource();
     
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, serialNumber, true,
-        birthMonthString, birthDayString, birthYearString);
+        birthMonthString, birthDayString, birthYearString, birthdayTextfield);
   
     showJsp(optinTestSubmitView.getJsp());
   
@@ -3963,10 +4101,12 @@ public class UiMain extends UiServiceLogicBase {
     String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
     String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
     
+    String birthdayTextfield = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
     OptinTestSubmitView optinTestSubmitView = optinTestSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), twoFactorPass, subjectSource, null, false,
-        birthMonthString, birthDayString, birthYearString);
+        birthMonthString, birthDayString, birthYearString, birthdayTextfield);
   
     showJsp(optinTestSubmitView.getJsp());
   
@@ -4089,7 +4229,1165 @@ public class UiMain extends UiServiceLogicBase {
     return result;
 
   }
+
+
+  /**
+   * optin wizard to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource 
+   * @return the view
+   */
+  public OptinWizardWelcomeView optinWizardLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
   
+    new UiMainPublic().setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+    
+    return optinWizardSetup(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, 
+        TwoFactorOath.twoFactorGenerateTwoFactorPass(), subjectSource);
+  }
+
+
+  /**
+   * optin to the service
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizard(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
   
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    OptinWizardWelcomeView optinWizardWelcomeView = optinWizardLogic(TwoFactorDaoFactory.getFactory(), 
+        twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+    
+    showJsp(optinWizardWelcomeView.getJsp());
+    
+  }
+  
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitTypeView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinAppInstall("optinAppInstall.jsp"),
+    
+    /**
+     */
+    optinFobInstall("optinFobInstall.jsp"),
+    
+    /**
+     */
+    optinPhoneInstall("optinPhoneInstall.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitTypeView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+  
+  /**
+   * optin to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSetupAppDoneView optinWizardSetupAppDoneLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
+      return OptinWizardSetupAppDoneView.index;
+    }
+
+    OptinWizardSetupAppDoneView result =  (OptinWizardSetupAppDoneView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardSetupAppDoneView.optinWelcome;
+        }
+
+        return OptinWizardSetupAppDoneView.optinAppIntegrate;
+      }
+    });
+
+    return result;
+  }
+  
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    OptinWizardSubmitAppIntegrateView optinWizardSubmitAppIntegrateView = optinWizardSubmitAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+
+    showJsp(optinWizardSubmitAppIntegrateView.getJsp());
+  }
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitAppIntegrateView optinWizardSubmitAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
+      return OptinWizardSubmitAppIntegrateView.index;
+    }
+
+    OptinWizardSubmitAppIntegrateView result =  (OptinWizardSubmitAppIntegrateView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardSubmitAppIntegrateView.optinWelcome;
+        }
+
+        return OptinWizardSubmitAppIntegrateView.optinAppTest;
+      }
+    });
+
+    return result;
+  }
+  
+
+
+  /**
+   * submit after install app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSetupAppDone(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    OptinWizardSetupAppDoneView optinWizardSetupAppDoneView = optinWizardSetupAppDoneLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+
+    showJsp(optinWizardSetupAppDoneView.getJsp());
+  }
+
+  
+  /**
+   * submit which type of optin
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitType(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    OptinSubmitType optInType = OptinSubmitType.valueOfIgnoreCase(TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optInTypeName"));
+
+    OptinWizardSubmitTypeView optinWizardSubmitTypeView = optinWizardSubmitTypeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource, optInType,
+        birthDayUuid);
+
+    showJsp(optinWizardSubmitTypeView.getJsp());
+  }
+  
+  /**
+   * type of submit
+   */
+  private static enum OptinSubmitType {
+    
+    /**
+     * app
+     */
+    app,
+    
+    /**
+     * phone
+     */
+    phone,
+    
+    /**
+     * fob
+     */
+    fob;
+    
+    /**
+     * take a string and convert to enum.  no reason to not find this
+     * @param string
+     * @return the enum
+     */
+    public static OptinSubmitType valueOfIgnoreCase(String string) {
+      return TwoFactorServerUtils.enumValueOfIgnoreCase(OptinSubmitType.class, string, true, true);
+    }
+
+    
+  }
+  
+  /**
+   * optin to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param optinSubmitType
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitTypeView optinWizardSubmitTypeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final OptinSubmitType optinSubmitType, final String birthDayUuid) {
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
+      return OptinWizardSubmitTypeView.index;
+    }
+
+    new UiMainPublic().setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, 
+        twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+
+    OptinWizardSubmitTypeView result =  (OptinWizardSubmitTypeView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardSubmitTypeView.optinWelcome;
+        }
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_SUBMIT_TYPE, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), optinSubmitType.name(), null);
+
+        switch (optinSubmitType) {
+          case app:
+            return OptinWizardSubmitTypeView.optinAppInstall;
+          case fob:
+            return OptinWizardSubmitTypeView.optinFobInstall;
+          case phone:
+            return OptinWizardSubmitTypeView.optinPhoneInstall;
+        }
+        return null;
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * optin to the service, submit birthday
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitBirthday(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
+    String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
+    String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
+    
+    String birthdayTextfield = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    OptinWizardSubmitBirthdayView optinWizardSubmitBirthdayView = optinWizardSubmitBirthdayLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthMonthString, birthDayString, birthYearString, birthdayTextfield);
+  
+    showJsp(optinWizardSubmitBirthdayView.getJsp());
+
+  }
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitBirthdayView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinSelectType("optinSelectType.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitBirthdayView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+  
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSetupAppDoneView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinAppIntegrate("optinAppIntegrate.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSetupAppDoneView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitAppIntegrateView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinAppTest("optinAppTest.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitAppIntegrateView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitAppTestView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinAppTest("optinAppTest.jsp"),
+
+    /**
+     */
+    optinPrintCodes("optinPrintCodes.jsp");
+
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitAppTestView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum OptinWizardPhoneCodeSentView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinConfirmPhoneCode("optinConfirmPhoneCode.jsp"),
+    
+    /**
+     */
+    optinPhoneInstall("optinPhoneInstall.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardPhoneCodeSentView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum OptinWizardTotpAppIntegrateView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinTotpAppIntegrate("optinTotpAppIntegrate.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardTotpAppIntegrateView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum OptinWizardTotpAppInstallView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinTotpAppInstall("optinTotpAppInstall.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardTotpAppInstallView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * optin to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthMonthString 
+   * @param birthDayString 
+   * @param birthYearString 
+   * @param birthdayTextfield 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitBirthdayView optinWizardSubmitBirthdayLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthMonthString,
+      final String birthDayString, final String birthYearString, final String birthdayTextfield) {
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
+      return OptinWizardSubmitBirthdayView.index;
+    }
+
+    OptinWizardSubmitBirthdayView result =  (OptinWizardSubmitBirthdayView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, 
+            userAgent, subjectSource, twoFactorUser, 
+            birthMonthString, birthDayString, 
+            birthYearString, birthdayTextfield)) {
+            return OptinWizardSubmitBirthdayView.optinWelcome;
+        }
+        
+        //we are passed bday, make a uuid and store as key
+        String birthDayUuid = TwoFactorServerUtils.uuid();
+        twoFactorUser.setBirthDayUuid(birthDayUuid);
+        twoFactorUser.store(twoFactorDaoFactory);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_SUBMIT_BIRTHDAY, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+        
+        return OptinWizardSubmitBirthdayView.optinSelectType;
+      }
+    });
+    
+    return result;
+  }
+
+  /**
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param twoFactorCode
+   * @param subjectSource 
+   * @return which view to go to
+   * 
+   */
+  private OptinWizardWelcomeView optinWizardSetup(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final String twoFactorCode, final Source subjectSource) {
+    
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+    
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardWelcomeView.index;
+    }
+  
+    return (OptinWizardWelcomeView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        if (twoFactorUser.isOptedIn()) {
+  
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinStep1optedIn"));
+  
+          return OptinWizardWelcomeView.index;
+        }
+        
+        twoFactorRequestContainer.getTwoFactorProfileContainer().setProfileForOptin(true);
+        
+        boolean hasEmail = false;
+        
+        if (twoFactorRequestContainer.isEditableEmail()) {
+          hasEmail = !StringUtils.isBlank(twoFactorUser.getEmail0());
+        } else {
+  
+          //if not editable, get from the subject source
+          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+              loggedInUser, true, false, true);
+          if (subject != null) {
+            hasEmail = !StringUtils.isBlank(TfSourceUtils.retrieveEmail(subject));
+          }
+        }
+        //lets validate the profile
+        if (!hasEmail) {
+          profileLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorEmailRequired"));
+          return OptinWizardWelcomeView.profile;
+        }
+        
+        if (lifelineCount(twoFactorUser.getColleagueUserUuid0(), twoFactorUser.getColleagueUserUuid1(),
+            twoFactorUser.getColleagueUserUuid2(), twoFactorUser.getColleagueUserUuid3(), 
+            twoFactorUser.getColleagueUserUuid4(), twoFactorUser.getPhone0(), twoFactorUser.getPhone1(),
+            twoFactorUser.getPhone2()) < 2) {
+          profileLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
+          return OptinWizardWelcomeView.profile;    
+        }
+
+        String pass = twoFactorCode.toUpperCase();
+        twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
+        twoFactorUser.setOptedIn(false);
+        twoFactorUser.setSeqPassIndexGivenToUser(null);
+        twoFactorUser.setSequentialPassIndex(null);
+        twoFactorUser.setTokenIndex(0L);
+        duoClearOutAttributes(twoFactorUser);
+        twoFactorUser.store(twoFactorDaoFactory);
+
+        List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
+
+        //untrust browsers since opting in, dont want orphans from last time
+        for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
+          twoFactorBrowser.setTrustedBrowser(false);
+          twoFactorBrowser.setWhenTrusted(0);
+          twoFactorBrowser.store(twoFactorDaoFactory);
+        }
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+
+        return OptinWizardWelcomeView.optinWelcome;
+      }
+    });
+  }
+
+
+  /**
+   * submit after test app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitAppTest(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardSubmitAppTestView optinWizardSubmitAppTestView = optinWizardSubmitAppTestLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardSubmitAppTestView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitAppTestView optinWizardSubmitAppTestLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardSubmitAppTestView.index;
+    }
+  
+    OptinWizardSubmitAppTestView result =  (OptinWizardSubmitAppTestView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardSubmitAppIntegrateView.optinWelcome;
+        }
+  
+        return OptinWizardSubmitAppTestView.optinPrintCodes;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * pink phone code
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardPhoneCodeSent(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardPhoneCodeSentView optinWizardPhoneCodeSentView = optinWizardPhoneCodeSentLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardPhoneCodeSentView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor send phone code
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardPhoneCodeSentView optinWizardPhoneCodeSentLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardPhoneCodeSentView.index;
+    }
+  
+    OptinWizardPhoneCodeSentView result =  (OptinWizardPhoneCodeSentView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardPhoneCodeSentView.optinWelcome;
+        }
+
+        return OptinWizardPhoneCodeSentView.optinConfirmPhoneCode;
+      }
+    });
+
+    return result;
+  }
+
+
+  /**
+   * integrate totp app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardTotpAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardTotpAppIntegrateView optinWizardTotpAppIntegrateView = optinWizardTotpAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardTotpAppIntegrateView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardTotpAppIntegrateView optinWizardTotpAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardTotpAppIntegrateView.index;
+    }
+  
+    OptinWizardTotpAppIntegrateView result =  (OptinWizardTotpAppIntegrateView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUser.setSubjectSource(subjectSource);
+
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardTotpAppIntegrateView.optinWelcome;
+        }
+
+        return OptinWizardTotpAppIntegrateView.optinTotpAppIntegrate;
+      }
+    });
+
+    return result;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardTotpAppInstall(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardTotpAppInstallView optinWizardTotpAppInstallView = optinWizardTotpAppInstallLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardTotpAppInstallView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardTotpAppInstallView optinWizardTotpAppInstallLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardTotpAppInstallView.index;
+    }
+  
+    OptinWizardTotpAppInstallView result =  (OptinWizardTotpAppInstallView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          return OptinWizardTotpAppInstallView.optinWelcome;
+        }
+  
+        return OptinWizardTotpAppInstallView.optinTotpAppInstall;
+      }
+    });
+  
+    return result;
+  }
+
+
 }
   

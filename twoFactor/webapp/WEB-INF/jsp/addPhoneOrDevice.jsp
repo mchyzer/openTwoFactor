@@ -8,7 +8,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -23,22 +23,24 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['addPhoneOrDeviceSubheader']}</b>
+  <h2>${textContainer.text['addPhoneOrDeviceSubheader']}</h2>
   <br /><br />
   ${textContainer.text['addPhoneOrDeviceInstructions']}
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
   <br />
+  <br />
+  <br />
+  <br />
   <form action="../../twoFactorUi/app/UiMain.addPhone" method="get" style="display: inline">
     <input value="${textContainer.textEscapeDouble['addPhoneOrDevicePhoneButton']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+       type="submit" />
   </form>
   &nbsp; &nbsp;
   <form action="../../twoFactorUi/app/UiMain.changeDevice" method="get" style="display: inline">
     <input value="${textContainer.textEscapeDouble['addPhoneOrDeviceDeviceButton']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+       type="submit"
       onclick="return confirm('${textContainer.textEscapeSingleDouble['addPhoneOrDeviceDeviceConfirm']}');" />
   </form>
 

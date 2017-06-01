@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -20,12 +20,11 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['adminSubheader']}</b>
+  <h3>${textContainer.text['adminSubheader']}</h3>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
-
+  <br />
   <form action="UiMainAdmin.userIdSubmit" method="post">
     <div class="formBox" style="width: 30em">
       <div class="formRow">
@@ -42,7 +41,7 @@
       <div class="formRow">
         <div class="formLabel" style="white-space: nowrap; text-align: right"></div>
         <div class="formValue" style="width: 14.5em"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" /></div>
+       type="submit" /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
     </div>
@@ -65,7 +64,7 @@
         <div class="formRow">
           <div class="formLabel" style="white-space: nowrap; text-align: right"></div>
           <div class="formValue" style="width: 14.5em"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
-        onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" /></div>
+         type="submit" /></div>
           <div class="formFooter">&nbsp;</div>
         </div>
       </div>
@@ -84,7 +83,7 @@
           <form action="UiMainAdmin.generateCodeSubmit" method="post" style="display: inline">
             <input value="${textContainer.textEscapeDouble['adminGenerateCodeFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
               class="tfBlueButton"
-              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+               type="submit"
               onclick="return confirm('${textContainer.textEscapeSingleDouble['adminGenerateCodeConfirm']}');" />
             <input type="hidden" name="userIdOperatingOn" 
               value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
@@ -94,7 +93,7 @@
         <form action="UiMainAdmin.optOutSubmit" method="post" style="display: inline">
           <input value="${textContainer.textEscapeDouble['adminOptOutPerson']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
             class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+             type="submit"
             onclick="return confirm('${textContainer.textEscapeSingleDouble['adminOptOutConfirm']}');" />
           <input type="hidden" name="userIdOperatingOn" 
             value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
@@ -105,7 +104,7 @@
             <form action="UiMainAdmin.untrustBrowsers" method="post" style="display: inline">
               <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
               class="tfBlueButton"
-              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+               type="submit"
               onclick="return confirm('${textContainer.textEscapeSingleDouble['adminUntrustConfirm']}');" />
               <input type="hidden" name="userIdOperatingOn" 
                 value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
@@ -114,7 +113,7 @@
           <c:otherwise>
               <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
                 class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                 type="submit"
                 onclick="alert('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersNone']}'); return false;" />
           </c:otherwise>
           
@@ -140,6 +139,9 @@
   
   <br />
   <br /> 
+  <br />
+  <br /> 
+  
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom" style="font-size: smaller">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>

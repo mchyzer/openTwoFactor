@@ -9,7 +9,7 @@
 
 <!-- nonTwoFactorIndex.jsp -->
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -23,12 +23,12 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['havingTroubleSubheader']}</b>
+  <h2>${textContainer.text['havingTroubleSubheader']}</h2>
   <div class="paragraphs">
     <br />
     <br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
+    <br />
 
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
@@ -53,7 +53,7 @@
                           <c:when test="${twoFactorPhoneForScreen.voice}">
                             <form action="UiMainPublic.phoneCode" method="post" style="display: inline">
                               <input value="${textContainer.textEscapeDouble['havingTroubleVoicePrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
-                                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                                 type="submit"
                                  />
                               <input type="hidden" name="phoneIndex" 
                                 value="${i}" />
@@ -70,7 +70,7 @@
                         <c:if test="${twoFactorPhoneForScreen.text}">
                           <form action="UiMainPublic.phoneCode" method="post" style="display: inline">
                             <input value="${textContainer.textEscapeDouble['havingTroubleTextPrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
-                              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit"
+                               type="submit"
                                />
                             <input type="hidden" name="phoneIndex" 
                               value="${i}" />
@@ -131,7 +131,7 @@
                 <c:otherwise>
                   <form action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline">
                     <input value="${textContainer.textEscapeDouble['havingTroubleAllowFriendButton']}" class="tfBlueButton"
-                      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+                       type="submit" />
                   </form> &nbsp;
                   <br /><br />
                   ${textContainer.text['havingTroubleAllowFriendsPrefix']} <c:if test="${!twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" ><form
@@ -162,18 +162,19 @@
 
             <form action="../../twoFactorUi/app/UiMain.optin" method="get" style="display: inline">
               <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
-              onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+               type="submit" />
             </form>
             &nbsp;
             <form action="../../twoFactorPublicUi/app/UiMainPublic.stopOptInRequirement" method="post" style="display: inline"><input
                 value="${textContainer.textEscapeDouble['havingTroubleRequiredToOptInButIsntButton']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';"
+                
                 type="submit" /></form>
           </c:if>
         </c:otherwise>  
       </c:choose>
 
     </div>
+    <br /><br />
     <br /><br />
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom" style="font-size: smaller">

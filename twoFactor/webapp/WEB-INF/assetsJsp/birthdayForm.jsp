@@ -1,4 +1,5 @@
 <%@ include file="../assetsJsp/commonTaglib.jsp"%>
+              <span id="birthdaySelectsId" style="display: none"><%-- TODO remove --%>
               <select name="birthMonth" id="birthMonthId">
                 <option value="">${textContainer.text['optinStep3enterBdayMonth']}</option>
                 <option value="1"
@@ -51,7 +52,7 @@
                 </c:forEach>
                 
               </select>
-              <select name="birthYear">
+              <select name="birthYear" >
                 
                 <c:forEach begin="0" end="125" var="currentYearIndex">
                   <c:set var="currentYear" value="${2025 - currentYearIndex }" />
@@ -68,4 +69,16 @@
                 </c:forEach>
 
               </select>
+              <a href="#"  
+                onclick="$('#birthdayTextfieldDivId').show(); $('#birthdaySelectsId').hide(); return false;"
+                style="font-size: x-small;"
+                >${textContainer.text['optinBirthdayHide']}</a>
+              </span>
+              <span id="birthdayTextfieldDivId" style="display: inline;"> <%-- TODO display none, take out hyzer bday value --%>
+                <input type="password" style="width: 4em" size="20" name="birthdayTextfield" value="1976-05-12" /> 
+                <span style="color: graytext; font-size: 0.75em;">(yyyy-mm-dd)</span>
+                <a href="#"  
+                  style="font-size: x-small;"
+                  onclick="$('#birthdaySelectsId').show(); $('#birthdayTextfieldDivId').hide(); return false;">${textContainer.text['optinBirthdayShow']}</a>
 
+              </span>

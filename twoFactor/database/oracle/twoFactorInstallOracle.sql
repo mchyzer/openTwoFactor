@@ -528,9 +528,9 @@ ALTER TABLE TWO_FACTOR_AUDIT ADD (
   REFERENCES TWO_FACTOR_IP_ADDRESS (UUID));
 
   
-  
-    
-/* Formatted on 1/31/2017 8:47:45 PM (QP5 v5.252.13127.32847) */
+
+
+/* Formatted on 5/30/2017 3:18:42 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
 (
    LOGINID,
@@ -578,7 +578,8 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    PHONE_AUTO_CALLTEXTS_IN_MONTH,
    LAST_EMAIL_NOT_OPTED_IN_USER,
    LAST_EMAIL_NOT_OPTED_IN_DATE,
-   WRONG_BDAY_ATTEMPTS_IN_MONTH
+   WRONG_BDAY_ATTEMPTS_IN_MONTH,
+   PHONE_AUTO_DUO_PHONE_ID
 )
    BEQUEATH DEFINER
 AS
@@ -835,7 +836,12 @@ AS
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'wrong_bday_attempts_in_month')
-             AS wrong_bday_attempts_in_month
+             AS wrong_bday_attempts_in_month,
+          (SELECT TFUA.ATTRIBUTE_VALUE_STRING
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'phone_auto_duo_phone_id')
+             AS phone_auto_duo_phone_id
      FROM two_factor_user tfu;
 
 COMMENT ON TABLE TWO_FACTOR_USER_V IS 'user and attributes of user in one view mainly for auditing purposes';
@@ -929,6 +935,8 @@ COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_USER IS 'millis sinc
 COMMENT ON COLUMN TWO_FACTOR_USER_V.LAST_EMAIL_NOT_OPTED_IN_DATE IS 'date of last email sent to not opted in user who is required';
 
 COMMENT ON COLUMN TWO_FACTOR_USER_V.WRONG_BDAY_ATTEMPTS_IN_MONTH IS 'if the user has had wrong birthday attempts in month, keep track, the json has the month (0 indexed) and day in the key, value is amount, will delete keys older than a month';
+
+COMMENT ON COLUMN TWO_FACTOR_USER_V.PHONE_AUTO_DUO_PHONE_ID IS 'duo phone id of the device which is autocall on login';
 
 
 /* Formatted on 3/12/2013 9:57:42 AM (QP5 v5.163.1008.3004) */

@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -20,12 +20,11 @@
     </div> 
     <div class="clearboth"></div> 
   </div>
-  <br />
-  <b>${textContainer.text['adminEmailAllSubheader']}</b>
+  <h2>${textContainer.text['adminEmailAllSubheader']}</h2>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
-
+  <br />
   <form action="UiMainAdmin.emailAllUsersSubmit" method="post">
     <div class="formBox" style="width: 50em">
       <div class="formRow">
@@ -56,13 +55,15 @@
       <div class="formRow">
         <div class="formLabel" style="white-space: nowrap; text-align: right"></div>
         <div class="formValue" style="width:34.5em"><input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
-      onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" type="submit" /></div>
+       type="submit" /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
     </div>
     <br />
   </form>
 
+  <br />
+  <br /> 
   <br />
   <br /> 
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">

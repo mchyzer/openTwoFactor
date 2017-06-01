@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -22,10 +22,10 @@
   </div> 
   <div class="paragraphs">
   
-    <br />
-    <b>${textContainer.text['addPhoneSubheader']}</b>
+    <h2>${textContainer.text['addPhoneSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
+    <br />
     ${textContainer.text['addPhoneStep1description']}
     <br /><br />
     <div class="substep">
@@ -58,7 +58,7 @@
           ${textContainer.text['addPhoneStep3codeLabel']} <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
           <br /><br />
           <input value="${textContainer.textEscapeDouble['addPhoneStep3codeButton']}" class="tfBlueButton"
-            onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';" 
+             
             type="submit"  />
           
       </div>
@@ -69,6 +69,8 @@
   <a name="qrCode"></a>
      <%-- --%>
     <img src="UiMain.qrCodeSecret.gif?imageId=${twoFactorRequestContainer.twoFactorAddPhoneContainer.qrCodeUniqueId}" height="300" width="300" />
+  <br />
+  <br /> 
   <br />
   <br /> 
   <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['addPhoneCancelButton']}</a> &nbsp; &nbsp;

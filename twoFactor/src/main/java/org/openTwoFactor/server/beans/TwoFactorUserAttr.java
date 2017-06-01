@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
@@ -125,6 +126,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     duo_push_phone_id(TwoFactorUserAttrType.string),
     
     /**
+     * duo phone id of the device which is autocall on login
+     */
+    phone_auto_duo_phone_id(TwoFactorUserAttrType.string),
+    
+    /**
      * millis since 1970 __ sbrowser id __ duo tx id for push
      * the 4th entry separated by two underscores is if the push has already successfully been used and when
      */
@@ -209,6 +215,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
      * email address for notifications
      */
     email0(TwoFactorUserAttrType.string),
+
+    /**
+     * birthday uuid is a session param that indicates the user has inputted the correct birthday
+     */
+    birth_day_uuid(TwoFactorUserAttrType.string),
 
     /**
      * if opt in for apps that require it, not for other apps
@@ -497,8 +508,19 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
    * @param attributeName1 the attributeName to set
    */
   public void setAttributeName(String attributeName1) {
-    this.attributeName = TwoFactorUserAttrName.valueOfIgnoreCase(attributeName1);
+    //this.attributeName = TwoFactorUserAttrName.valueOfIgnoreCase(attributeName1);
+    this.attributeName = TwoFactorServerUtils.enumValueOfIgnoreCase(TwoFactorUserAttrName.class, attributeName1, false, false);
+    
+    if (!StringUtils.isBlank(attributeName1) && this.attributeName == null ) {
+      if (LOG.isInfoEnabled()) {
+        LOG.info("Cant find enum TwoFactorUserAttrName for value in DB: '" + attributeName1 + "'");
+      }
+    }
+    
   }
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(TwoFactorUserAttr.class);
 
   /**
    * attribute name

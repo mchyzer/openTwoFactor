@@ -19,6 +19,29 @@ public class TfCheckPasswordResponse extends TwoFactorResponseBeanBase {
   }
 
   /**
+   * if should retry an async auth
+   */
+  private Boolean retry;
+  
+  
+  /**
+   * if should retry an async auth
+   * @return the retry
+   */
+  public Boolean getRetry() {
+    return this.retry;
+  }
+
+  
+  /**
+   * if should retry an async auth
+   * @param retry1 the retry to set
+   */
+  public void setRetry(Boolean retry1) {
+    this.retry = retry1;
+  }
+
+  /**
    * if rate limiting user
    */
   private Boolean rateLimitedUser;

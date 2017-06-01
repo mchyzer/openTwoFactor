@@ -10,7 +10,7 @@
 <!-- nonTwoFactorPhoneCode.jsp -->
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -24,8 +24,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['phoneCodeSubheader']}</b>
+  <h2>${textContainer.text['phoneCodeSubheader']}</h2>
   <br />
   <br />
   <div class="paragraphs">
@@ -33,7 +32,7 @@
     ${textContainer.text['phoneCodeParagraph1']}
   </div>
   <%@ include file="../assetsJsp/commonError.jsp"%>
-    <br /><br /><br />
+    <br /><br /><br /><br />
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom" style="font-size: smaller">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>

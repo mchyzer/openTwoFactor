@@ -126,7 +126,7 @@ public class UiMainTest extends TestCase {
     twoFactorRequestContainer.setError(null);
     
     OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, "123456", null, null, false, null, null, null);
+        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, "123456", null, null, false, null, null, null, null);
 
     assertEquals(OptinTestSubmitView.index, optinTestSubmitView);
     assertTrue(twoFactorRequestContainer.getError(), twoFactorRequestContainer.getError().toLowerCase().contains("inconsistent"));
@@ -145,7 +145,7 @@ public class UiMainTest extends TestCase {
 
     twoFactorRequestContainer.setError(null);
     optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, "", null, null, false, null, null, null);
+        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, "", null, null, false, null, null, null, null);
 
     assertEquals(OptinTestSubmitView.optin, optinTestSubmitView);
     assertTrue(twoFactorRequestContainer.getError(), twoFactorRequestContainer.getError().toLowerCase().contains("password"));
@@ -160,7 +160,7 @@ public class UiMainTest extends TestCase {
     
       twoFactorRequestContainer.setError(null);
       optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-          twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, pass, null, null, false, null, null, null);
+          twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, pass, null, null, false, null, null, null, null);
   
       assertEquals(index + ": ", OptinTestSubmitView.optin, optinTestSubmitView);
       assertTrue(index + ": " + twoFactorRequestContainer.getError(), twoFactorRequestContainer.getError().toLowerCase().contains("password"));
@@ -193,7 +193,7 @@ public class UiMainTest extends TestCase {
 
       twoFactorRequestContainer.setError(null);
       optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-          twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null);
+          twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null, null);
 
       assertEquals(index + ": " + optinTestSubmitView.name() 
           + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -266,7 +266,8 @@ public class UiMainTest extends TestCase {
 
     twoFactorRequestContainer.setError(null);
     optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null);
+        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, 
+        passString, null, null, false, null, null, null, null);
   
     assertEquals(index + ": " + optinTestSubmitView.name() 
         + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -335,7 +336,8 @@ public class UiMainTest extends TestCase {
       auditsSize = TfMemoryAuditDao.audits.size();
   
       OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-          twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null);
+          twoFactorRequestContainer, "jsmith", "130.91.219.176", 
+          userAgent1, passString, null, null, false, null, null, null, null);
     
       assertEquals(optinTestSubmitView.name() 
           + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -400,7 +402,8 @@ public class UiMainTest extends TestCase {
 
     twoFactorRequestContainer.setError(null);
     OptinTestSubmitView optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null);
+        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, 
+        passString, null, null, false, null, null, null, null);
 
     assertEquals(index + ": " + optinTestSubmitView.name() 
         + ", " + twoFactorRequestContainer.getError() + ", " + passString, 
@@ -475,7 +478,8 @@ public class UiMainTest extends TestCase {
 
     twoFactorRequestContainer.setError(null);
     optinTestSubmitView = new UiMain().optinTestSubmitLogic(TfMemoryDaoFactory.getFactory(), 
-        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, passString, null, null, false, null, null, null);
+        twoFactorRequestContainer, "jsmith", "130.91.219.176", userAgent1, 
+        passString, null, null, false, null, null, null, null);
 
     assertEquals(index + ": " + optinTestSubmitView.name() 
         + ", " + twoFactorRequestContainer.getError() + ", " + passString, 

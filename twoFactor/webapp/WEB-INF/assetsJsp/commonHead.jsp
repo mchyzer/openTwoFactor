@@ -1,3 +1,4 @@
+
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -21,3 +22,5 @@
 
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactor.css?v=1.0.13" />
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactorPrint.css?v=1.0.13" media="print" />
+
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Gentium+Basic:italic,regular|Open+Sans:300,600&amp;subset=latin" />

@@ -6,7 +6,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -20,13 +20,13 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text['profileSubheader']}</b>
+  <h2>${textContainer.text['profileSubheader']}</h2>
   <br /><br />
   <%@ include file="../assetsJsp/profileInstructions.jsp" %>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
+  <br />
 
   <form action="UiMain.profileSubmit" method="post">
 
@@ -184,14 +184,14 @@
           <c:choose>
             <c:when test="${twoFactorRequestContainer.twoFactorProfileContainer.profileForOptin}">
               <input value="${textContainer.textEscapeDouble['buttonContinue']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" 
-                onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+                 
+                 type="submit" />
             
             </c:when>
             <c:otherwise>
               <input value="${textContainer.textEscapeDouble['buttonSubmit']}" class="tfBlueButton"
-                onmouseover="this.style.backgroundColor='#011D5C';" 
-                onmouseout="this.style.backgroundColor='#7794C9';" type="submit" />
+                 
+                 type="submit" />
             
             </c:otherwise>
           </c:choose>
@@ -202,6 +202,8 @@
     <br />
   </form>
 
+  <br />
+  <br /> 
   <br />
   <br /> 
   

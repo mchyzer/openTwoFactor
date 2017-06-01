@@ -583,6 +583,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   * duo phone id of the device which is autocall on login
+   * @return if phone auto call text
+   */
+  public String getPhoneAutoDuoPhoneId() {
+    return attributeValueString(TwoFactorUserAttrName.phone_auto_duo_phone_id);
+  }
+
+  /**
+   * duo phone id of the device which is autocall on login
+   * @param phoneAutoDuoPhoneId
+   */
+  public void setPhoneAutoDuoPhoneId(String phoneAutoDuoPhoneId) {
+    this.attribute(TwoFactorUserAttrName.phone_auto_duo_phone_id, true).setAttributeValueString(phoneAutoDuoPhoneId);
+  }
+
+  /**
    * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
    * @return if phone auto call text
    */
@@ -1107,7 +1123,20 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     Set<TwoFactorUserAttr> twoFactorUserAttrsSet = twoFactorDaoFactory
       .getTwoFactorUserAttr().retrieveByUser(uuid);
     
+    
     if (twoFactorUserAttrsSet != null) {
+      
+      Iterator<TwoFactorUserAttr> iterator = twoFactorUserAttrsSet.iterator();
+      
+      //if we have two versions of open two factor pointing to the same db, then 
+      //dont throw errors if attribute names dont match
+      while (iterator.hasNext()) {
+        TwoFactorUserAttr twoFactorUserAttr = iterator.next();
+        if (StringUtils.isBlank(twoFactorUserAttr.getAttributeName())) {
+          iterator.remove();
+        }
+      }
+      
       twoFactorUser.setAttributes(twoFactorUserAttrsSet);
       ((TwoFactorUser)twoFactorUser.dbVersion()).setAttributes(TwoFactorServerUtils.cloneValue(twoFactorUserAttrsSet));
     }
@@ -1743,6 +1772,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
    */
   public String getEmail0() {
     return attributeValueString(TwoFactorUserAttrName.email0);
+  }
+
+  /**
+   * 
+   * @return birth day
+   */
+  public String getBirthDayUuid() {
+    return attributeValueString(TwoFactorUserAttrName.birth_day_uuid);
+  }
+
+  /**
+   * birthday uuid is a session param that indicates the user has inputted the correct birthday
+   * @param birthDayUuid
+   */
+  public void setBirthDayUuid(String birthDayUuid) {
+    this.attribute(TwoFactorUserAttrName.birth_day_uuid, true).setAttributeValueString(birthDayUuid);
   }
 
   /**

@@ -386,6 +386,26 @@ public class TfCheckPasswordRequest {
     return this;
   }
 
+  /**
+   * true|false if the service is being queried asynchronously from a browser (e.g. dont clear state)
+   */
+  private Boolean asyncAuth;
+  
+  /**
+   * true|false if the service is being queried asynchronously from a browser (e.g. dont clear state)
+   * @return the asyncAuth
+   */
+  public Boolean getAsyncAuth() {
+    return this.asyncAuth;
+  }
+  
+  /**
+   * true|false if the service is being queried asynchronously from a browser (e.g. dont clear state)
+   * @param asyncAuth1 the asyncAuth to set
+   */
+  public void assignAsyncAuth(Boolean asyncAuth1) {
+    this.asyncAuth = asyncAuth1;
+  }
 
   /**
    * true|false depending on what the user selected

@@ -409,6 +409,38 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * optin to two factor submit birthday
+   */
+  OPTIN_SUBMIT_BIRTHDAY {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsOptInSubmitBirthday";
+    }
+    
+  }, 
+  
+  /**
+   * optin to two factor submit type
+   */
+  OPTIN_SUBMIT_TYPE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsOptInSubmitType";
+    }
+    
+  }, 
+  
+  /**
    * stop opt in requirement temporarily
    */
   STOP_OPT_IN_REQUIREMENT {

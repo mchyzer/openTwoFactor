@@ -5,7 +5,7 @@
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
 </head>
-<body alink="#cc6600" bgcolor="#f0f0ea" link="#011d5c" text="#000000" vlink="#011d5c">
+<body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
 
 <%@ include file="../assetsJsp/commonBanner.jsp"%>
 
@@ -19,11 +19,11 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <br />
-  <b>${textContainer.text[twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling ? 'duoPushSubheaderEnroll' : 'duoPushSubheader' ]}</b>
+  <h2>${textContainer.text[twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling ? 'duoPushSubheaderEnroll' : 'duoPushSubheader' ]}</h2>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
+  <br />
   
     <c:choose>
       <c:when test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolling}">

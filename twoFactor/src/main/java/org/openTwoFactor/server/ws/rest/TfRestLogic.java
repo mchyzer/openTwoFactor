@@ -131,6 +131,15 @@ public class TfRestLogic {
     }
     
     {
+      //asyncAuth: true|false if the request should not reset the flag of push or phone
+      String asyncAuthString = params.get("asyncAuth");
+
+      Boolean asyncAuth = TwoFactorServerUtils.booleanObjectValue(asyncAuthString);
+
+      tfCheckPasswordRequest.assignAsyncAuth(asyncAuth);
+    }
+    
+    {
       String requireTwoFactorString = params.get("requireTwoFactor");
       
       Boolean requireTwoFactor = TwoFactorServerUtils.booleanObjectValue(requireTwoFactorString);
@@ -276,6 +285,11 @@ public class TfRestLogic {
     
     TfCheckPasswordResponse tfCheckPasswordResponse = new TfCheckPasswordResponse();
     
+    if (TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+      tfCheckPasswordResponse.setRetry(false);
+      trafficLogMap.put("retry", false);
+    }
+    
     try {
       
       refreshUsersNotOptedInButRequiredIfNeeded(twoFactorDaoFactory);
@@ -329,10 +343,11 @@ public class TfRestLogic {
       if (StringUtils.isBlank(username)) {
         
         String responseMessage = "Invalid request, username required, not sent in or not resolvable as subject";
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-            TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
-            null, responseMessage, serviceProviderId, serviceProviderName, null, null);
-  
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+              TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
+              null, responseMessage, serviceProviderId, serviceProviderName, null, null);
+        }  
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage("username required");
         tfCheckPasswordResponse.setResponseMessage(responseMessage);
@@ -351,16 +366,18 @@ public class TfRestLogic {
       //see if there is a testing error or timeout
       TwoFactorRestServlet.testingErrorOrTimeout(tfCheckPasswordRequest.getSubjectSource(), username);
       
-      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, username);
+      final TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, username);
   
       //############# if no serviceId but yes to serviceName
       if (StringUtils.isBlank(tfCheckPasswordRequest.getServiceId()) && !StringUtils.isBlank(tfCheckPasswordRequest.getServiceName())) {
         
         String responseMessage = "Invalid request, if serviceName is sent, then serviceId must be sent";
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-            TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage, serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
-  
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+              TwoFactorAuditAction.AUTHN_ERROR, ipAddress, userAgent, 
+              twoFactorUser.getUuid(), responseMessage, serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+        }
+        
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage("serviceId is required if serviceName is sent");
         tfCheckPasswordResponse.setResponseMessage(responseMessage);
@@ -527,10 +544,12 @@ public class TfRestLogic {
 
       if (serviceProviderForbidsTwoFactor && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
         
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-            TwoFactorAuditAction.AUTHN_TWO_FACTOR_FORBIDDEN, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
-
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+              TwoFactorAuditAction.AUTHN_TWO_FACTOR_FORBIDDEN, ipAddress, userAgent, 
+              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+        }
+        
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -563,7 +582,9 @@ public class TfRestLogic {
               TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user required to be enrolled and is not", null);
               trafficLogMap.put("userRequiredToBeEnrolledAndIsNot", true);
             }
-            emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+            if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+              emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+            }
           }
         }
       }
@@ -573,10 +594,12 @@ public class TfRestLogic {
   
         if (twoFactorRequired) {
   
-          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-              TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
-  
+          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+            TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+                TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
+                twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+          }
+          
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -608,8 +631,9 @@ public class TfRestLogic {
                 && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
                     "twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
 
-          emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
-          
+          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+            emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+          }
         }
 
         if (!serviceProviderDoesntRequireOptIn
@@ -617,10 +641,13 @@ public class TfRestLogic {
             && (userNotOptedInButRequiredToBeOptedIn
                 && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
                     "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn"))) {
-          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-            TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-            null);
+
+          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+            TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+              TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
+              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+              null);
+          }
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
@@ -642,9 +669,11 @@ public class TfRestLogic {
         //lets see if password is sent
         if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
           
-          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-              TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+            TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+                TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
+                twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+          }
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -661,9 +690,11 @@ public class TfRestLogic {
         }
 
         //not opted in, service doesnt require two factor
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-             TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+               TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
+               twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), null);
+        }
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -701,33 +732,43 @@ public class TfRestLogic {
       if (twoFactorPassResult.isPhonePass()) {
         twoFactorUser.setDatePhoneCodeSent(null);
         twoFactorUser.setPhoneCodeEncrypted(null);
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
       //if it was hotp, store this to the DB
       if (twoFactorPassResult.getNextHotpIndex() != null) {
         //dont log this
         twoFactorUser.setSequentialPassIndex(twoFactorPassResult.getNextHotpIndex());
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
   
       //if it was token, store this to the db
       if (twoFactorPassResult.getNextTokenIndex() != null) {
         twoFactorUser.setTokenIndex(twoFactorPassResult.getNextTokenIndex());
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
       
       //if it was totp 30, store this to the DB
       if (twoFactorPassResult.getLastTotp30TimestampUsed() != null) {
         //dont log this
         twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp30TimestampUsed());
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
       
       //if it was totp 60, store this to the DB
       if (twoFactorPassResult.getLastTotp60TimestampUsed() != null) {
         //dont log this
         twoFactorUser.setLastTotp60TimestampUsed(twoFactorPassResult.getLastTotp60TimestampUsed());
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
 
       //send a phone code?
@@ -859,7 +900,6 @@ public class TfRestLogic {
             twoFactorBrowser.setBrowserTrustedUuidUnencrypted(cookieUserUuid);
           } else {
           
-            
             if (debug) {
               tfCheckPasswordResponse.appendDebug("cant find active twoFactorBrowser by cookie uuid");
             }
@@ -920,6 +960,7 @@ public class TfRestLogic {
         //check duo
         boolean duoRegisterUsers = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.registerUsers", true);
         boolean duoPushByDefaultEnabled = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duo.pushByDefaultEnabled", true);
+        boolean duoAutoCallEnabled = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfWsDuoAutoCallEnabled", true);
 
         String browserId = StringUtils.defaultIfEmpty(tfCheckPasswordResponse.getChangeUserBrowserUuid(), cookieUserUuid);
 
@@ -933,7 +974,8 @@ public class TfRestLogic {
         
         
         //clear it out - dont clear it out since subsequent requests should ignore push
-        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duoDeletePushTransactionId", true)) {
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) 
+            && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("duoDeletePushTransactionId", true)) {
           if (!StringUtils.isBlank(timestampBrowserTxId)) {
             //clear it out
             twoFactorUser.setDuoPushTransactionId(null);
@@ -945,22 +987,21 @@ public class TfRestLogic {
           
         }
 
+        boolean autoDuoCall = false;
+        //lets see if we are over the limit
+        String autoVoiceTextHistogram = twoFactorUser.getPhoneAutoCalltextsInMonth();
+        
         //maybe autocall
         if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
             && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true)) {
-          if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn()) {
+          if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn()
+              && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
             if (!StringUtils.isBlank(twoFactorUser.getPhoneAutoCalltext() )) {
 
-              //lets see if we are over the limit
-              String autoVoiceTextHistogram = twoFactorUser.getPhoneAutoCalltextsInMonth();
-              
               int numberToday = TwoFactorServerUtils.histogramValueForDate(null, autoVoiceTextHistogram);
               
               autoVoiceTextHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, autoVoiceTextHistogram);
 
-              twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
-              twoFactorUser.store(twoFactorDaoFactory);
-              
               //if we havent done too many
               if (numberToday < TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxAutoCallsTextsPerDayPerUser", 5)) {
 
@@ -1003,71 +1044,88 @@ public class TfRestLogic {
                   final TwoFactorUser TWO_FACTOR_USER = twoFactorUser;
                   final int PHONE_INDEX = phoneIndex;
                   final String PHONE_TYPE = phoneType;
-    
-                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "autosend " + phoneType + " to index " + phoneIndex, null);
-                  trafficLogMap.put("autosendToIndex_" + phoneType, phoneIndex);
-    
-                  //run this in a thread so it doesnt slow things down
-                  Thread thread = new Thread(new Runnable() {
-    
-                    public void run() {
-                      
-                      try {
-                        TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
-                        
-                        twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
-                        
-                        new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
-                            TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
-                            tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
-                      } catch (RuntimeException re) {
-                        LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
-                        throw re;
-                      }
+
+                  if (duoAutoCallEnabled && !StringUtils.isBlank(twoFactorUser.getPhoneAutoDuoPhoneId())) {
+
+                    autoDuoCall = true;
+
+                  } else {
+
+                    TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "autosend " + phoneType + " to index " + phoneIndex, null);
+                    trafficLogMap.put("autosendToIndex_" + phoneType, phoneIndex);
+      
+                    twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
+                    if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                      twoFactorUser.store(twoFactorDaoFactory);
                     }
+
+                    //run this in a thread so it doesnt slow things down
+                    Thread thread = new Thread(new Runnable() {
+      
+                      public void run() {
+                        
+                        try {
+                          TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
+                          
+                          twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
+                          
+                          new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+                              TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
+                              tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
+                          
+                        } catch (RuntimeException re) {
+                          LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
+                          throw re;
+                        }
+                      }
+                      
+                    });
                     
-                  });
-                  
-                  thread.start();
+                    thread.start();
+                  }
                 }
               }
             }
           }
         }
-        
-        if (duoRegisterUsers && duoPushByDefaultEnabled 
+
+        boolean phoneOrPush = !StringUtils.isBlank(twoFactorUser.getPhoneAutoDuoPhoneId()) && StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId());
+        String pushPhoneLogLabel = phoneOrPush ? "PhoneCall" : "Push"; 
+        if (duoRegisterUsers && (phoneOrPush || (duoPushByDefaultEnabled 
             && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
-            && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())
+            && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())))
             && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)) {
           try {
              
             boolean needsPush = true;
             
             if (!StringUtils.isBlank(timestampBrowserTxId)) {
-              
+
               String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
               boolean alreadyUsed = TwoFactorServerUtils.length(pieces) == 4;
-              
+
               if (TwoFactorServerUtils.length(pieces) != 3 && !alreadyUsed) {
-  
+
                 //clear it out
-                if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
+                if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) 
+                    && !TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                   twoFactorUser.setDuoPushTransactionId(null);
                   if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
                     readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
                   }
                   storeUser = true;
                 }
-  
+
               } else {
                 String browserIdFromDb = pieces[1];
                 
                 if (StringUtils.isBlank(browserId) || !StringUtils.equals(TwoFactorBrowser.encryptBrowserUserUuid(browserId), browserIdFromDb)) {
-                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push not valid browser id mismatch", null);
-                  trafficLogMap.put("duoPushNotValidBrowserIdMismatch", true);
+                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " not valid browser id mismatch", null);
+                  trafficLogMap.put("duo" + pushPhoneLogLabel + "NotValidBrowserIdMismatch", true);
   
                   //clear it out
-                  if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
+                  if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) 
+                      && !TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                     twoFactorUser.setDuoPushTransactionId(null);
                     if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
                       readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
@@ -1095,8 +1153,8 @@ public class TfRestLogic {
                           cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
                           requestIsTrusted, true);
                       performedTrustedBrowserLogic = true;
-                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "successful duo push active", null);
-                      trafficLogMap.put("duoPushSuccessActive", duoTransactionIdLastsAfterFirstUseSeconds);
+                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "successful duo " + pushPhoneLogLabel + " active", null);
+                      trafficLogMap.put("duo" + pushPhoneLogLabel + "SuccessActive", duoTransactionIdLastsAfterFirstUseSeconds);
   
                       tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
                       tfCheckPasswordResponse.setErrorMessage(null);
@@ -1110,17 +1168,20 @@ public class TfRestLogic {
                       trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_TWO_FACTOR.name());
 
                       if (storeUser) {
-                        twoFactorUser.store(twoFactorDaoFactory);
+                        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                          twoFactorUser.store(twoFactorDaoFactory);
+                        }
                       }
 
                       return tfCheckPasswordResponse;
                     }
   
-                    TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push already used timed out", null);
-                    trafficLogMap.put("duoPushAlreadyUsedTimedOut", duoTransactionIdLastsAfterFirstUseSeconds);
+                    TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " already used timed out", null);
+                    trafficLogMap.put("duo" + pushPhoneLogLabel + "AlreadyUsedTimedOut", duoTransactionIdLastsAfterFirstUseSeconds);
   
                     //clear it out
-                    if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
+                    if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) 
+                        && !TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                       twoFactorUser.setDuoPushTransactionId(null);
                       if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
                         readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
@@ -1140,11 +1201,12 @@ public class TfRestLogic {
                     
                     //push timed out
                     if (((System.currentTimeMillis() - timestampLong) / 1000) > pushLastsForSeconds) {
-                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push timed out", null);
-                      trafficLogMap.put("duoPushTimedOutAfterSeconds", pushLastsForSeconds);
+                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " timed out", null);
+                      trafficLogMap.put("duo" + pushPhoneLogLabel + "TimedOutAfterSeconds", pushLastsForSeconds);
                       
                       //clear it out
-                      if (!TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
+                      if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) 
+                          && !TwoFactorServerUtils.isBlank(timestampBrowserTxId)) {
                         twoFactorUser.setDuoPushTransactionId(null);
                         if (HibernateSession.isReadonlyMode() && !StringUtils.isBlank(browserId)) {
                           readonlyBrowserIdToDuoTxIdTemp.put(TwoFactorBrowser.encryptBrowserUserUuid(browserId), null);
@@ -1157,11 +1219,11 @@ public class TfRestLogic {
                       boolean validPush = false;
                       
                       try {
-                        Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutSeconds", 3);
+                        Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuo" + pushPhoneLogLabel + "TimeoutSeconds", 3);
                         if (timeoutSeconds == -1) {
                           timeoutSeconds = null;
                         }
-                        validPush = DuoCommands.duoPushSuccess(txId, timeoutSeconds);
+                        validPush = DuoCommands.duoPushOrPhoneSuccess(txId, timeoutSeconds);
                       } catch (RuntimeException re) {
                         //if its a timeout, then validPush is false, else rethrow
                         if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
@@ -1177,18 +1239,21 @@ public class TfRestLogic {
                             tfCheckPasswordResponse, debug, twoFactorUser,
                             cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
                             requestIsTrusted, true);
-                        performedTrustedBrowserLogic = true;
-                        //store this timestamp as when it was used
-                        String duoPushTransactionId = timestampBrowserTxId + "__" + System.currentTimeMillis();
-                        twoFactorUser.setDuoPushTransactionId(duoPushTransactionId);
-                        if (HibernateSession.isReadonlyMode()) {
-                          //note this field is already hashed
-                          readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoPushTransactionId);
-                        }
-                        storeUser = true;
                         
-                        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push valid", null);
-                        trafficLogMap.put("duoPushValid", pushLastsForSeconds);
+                        // if async, then dont store the result... let it be checked again
+                        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false) ) {
+                          performedTrustedBrowserLogic = true;
+                          //store this timestamp as when it was used
+                          String duoPushTransactionId = timestampBrowserTxId + "__" + System.currentTimeMillis();
+                          twoFactorUser.setDuoPushTransactionId(duoPushTransactionId);
+                          if (HibernateSession.isReadonlyMode()) {
+                            //note this field is already hashed
+                            readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoPushTransactionId);
+                          }
+                          storeUser = true;
+                        }                        
+                        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " valid", null);
+                        trafficLogMap.put("duo" + pushPhoneLogLabel + "Valid", pushLastsForSeconds);
   
                         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
                         tfCheckPasswordResponse.setErrorMessage(null);
@@ -1202,14 +1267,21 @@ public class TfRestLogic {
                         trafficLogMap.put("auditAction", TwoFactorAuditAction.AUTHN_TWO_FACTOR.name());
 
                         if (storeUser) {
-                          twoFactorUser.store(twoFactorDaoFactory);
+                          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                            twoFactorUser.store(twoFactorDaoFactory);
+                          }
                         }
 
                         return tfCheckPasswordResponse;
   
                       }
-                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push invalid", null);
-                      trafficLogMap.put("duoPushInvalid", pushLastsForSeconds);
+                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " invalid", null);
+                      trafficLogMap.put("duo" + pushPhoneLogLabel + "Invalid", pushLastsForSeconds);
+                      
+                      if (TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                        tfCheckPasswordResponse.setRetry(true);
+                        trafficLogMap.put("retry", true);
+                      }
                       
                       //dontpush again, this one might be valid at some point
                       needsPush = false;
@@ -1221,18 +1293,34 @@ public class TfRestLogic {
               }              
             }
             
+            if (TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+              needsPush = false;
+            }
+            
             if (needsPush) {
               String message = TextContainer.retrieveFromRequest().getText().get("duoPushWebPrompt");
               
               String txId = null;
               
               try {
-                Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuoPushTimeoutSeconds", 3);
+                Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuo" + pushPhoneLogLabel + "TimeoutSeconds", 3);
                 if (timeoutSeconds == -1) {
                   timeoutSeconds = null;
                 }
-                txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
-                    twoFactorUser.getDuoPushPhoneId(), message, timeoutSeconds);
+
+                if (autoDuoCall) {
+                  
+                  twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
+                  twoFactorUser.store(twoFactorDaoFactory);
+
+                  txId = DuoCommands.duoInitiatePhoneCallByPhoneId(
+                      twoFactorUser.getDuoUserId(), twoFactorUser.getPhoneAutoDuoPhoneId(), timeoutSeconds);
+
+                } else {
+                
+                  txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
+                      twoFactorUser.getDuoPushPhoneId(), message, timeoutSeconds);
+                }
               } catch (RuntimeException re) {
                 //if its a timeout, then no tx id, else rethrow
                 if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
@@ -1266,8 +1354,8 @@ public class TfRestLogic {
 
                 }
                 
-                trafficLogMap.put("duoPush", true);
-                TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push initiated", null);
+                trafficLogMap.put("duo" + pushPhoneLogLabel, true);
+                TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " initiated", null);
                 String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserId) + "__" + txId;
                 twoFactorUser.setDuoPushTransactionId(duoTxId);
                 if (HibernateSession.isReadonlyMode()) {
@@ -1278,9 +1366,9 @@ public class TfRestLogic {
               }
             }
           } catch (Exception e) {
-            LOG.error("Cant push for user: " + twoFactorUser.getLoginid(), e);
-            trafficLogMap.put("duoPushError", true);
-            TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo push error", null);
+            LOG.error("Cant " + pushPhoneLogLabel + " for user: " + twoFactorUser.getLoginid(), e);
+            trafficLogMap.put("duo" + pushPhoneLogLabel + "Error", true);
+            TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " error", null);
           }
         }
         
@@ -1300,7 +1388,9 @@ public class TfRestLogic {
       }
       
       if (storeUser) {
-        twoFactorUser.store(twoFactorDaoFactory);
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          twoFactorUser.store(twoFactorDaoFactory);
+        }
       }
       
       if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
@@ -1310,10 +1400,12 @@ public class TfRestLogic {
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "password not correct", null);
           tfCheckPasswordResponse.setTwoFactorPasswordCorrect(false);
     
-          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-                TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
-                twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-                twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+          if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+            TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+                  TwoFactorAuditAction.AUTHN_WRONG_PASSWORD, ipAddress, userAgent, 
+                  twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+                  twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+          }
           tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
           tfCheckPasswordResponse.setErrorMessage(null);
           tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -1338,10 +1430,12 @@ public class TfRestLogic {
         TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "password correct", null);
         tfCheckPasswordResponse.setTwoFactorPasswordCorrect(true);
 
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-             TwoFactorAuditAction.AUTHN_TWO_FACTOR, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-             twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+               TwoFactorAuditAction.AUTHN_TWO_FACTOR, ipAddress, userAgent, 
+               twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+               twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        }
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -1375,7 +1469,9 @@ public class TfRestLogic {
                   twoFactorBrowser = TwoFactorBrowser.retrieveByBrowserTrustedUuid(twoFactorDaoFactory, cookieUserUuid, false);
                 }
                 twoFactorBrowser.setWhenTrusted(System.currentTimeMillis());
-                twoFactorBrowser.store(twoFactorDaoFactory);
+                if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                  twoFactorBrowser.store(twoFactorDaoFactory);
+                }
                 //we are good
                 break;
               } catch (TfStaleObjectStateException tsose) {
@@ -1399,10 +1495,12 @@ public class TfRestLogic {
       
       //no password sent in, and trusted browser, ok
       if (!requireReauth && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass()) && browserPreviouslyTrusted && !dontTrustBrowser) {
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-            TwoFactorAuditAction.AUTHN_TRUSTED_BROWSER, ipAddress, userAgent, 
-            twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-            twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+              TwoFactorAuditAction.AUTHN_TRUSTED_BROWSER, ipAddress, userAgent, 
+              twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+              twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        }
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -1423,8 +1521,9 @@ public class TfRestLogic {
                   && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
                       "twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
         
-        emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
-
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
+        }
       }
 
       //finally, the service requires two factor, and the pass was not sent, and user opted in
@@ -1435,10 +1534,12 @@ public class TfRestLogic {
                   && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
                       "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn", false)))) {
 
-        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-             TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
-             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-             twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+          TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+               TwoFactorAuditAction.AUTHN_TWO_FACTOR_REQUIRED, ipAddress, userAgent, 
+               twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+               twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+        }
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResultCode(TfCheckPasswordResponseCode.TWO_FACTOR_REQUIRED.name());
@@ -1458,10 +1559,12 @@ public class TfRestLogic {
       }
   
       //finally, the service requires two factor, and the user is not enrolled
-      TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
-           TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
-           twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
-           twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+      if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+        TwoFactorAudit.createAndStoreFailsafe(twoFactorDaoFactory, 
+             TwoFactorAuditAction.AUTHN_NOT_OPTED_IN, ipAddress, userAgent, 
+             twoFactorUser.getUuid(), responseMessage.toString(), serviceProviderId, serviceProviderName, twoFactorUser.getUuid(), 
+             twoFactorBrowser == null ? null : twoFactorBrowser.getUuid());
+      }
       tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
       tfCheckPasswordResponse.setErrorMessage(null);
       tfCheckPasswordResponse.setResponseMessage(responseMessage.toString());
@@ -1823,6 +1926,12 @@ public class TfRestLogic {
         tfCheckPasswordResponse.appendDebug("trustedBrowser: '" + tfCheckPasswordRequest.getTrustedBrowser() + "'");
       }
       trafficLogMap.put("trustedBrowser", tfCheckPasswordRequest.getTrustedBrowser());
+    }
+    if (tfCheckPasswordRequest.getAsyncAuth() != null) {
+      if (debug) {
+        tfCheckPasswordResponse.appendDebug("asyncAuth: '" + tfCheckPasswordRequest.getAsyncAuth() + "'");
+      }
+      trafficLogMap.put("asyncAuth", tfCheckPasswordRequest.getAsyncAuth());
     }
     if (!StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())) {
       String passAsterisk = StringUtils.repeat("*", tfCheckPasswordRequest.getTwoFactorPass().length());
