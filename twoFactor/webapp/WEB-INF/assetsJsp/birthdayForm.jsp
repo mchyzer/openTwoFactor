@@ -75,7 +75,8 @@
                 >${textContainer.text['optinBirthdayHide']}</a>
               </span>
               <span id="birthdayTextfieldDivId" style="display: inline;"> <%-- TODO display none, take out hyzer bday value --%>
-                <input type="password" style="width: 4em" size="20" name="birthdayTextfield" value="1976-05-12" /> 
+                <input type="password" style="width: 4em" size="20" name="birthdayTextfield" 
+                  value="${twoFactorRequestContainer.twoFactorProfileContainer.defaultBirthdayForTesting}" /> 
                 <span style="color: graytext; font-size: 0.75em;">(yyyy-mm-dd)</span>
                 <a href="#"  
                   style="font-size: x-small;"

@@ -90,6 +90,14 @@ public class TwoFactorProfileContainer {
   private String accountName = null;
   
   /**
+   * 
+   * @return default bday
+   */
+  public String getDefaultBirthdayForTesting() {
+    return StringUtils.trimToEmpty(TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.defaultBirthdayForTesting"));
+  }
+  
+  /**
    * account name in QR code, e.g. jsmith@institution.edu
    * @return account name
    */

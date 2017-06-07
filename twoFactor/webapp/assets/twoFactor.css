@@ -291,6 +291,10 @@ ol.bold {
   width: 13em;
 }
 
+.formLabelNarrow {
+  width: 8em;
+}
+
 .formValue {
   float: right;
   width: 11.5em;
@@ -467,12 +471,18 @@ table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
   font-size: 1em;
 } */
 
+
 /* profile screen form box customizations */
 .profileFormBox {
   width: 41.3em;
   background-color: inherit;
   border: none;
 }
+
+.profileFormBoxNarrow {
+  width: 36em;
+}
+
 
 /* profile screen form box form label to the right */
 .profileFormBox .formLabel {

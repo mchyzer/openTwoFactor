@@ -425,6 +425,22 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * optin to two factor submit email
+   */
+  OPTIN_SUBMIT_EMAIL {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsOptInSubmitEmail";
+    }
+    
+  }, 
+  
+  /**
    * optin to two factor submit type
    */
   OPTIN_SUBMIT_TYPE {
@@ -662,6 +678,38 @@ public enum TwoFactorAuditAction {
     @Override
     public String toStringForUi() {
       return "auditsGenerateSingleUseCodes";
+    }
+    
+  }, 
+  
+  /**
+   * optin to two factor submit phones
+   */
+  OPTIN_SUBMIT_PHONES {
+  
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsOptInSubmitPhones";
+    }
+    
+  }, 
+  
+  /**
+   * optin to two factor submit friends
+   */
+  OPTIN_SUBMIT_FRIENDS{
+  
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsOptInSubmitFriends";
     }
     
   };
