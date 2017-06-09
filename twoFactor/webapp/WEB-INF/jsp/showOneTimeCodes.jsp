@@ -22,7 +22,7 @@
   </div> 
   <h2>${textContainer.text['codesSubheader']}</h2>
   <br />
-  <br />
+  <%@ include file="../assetsJsp/commonError.jsp"%>
   <div class="paragraphs">
   ${textContainer.text['codesParagraph1']}
   <br /><br />
@@ -38,7 +38,6 @@
   <span class="tfPrinterFriendlyOnlyInline" style="font-size: 0.5625em">
   ${textContainer.text['codesPrintedInstructions']}
   </span>
-  <%@ include file="../assetsJsp/commonError.jsp"%>
   <pre class="codes" style="width: 30em" >
     <c:forEach items="${twoFactorRequestContainer.oneTimePassRows}" var="oneTimePassRow">
   ${oneTimePassRow.oneTimePassCol1}   ${oneTimePassRow.oneTimePassCol2}</c:forEach>

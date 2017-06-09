@@ -27,6 +27,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
@@ -513,84 +514,12 @@ public class UiMain extends UiServiceLogicBase {
           return false;
         }
         
-        //see what the user already had
-        if (twoFactorUser.getSeqPassIndexGivenToUser() == null || twoFactorUser.getSeqPassIndexGivenToUser() < 500000L) {
-          //set to 0 so we can add one
-          twoFactorUser.setSeqPassIndexGivenToUser(500000L);
-        }
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, twoFactorRequestContainer, ipAddress, userAgent);
         
-        //make sure sequential pass index exists
-        if (twoFactorUser.getSequentialPassIndex() == null || twoFactorUser.getSequentialPassIndex() < 500001L) {
-          twoFactorUser.setSequentialPassIndex(500001L);
-        }
-        
-        //make the pass index to use equal to the one given to the user plus one
-        if (twoFactorUser.getSeqPassIndexGivenToUser() > twoFactorUser.getSequentialPassIndex()) {
-          twoFactorUser.setSequentialPassIndex(twoFactorUser.getSeqPassIndexGivenToUser() + 1);
-        }
-        
-        int numberOfOneTimePassesShownOnScreen = TwoFactorServerConfig.retrieveConfig()
-          .propertyValueInt("twoFactorServer.hotpSecretsShownOnScreen", 20);
-        
-        //subtract one since if you show one code, the last you gave to the user is that one...
-        twoFactorUser.setSeqPassIndexGivenToUser((twoFactorUser.getSequentialPassIndex() + numberOfOneTimePassesShownOnScreen)-1);
-        twoFactorUser.store(twoFactorDaoFactory);
-        
-        
-        List<TwoFactorOneTimePassRow> passRows = new ArrayList<TwoFactorOneTimePassRow>();
-        twoFactorRequestContainer.setOneTimePassRows(passRows);
-    
-        TwoFactorLogicInterface twoFactorLogicInterface = TwoFactorServerConfig.retrieveConfig().twoFactorLogic();
-        
-        Base32 base32 = new Base32();
-        byte[] secret = base32.decode(twoFactorUser.getTwoFactorSecretUnencrypted());
-        
-        long firstNumberLabel = twoFactorUser.getSequentialPassIndex();
-        
-        if (firstNumberLabel >= 1000) {
-          firstNumberLabel = firstNumberLabel % 1000;
-        }
-        
-        for (int i=0;i<numberOfOneTimePassesShownOnScreen/2;i++) {
-          TwoFactorOneTimePassRow twoFactorOneTimePassRow = new TwoFactorOneTimePassRow();
-          passRows.add(twoFactorOneTimePassRow);
-          
-          {
-            String oneTimePassCol1 = Integer.toString(twoFactorLogicInterface.hotpPassword(secret, twoFactorUser.getSequentialPassIndex()+i));
-            oneTimePassCol1 = StringUtils.leftPad(oneTimePassCol1, 6, '0');
-            oneTimePassCol1 = StringUtils.leftPad(Long.toString(firstNumberLabel + i), 3, " ") + ". " 
-              + oneTimePassCol1;
-            twoFactorOneTimePassRow.setOneTimePassCol1(oneTimePassCol1);
-          }
-          
-          {
-            String oneTimePassCol2 = Integer.toString(twoFactorLogicInterface.hotpPassword(secret, 
-                (twoFactorUser.getSequentialPassIndex()+(numberOfOneTimePassesShownOnScreen/2))+i));
-            oneTimePassCol2 = StringUtils.leftPad(oneTimePassCol2, 6, '0');
-            oneTimePassCol2 = 
-              StringUtils.leftPad(Long.toString(firstNumberLabel
-                +(numberOfOneTimePassesShownOnScreen/2) + i), 3, " ") + ". " 
-                + oneTimePassCol2;
-            twoFactorOneTimePassRow.setOneTimePassCol2(oneTimePassCol2);
-          }      
-        }
-        
-        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-            TwoFactorAuditAction.GENERATE_PASSWORDS, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
-
         return true;
       }
     });
     
-    //change codes in duo
-    if (duoRegisterUsers()) {
-      
-      String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid());
-      
-      DuoCommands.setupOneTimeCodes(twoFactorRequestContainer.getTwoFactorUserLoggedIn(), duoUserId, true);
-      
-    }
-
     return result;
   }
   
@@ -779,7 +708,7 @@ public class UiMain extends UiServiceLogicBase {
 
     boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"));
+        httpServletRequest.getHeader("User-Agent"), true);
 
     if (success) {
 
@@ -798,12 +727,13 @@ public class UiMain extends UiServiceLogicBase {
    * @param ipAddress 
    * @param userAgent 
    * @param loggedInUser
+   * @param requireOptIn 
    * @return true if ok, false if not
    */
   public boolean duoPushEnrollLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent) {
+      final String userAgent, boolean requireOptIn) {
     
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
 
@@ -813,7 +743,7 @@ public class UiMain extends UiServiceLogicBase {
       return false;
     }
     
-    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+    if (requireOptIn && (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted()))) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
       return false;
     }
@@ -821,11 +751,16 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
 
     if (twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()) {
-      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorAlreadyInPush"));
-      return true;
+      if (!requireOptIn) {
+        twoFactorUser.setDuoPushByDefault(false);
+        twoFactorUser.store(twoFactorDaoFactory);
+      } else {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorAlreadyInPush"));
+        return true;
+      }
     }
 
-    String barcode = DuoCommands.enrollUserInPushBySomeId(twoFactorUser.getUuid());
+    String barcode = DuoCommands.enrollUserInPushBySomeId(twoFactorUser.getUuid(), requireOptIn);
 
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().setEnrolling(true);
     
@@ -850,8 +785,10 @@ public class UiMain extends UiServiceLogicBase {
     //init again since not enrolled
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
 
-    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolling"));
-
+    if (requireOptIn) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolling"));
+    }
+    
     return true;
   }
 
@@ -1033,7 +970,7 @@ public class UiMain extends UiServiceLogicBase {
 
     boolean success = duoPushLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"));
+        httpServletRequest.getHeader("User-Agent"), true);
 
     if (success) {
 
@@ -1052,12 +989,13 @@ public class UiMain extends UiServiceLogicBase {
    * @param ipAddress 
    * @param userAgent 
    * @param loggedInUser
+   * @param requireTwoFactorSecret if needs to require opt in
    * @return true if ok, false if not
    */
   public boolean duoPushLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent) {
+      final String userAgent, boolean requireTwoFactorSecret) {
     
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
 
@@ -1067,7 +1005,12 @@ public class UiMain extends UiServiceLogicBase {
       return false;
     }
 
-    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+    if (requireTwoFactorSecret && !twoFactorUser.isOptedIn()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return false;
+    }
+    
+    if (requireTwoFactorSecret && StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
       return false;
     }
@@ -1695,8 +1638,6 @@ public class UiMain extends UiServiceLogicBase {
         
         duoClearOutAttributes(twoFactorUserGettingOptedOut[0]);
 
-        twoFactorUserGettingOptedOut[0].setSequentialPassIndex(1L);
-
         twoFactorUserGettingOptedOut[0].setDateInvitedColleagues(null);
         
         twoFactorUserGettingOptedOut[0].store(twoFactorDaoFactory);
@@ -2087,7 +2028,8 @@ public class UiMain extends UiServiceLogicBase {
             userAgent, subjectSource, twoFactorUser, 
             SUBMITTED_BIRTHDAY_MONTH, SUBMITTED_BIRTHDAY_DAY, 
             SUBMITTED_BIRTHDAY_YEAR, birthdayTextfield)) {
-            return OptinTestSubmitView.optin;
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinTestSubmitView.optin;
         }
         
         if (StringUtils.isBlank(twoFactorPass)) {
@@ -2208,7 +2150,6 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
         twoFactorUser.setTwoFactorSecretTemp(null);
         twoFactorUser.setOptedIn(true);
-        twoFactorUser.setSequentialPassIndex(null);
         twoFactorUser.setTokenIndex(0L);
         twoFactorUser.setLastTotpTimestampUsed(null);
         duoClearOutAttributes(twoFactorUser);
@@ -2256,7 +2197,7 @@ public class UiMain extends UiServiceLogicBase {
       //opt in to duo
       if (duoRegisterUsers()) {
 
-        DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false);
+        DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, true);
 
       }
       
@@ -2556,7 +2497,6 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setTwoFactorSecret(null);
         
         twoFactorUser.setOptedIn(false);
-        twoFactorUser.setSequentialPassIndex(1L);
         twoFactorUser.setDateInvitedColleagues(null);
 
         duoClearOutAttributes(twoFactorUser);
@@ -3993,23 +3933,7 @@ public class UiMain extends UiServiceLogicBase {
           return OptinView.profile;    
         }
 
-        String pass = twoFactorCode.toUpperCase();
-        twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
-        twoFactorUser.setOptedIn(false);
-        twoFactorUser.setSeqPassIndexGivenToUser(null);
-        twoFactorUser.setSequentialPassIndex(null);
-        twoFactorUser.setTokenIndex(0L);
-        duoClearOutAttributes(twoFactorUser);
-        twoFactorUser.store(twoFactorDaoFactory);
-
-        List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
-  
-        //untrust browsers since opting in, dont want orphans from last time
-        for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
-          twoFactorBrowser.setTrustedBrowser(false);
-          twoFactorBrowser.setWhenTrusted(0);
-          twoFactorBrowser.store(twoFactorDaoFactory);
-        }
+        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -4382,10 +4306,38 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSetupAppDoneView.optinWelcome;
         }
 
-        return OptinWizardSetupAppDoneView.optinAppIntegrate;
+        
+        String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
+
+        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+
+        //move from temp to real code
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
+        twoFactorUser.setTwoFactorSecretTemp(null);
+        twoFactorUser.store(twoFactorDaoFactory);
+        
+        //sync user to duo
+        DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+        
+        boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+            loggedInUser, ipAddress, 
+            userAgent, false);
+        if (success) {
+
+          return OptinWizardSetupAppDoneView.optinAppIntegrate;
+
+        }
+
+        return OptinWizardSetupAppDoneView.index;
+
+        
+//        boolean success = duoPushLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+//            loggedInUser, ipAddress, 
+//            userAgent, false);
       }
     });
 
@@ -4453,12 +4405,34 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
 
         TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
-        
+
         twoFactorUser.setSubjectSource(subjectSource);
-        
+
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitAppIntegrateView.optinWelcome;
         }
+
+        twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+        
+        if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()
+            || StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+          return OptinWizardSubmitAppIntegrateView.optinWelcome;
+        }
+
+        String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(), 
+            twoFactorUser.getDuoPushPhoneId(), null, null);
+
+        if (StringUtils.isBlank(txId)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+          return false;
+        }
+        
+        String duoTxId = System.currentTimeMillis() + "__uiSoNoBrowserId__" + txId;
+        twoFactorUser.setDuoPushTransactionId(duoTxId);
+
+        twoFactorUser.store(twoFactorDaoFactory);
 
         return OptinWizardSubmitAppIntegrateView.optinAppTest;
       }
@@ -4598,6 +4572,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitTypeView.optinWelcome;
         }
 
@@ -4872,11 +4847,15 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    optinAppTest("optinAppTest.jsp"),
+    //optinAppTest("optinAppTest.jsp"),
 
     /**
      */
-    optinPrintCodes("optinPrintCodes.jsp");
+    //optinAppIntegrate("optinAppIntegrate.jsp"),
+
+    /**
+     */
+    optinPrintCodes("showOneTimeCodes.jsp");
 
     /**
      * 
@@ -5161,7 +5140,8 @@ public class UiMain extends UiServiceLogicBase {
             userAgent, subjectSource, twoFactorUser, 
             birthMonthString, birthDayString, 
             birthYearString, birthdayTextfield)) {
-            return OptinWizardSubmitBirthdayView.optinWelcome;
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardSubmitBirthdayView.optinWelcome;
         }
         
         //we are passed bday, make a uuid and store as key
@@ -5252,23 +5232,7 @@ public class UiMain extends UiServiceLogicBase {
           return OptinWizardWelcomeView.profile;    
         }
 
-        String pass = twoFactorCode.toUpperCase();
-        twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
-        twoFactorUser.setOptedIn(false);
-        twoFactorUser.setSeqPassIndexGivenToUser(null);
-        twoFactorUser.setSequentialPassIndex(null);
-        twoFactorUser.setTokenIndex(0L);
-        duoClearOutAttributes(twoFactorUser);
-        twoFactorUser.store(twoFactorDaoFactory);
-
-        List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
-
-        //untrust browsers since opting in, dont want orphans from last time
-        for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
-          twoFactorBrowser.setTrustedBrowser(false);
-          twoFactorBrowser.setWhenTrusted(0);
-          twoFactorBrowser.store(twoFactorDaoFactory);
-        }
+        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
 
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -5345,16 +5309,162 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitAppIntegrateView.optinWelcome;
         }
-  
-        return OptinWizardSubmitAppTestView.optinPrintCodes;
+        String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
+        String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
+
+        if (TwoFactorServerUtils.length(pieces) != 3 || !StringUtils.equals("uiSoNoBrowserId", pieces[1])) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
+          return OptinWizardSubmitAppTestView.optinWelcome;
+          
+        }
+        
+        //if not already used
+        String timestampString = pieces[0];
+
+        long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+        
+        //give them 10 minutes
+        if (((System.currentTimeMillis() - timestampLong) / 1000) > (60 * 10)) { 
+
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorTimeoutText"));
+          return OptinWizardSubmitAppTestView.optinWelcome;
+
+        }
+
+        String txId = pieces[2];
+
+        //see if valid
+        boolean validPush = false;
+        
+        try {
+          validPush = DuoCommands.duoPushOrPhoneSuccess(txId, 5);
+        } catch (RuntimeException re) {
+          //if its a timeout, then validPush is false, else rethrow
+          if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+            validPush = false;
+          } else {
+            throw re;
+          }
+        }
+
+        if (validPush) {
+
+          twoFactorUser.setDuoPushByDefault(true);
+          twoFactorUser.setDuoPushTransactionId(null);
+          twoFactorUser.setOptedIn(true);
+          twoFactorUser.setOptInOnlyIfRequired(null);
+          twoFactorUser.store(twoFactorDaoFactory);
+
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+
+          setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+              twoFactorRequestContainer, ipAddress, userAgent);
+
+          //opt the user in
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+          return OptinWizardSubmitAppTestView.optinPrintCodes;
+        }
+
+        //problem, try again?
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
+        return OptinWizardSubmitAppTestView.optinWelcome;
+        
       }
     });
   
     return result;
   }
 
+  /**
+   * @param twoFactorDaoFactory 
+   * @param twoFactorUser
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   */
+  public static void setupOneTimeCodesOnOptin(TwoFactorDaoFactory twoFactorDaoFactory, TwoFactorUser twoFactorUser, 
+      TwoFactorRequestContainer twoFactorRequestContainer, String ipAddress, String userAgent) {
+
+    //see what the user already had
+    if (twoFactorUser.getSeqPassIndexGivenToUser() == null || twoFactorUser.getSeqPassIndexGivenToUser() < 500000L) {
+      //set to 0 so we can add one
+      twoFactorUser.setSeqPassIndexGivenToUser(500000L);
+    }
+
+    //make sure sequential pass index exists
+    if (twoFactorUser.getSequentialPassIndex() == null || twoFactorUser.getSequentialPassIndex() < 500001L) {
+      twoFactorUser.setSequentialPassIndex(500001L);
+    }
+
+    //make the pass index to use equal to the one given to the user plus one
+    if (twoFactorUser.getSeqPassIndexGivenToUser() > twoFactorUser.getSequentialPassIndex()) {
+      twoFactorUser.setSequentialPassIndex(twoFactorUser.getSeqPassIndexGivenToUser() + 1);
+    }
+
+    int numberOfOneTimePassesShownOnScreen = TwoFactorServerConfig.retrieveConfig()
+        .propertyValueInt("twoFactorServer.hotpSecretsShownOnScreen", 20);
+
+    //subtract one since if you show one code, the last you gave to the user is that one...
+    twoFactorUser.setSeqPassIndexGivenToUser((twoFactorUser.getSequentialPassIndex() + numberOfOneTimePassesShownOnScreen)-1);
+    twoFactorUser.store(twoFactorDaoFactory);
+
+    List<TwoFactorOneTimePassRow> passRows = new ArrayList<TwoFactorOneTimePassRow>();
+    twoFactorRequestContainer.setOneTimePassRows(passRows);
+
+    TwoFactorLogicInterface twoFactorLogicInterface = TwoFactorServerConfig.retrieveConfig().twoFactorLogic();
+    
+    Base32 base32 = new Base32();
+    byte[] secret = base32.decode(twoFactorUser.getTwoFactorSecretUnencrypted());
+    
+    long firstNumberLabel = twoFactorUser.getSequentialPassIndex();
+    
+    if (firstNumberLabel >= 1000) {
+      firstNumberLabel = firstNumberLabel % 1000;
+    }
+    
+    for (int i=0;i<numberOfOneTimePassesShownOnScreen/2;i++) {
+      TwoFactorOneTimePassRow twoFactorOneTimePassRow = new TwoFactorOneTimePassRow();
+      passRows.add(twoFactorOneTimePassRow);
+      
+      {
+        String oneTimePassCol1 = Integer.toString(twoFactorLogicInterface.hotpPassword(secret, twoFactorUser.getSequentialPassIndex()+i));
+        oneTimePassCol1 = StringUtils.leftPad(oneTimePassCol1, 6, '0');
+        oneTimePassCol1 = StringUtils.leftPad(Long.toString(firstNumberLabel + i), 3, " ") + ". " 
+          + oneTimePassCol1;
+        twoFactorOneTimePassRow.setOneTimePassCol1(oneTimePassCol1);
+      }
+      
+      {
+        String oneTimePassCol2 = Integer.toString(twoFactorLogicInterface.hotpPassword(secret, 
+            (twoFactorUser.getSequentialPassIndex()+(numberOfOneTimePassesShownOnScreen/2))+i));
+        oneTimePassCol2 = StringUtils.leftPad(oneTimePassCol2, 6, '0');
+        oneTimePassCol2 = 
+          StringUtils.leftPad(Long.toString(firstNumberLabel
+            +(numberOfOneTimePassesShownOnScreen/2) + i), 3, " ") + ". " 
+            + oneTimePassCol2;
+        twoFactorOneTimePassRow.setOneTimePassCol2(oneTimePassCol2);
+      }      
+    }
+    
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.GENERATE_PASSWORDS, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+    //change codes in duo
+    if (duoRegisterUsers()) {
+      
+      String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid());
+      
+      DuoCommands.setupOneTimeCodes(twoFactorRequestContainer.getTwoFactorUserLoggedIn(), duoUserId, true);
+      
+    }
+
+  }
 
   /**
    * pink phone code
@@ -5422,6 +5532,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardPhoneCodeSentView.optinWelcome;
         }
 
@@ -5499,6 +5610,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
 
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardTotpAppIntegrateView.optinWelcome;
         }
 
@@ -5576,6 +5688,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardTotpAppInstallView.optinWelcome;
         }
   
@@ -5630,6 +5743,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitEmailView.optinWelcome;
         }
         
@@ -5785,6 +5899,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitPhonesView.optinWelcome;
         }
         
@@ -5950,6 +6065,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setSubjectSource(subjectSource);
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitFriendsView.optinWelcome;
         }
         
@@ -6110,6 +6226,34 @@ public class UiMain extends UiServiceLogicBase {
     });
     
     return result;
+  }
+
+
+  /**
+   * @param twoFactorDaoFactory
+   * @param twoFactorCode
+   * @param twoFactorUser
+   */
+  private void initNewOathCode(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final String twoFactorCode, TwoFactorUser twoFactorUser) {
+    String pass = twoFactorCode.toUpperCase();
+    twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
+    twoFactorUser.setOptedIn(false);
+    twoFactorUser.setDatePhoneCodeSent(null);
+    twoFactorUser.setPhoneCodeEncrypted(null);
+    twoFactorUser.setLastTotpTimestampUsed(null);
+    twoFactorUser.setTokenIndex(0L);
+    duoClearOutAttributes(twoFactorUser);
+    twoFactorUser.store(twoFactorDaoFactory);
+
+    List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
+
+    //untrust browsers since opting in, dont want orphans from last time
+    for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
+      twoFactorBrowser.setTrustedBrowser(false);
+      twoFactorBrowser.setWhenTrusted(0);
+      twoFactorBrowser.store(twoFactorDaoFactory);
+    }
   }
 
 

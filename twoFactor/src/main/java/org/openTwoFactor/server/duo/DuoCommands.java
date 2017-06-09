@@ -320,7 +320,7 @@ public class DuoCommands {
     } else if (args.length == 1 && StringUtils.equals("deleteAllFromDuo", args[0])) {
       deleteAllFromDuo();
     } else if (args.length == 2 && StringUtils.equals("migrateUserAndTokensToDuo", args[0])) {
-      migrateUserAndPhonesAndTokensBySomeId(args[0], true);
+      migrateUserAndPhonesAndTokensBySomeId(args[0], true, true);
     } else if (args.length == 2 && StringUtils.equals("viewUser", args[0])) {
       String userLookupId = args[1];
       JSONObject duoUser = retrieveDuoUserBySomeId(userLookupId);
@@ -337,7 +337,7 @@ public class DuoCommands {
       deleteDuoUserBySomeId(userLookupId);
     } else if (args.length == 2 && StringUtils.equals("enrollUserInDuoPush", args[0])) {
       String userLookupId = args[1];
-      String barcode = enrollUserInPushBySomeId(userLookupId);
+      String barcode = enrollUserInPushBySomeId(userLookupId, true);
       System.out.println(barcode);
       
     } else if (args.length == 2 && StringUtils.equals("migratePhonesToDuo", args[0])) {
@@ -441,10 +441,11 @@ public class DuoCommands {
    * 
    * @param someId
    * @param printOutput 
+   * @param requireOptin 
    */
-  public static void migrateUserAndPhonesAndTokensBySomeId(String someId, boolean printOutput) {
+  public static void migrateUserAndPhonesAndTokensBySomeId(String someId, boolean printOutput, boolean requireOptin) {
     
-    migrateUserBySomeId(someId);
+    migrateUserBySomeId(someId, requireOptin);
     
     migratePhonesToDuoBySomeId(someId, printOutput);
     
@@ -454,15 +455,16 @@ public class DuoCommands {
   /**
    * 
    * @param someId
+   * @param requireOptIn
    * @return url of barcode
    */
-  public static String enrollUserInPushBySomeId(String someId) {
+  public static String enrollUserInPushBySomeId(String someId, boolean requireOptIn) {
     
     String userUuid = retrieveTfUserUuidBySomeId(someId, true);
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
 
-    if (!twoFactorUser.isOptedIn()) {
+    if (requireOptIn && !twoFactorUser.isOptedIn()) {
       throw new RuntimeException("User is not enrolled in twostep! " + twoFactorUser.getLoginid());
     }
     
@@ -1173,14 +1175,15 @@ public class DuoCommands {
   /**
    * 
    * @param someId
+   * @param requireOptin
    */
-  private static void migrateUserBySomeId(String someId) {
+  private static void migrateUserBySomeId(String someId, boolean requireOptin) {
     
     String userUuid = retrieveTfUserUuidBySomeId(someId, true);
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
 
-    if (!twoFactorUser.isOptedIn()) {
+    if (requireOptin && !twoFactorUser.isOptedIn()) {
       return;
     }
     
@@ -1236,7 +1239,7 @@ public class DuoCommands {
     //lets get all the opted in users
     for (TwoFactorUserView twoFactorUserView : TwoFactorServerUtils.nonNull(
         TwoFactorDaoFactory.getFactory().getTwoFactorUserView().retrieveAllOptedInUsers())) {
-      migrateUserBySomeId(twoFactorUserView.getUuid());
+      migrateUserBySomeId(twoFactorUserView.getUuid(), true);
     }
     
     migrateAllPhonesToDuo();

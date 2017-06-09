@@ -28,6 +28,13 @@
     <%@ include file="../assetsJsp/commonError.jsp"%>
     <br />
     ${textContainer.text['optinAppIntegrateText']}
+    
+    <br /><br />
+    <img src="${twoFactorRequestContainer.twoFactorDuoPushContainer.barcodeUrl}" 
+      alt="${textContainer.textEscapeDouble['optinAppIntegrateQrAlt']}"/>
+    <br /><br />
+    
+    ${textContainer.text['optinAppIntegrateTextBottom']}
     <br /><br />
     <input type="hidden" name="birthdayTextfield" 
       value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
