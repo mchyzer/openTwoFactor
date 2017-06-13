@@ -38,35 +38,35 @@
            <b><label for="colleagueLogin0">${textContainer.text['profileFriendLabel1']}</label></b></div>
         <div class="formValue">
            <span style="font-size: 0.8em">${textContainer.text['profileFriendComboSubtext']}</span><br />
-           <twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
+           <twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker"  style="width: 45em; font-size: .9em"
              idBase="colleagueLogin0" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin0) }"
              /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
       <div class="formRow">
         <div class="formLabel formLabelNarrow"><b><label for="colleagueLogin1">${textContainer.text['profileFriendLabel2']}</label></b></div>
-        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
+        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker"   style="width: 45em; font-size: .9em"
              idBase="colleagueLogin1" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin1) }"
              /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
       <div class="formRow">
         <div class="formLabel formLabelNarrow"><b><label for="colleagueLogin2">${textContainer.text['profileFriendLabel3']}</label></b></div>
-        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
+        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker"   style="width: 45em; font-size: .9em"
              idBase="colleagueLogin2" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin2) }"
              /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
       <div class="formRow">
         <div class="formLabel formLabelNarrow"><b><label for="colleagueLogin3">${textContainer.text['profileFriendLabel4']}</label></b></div>
-        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
+        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker"   style="width: 45em; font-size: .9em"
              idBase="colleagueLogin3" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin3) }"
              /></div>
         <div class="formFooter">&nbsp;</div>
       </div>
       <div class="formRow">
         <div class="formLabel formLabelNarrow"><b><label for="colleagueLogin4">${textContainer.text['profileFriendLabel5']}</label></b></div>
-        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker" 
+        <div class="formValue"><twoFactor:combobox filterOperation="../../twoFactorUi/app/UiMain.personPicker"   style="width: 45em; font-size: .9em"
              idBase="colleagueLogin4" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueLogin4) }"
              /></div>
         <div class="formFooter">&nbsp;</div>

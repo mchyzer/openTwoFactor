@@ -20,7 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitAppIntegrate" method="post">
+  <form action="UiMain.optinWizardSubmitPhoneCode" method="post">
     <div class="paragraphs">
 
     <h2>${textContainer.text['optinConfirmPhoneCodeSubheader']}</h2>
@@ -35,17 +35,17 @@
     
     <br />
     <br />
-    <a href="../../twoFactorUi/app/UiMain.optinWizardConfirmApp">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
     <input value="${textContainer.textEscapeDouble['buttonNextStep']}" class="tfBlueButton" 
        type="submit" />
-    
+
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
         &nbsp; &nbsp;      
       </div>
     </c:if>
-    
+
     <br />
     <br />
     <%@ include file="../assetsJsp/commonAbout.jsp"%>

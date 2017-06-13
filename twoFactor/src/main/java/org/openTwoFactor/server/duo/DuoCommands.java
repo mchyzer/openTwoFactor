@@ -1472,11 +1472,18 @@ public class DuoCommands {
     JSONObject tokenJsonObject = retrieveDuoTokenBySerial(tokenType, tokenSerial);
     
     String tokenId = tokenJsonObject == null ? null : tokenJsonObject.getString("token_id");
-    
+
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "setupHotpToken");
+
+    debugMap.put("userId", userId);
+    debugMap.put("resetCodesIfExists", resetCodesIfExists);
+
     if (!resetCodesIfExists && !StringUtils.isBlank(tokenId)) {
       
-      System.out.println("Token exists: " + tokenSerial);
-      
+      //System.out.println("Token exists: " + tokenSerial);
+      debugMap.put("tokenExists", true);
       return;
     }
     
@@ -1486,12 +1493,6 @@ public class DuoCommands {
       deleteDuoToken(tokenId);
 
     }
-
-    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
-
-    debugMap.put("method", "setupHotpToken");
-    debugMap.put("userId", userId);
-    debugMap.put("resetCodesIfExists", resetCodesIfExists);
     
     long startTime = System.nanoTime();
     try {

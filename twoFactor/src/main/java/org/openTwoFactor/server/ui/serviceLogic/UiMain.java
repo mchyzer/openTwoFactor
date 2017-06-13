@@ -2201,67 +2201,78 @@ public class UiMain extends UiServiceLogicBase {
 
       }
       
-      String userEmail = null;
-      try {
-        
-        //see if there
-        
-        //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
-        if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
-            && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptin", true)) {
-          
-          Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
-          
-          String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
-          String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
-          
-          //set the default text container...
-          String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
-          subject = TextContainer.massageText("emailOptInSubject", subject);
-  
-          String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInBody");
-          body = TextContainer.massageText("emailOptInBody", body);
-          
-          String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
-          
-          TwoFactorEmail twoFactorMail = new TwoFactorEmail();
-          
-          if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
-            emailAddressFromDatabase = null;
-          }
-          
-          userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
-  
-          boolean sendEmail = true;
-          
-          //there is no email address????
-          if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
-            LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
-            if (StringUtils.isBlank(bccsString)) {
-              sendEmail = false;
-            } else {
-              twoFactorMail.addTo(bccsString);
-            }
-          } else {
-            twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
-            twoFactorMail.addBcc(bccsString);
-          }
-          
-          if (sendEmail) {
-            twoFactorMail.assignBody(body);
-            twoFactorMail.assignSubject(subject);
-            twoFactorMail.send();
-          }
-          
-        }
-        
-      } catch (Exception e) {
-        //non fatal, just log this
-        LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
-      }
+      emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
     }    
 
     return result;
+  }
+
+
+  /**
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private static void emailUserAfterOptin(final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final Source subjectSource) {
+    String userEmail = null;
+    try {
+      
+      //see if there
+      
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForOptin", true)) {
+        
+        Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+        
+        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
+        subject = TextContainer.massageText("emailOptInSubject", subject);
+ 
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInBody");
+        body = TextContainer.massageText("emailOptInBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+          emailAddressFromDatabase = null;
+        }
+        
+        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
+ 
+        boolean sendEmail = true;
+        
+        //there is no email address????
+        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
+    }
   }
   
   /**
@@ -4309,7 +4320,6 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSetupAppDoneView.optinWelcome;
         }
-
         
         String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
 
@@ -4333,7 +4343,6 @@ public class UiMain extends UiServiceLogicBase {
         }
 
         return OptinWizardSetupAppDoneView.index;
-
         
 //        boolean success = duoPushLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
 //            loggedInUser, ipAddress, 
@@ -5092,6 +5101,46 @@ public class UiMain extends UiServiceLogicBase {
 
 
   /**
+   * 
+   */
+  public static enum OptinWizardSubmitPhoneCodeView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinPrintCodes("showOneTimeCodes.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitPhoneCodeView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
    * optin to two factor
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
@@ -5368,6 +5417,9 @@ public class UiMain extends UiServiceLogicBase {
 
           //opt the user in
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+          
+          emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+          
           return OptinWizardSubmitAppTestView.optinPrintCodes;
         }
 
@@ -5482,11 +5534,14 @@ public class UiMain extends UiServiceLogicBase {
     
     String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
   
+    int phoneIndex = Integer.parseInt(httpServletRequest.getParameter("phoneIndex"));
+    String phoneType = httpServletRequest.getParameter("phoneType");
+  
     OptinWizardPhoneCodeSentView optinWizardPhoneCodeSentView = optinWizardPhoneCodeSentLogic(
         TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource,
-        birthDayUuid);
+        birthDayUuid, phoneIndex, phoneType);
   
     showJsp(optinWizardPhoneCodeSentView.getJsp());
   }
@@ -5501,12 +5556,15 @@ public class UiMain extends UiServiceLogicBase {
    * @param loggedInUser
    * @param subjectSource
    * @param birthDayUuid 
+   * @param phoneIndex index of phone (0, 1, 2)
+   * @param phoneType voice or text
    * @return error message if there is one and jsp
    */
   public OptinWizardPhoneCodeSentView optinWizardPhoneCodeSentLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final int phoneIndex,
+      final String phoneType) {
   
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
   
@@ -5535,6 +5593,14 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardPhoneCodeSentView.optinWelcome;
         }
+
+        //this is 0t, 1v, etc
+        twoFactorUser.setPhoneAutoCalltext(Integer.toString(phoneIndex) + phoneType.charAt(0));
+        twoFactorUser.store(twoFactorDaoFactory);
+        
+        new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+            loggedInUser, ipAddress, 
+            userAgent, phoneIndex, phoneType, false);        
 
         return OptinWizardPhoneCodeSentView.optinConfirmPhoneCode;
       }
@@ -6254,6 +6320,126 @@ public class UiMain extends UiServiceLogicBase {
       twoFactorBrowser.setWhenTrusted(0);
       twoFactorBrowser.store(twoFactorDaoFactory);
     }
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitPhoneCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+
+    OptinWizardSubmitPhoneCodeView optinWizardSubmitPhoneCodeView = optinWizardSubmitPhoneCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid, twoFactorPass);
+  
+    showJsp(optinWizardSubmitPhoneCodeView.getJsp());
+  }
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitPhoneCodeView optinWizardSubmitPhoneCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final String twoFactorPass) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardSubmitPhoneCodeView.index;
+    }
+  
+    OptinWizardSubmitPhoneCodeView result =  (OptinWizardSubmitPhoneCodeView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUser.setSubjectSource(subjectSource);
+
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardSubmitPhoneCodeView.optinWelcome;
+        }
+
+        if (!StringUtils.equals(twoFactorPass, twoFactorUser.getPhoneCodeUnencryptedIfNotExpired())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("phoneCodeDoesntMatchError"));
+          return OptinWizardSubmitPhoneCodeView.optinWelcome;
+        }
+
+        String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
+
+        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+
+        twoFactorUser.setOptedIn(true);
+        twoFactorUser.setPhoneOptIn(true);
+        twoFactorUser.setOptInOnlyIfRequired(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+        twoFactorUser.setDatePhoneCodeSent(null);
+        
+        //move from temp to real code
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
+        twoFactorUser.setTwoFactorSecretTemp(null);
+
+        twoFactorUser.store(twoFactorDaoFactory);
+
+        //opt in to duo
+        if (duoRegisterUsers()) {
+
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+
+        }
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+            twoFactorRequestContainer, ipAddress, userAgent);
+
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+
+        emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+        
+        return OptinWizardSubmitPhoneCodeView.optinPrintCodes;
+      }
+    });
+  
+    return result;
   }
 
 
