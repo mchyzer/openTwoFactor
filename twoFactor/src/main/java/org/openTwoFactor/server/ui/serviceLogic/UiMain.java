@@ -30,6 +30,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.validator.routines.EmailValidator;
+import org.openTwoFactor.server.TwoFactorLogic;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
@@ -4249,7 +4250,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    optinFobInstall("optinFobInstall.jsp"),
+    optinFobInstall("optinFobRegister.jsp"),
     
     /**
      */
@@ -5141,6 +5142,51 @@ public class UiMain extends UiServiceLogicBase {
 
 
   /**
+   * 
+   */
+  public static enum OptinWizardSubmitFobSerialView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinFobRegister("optinFobRegister.jsp"),
+    
+    /**
+     */
+    optinPrintCodes("showOneTimeCodes.jsp");
+
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitFobSerialView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
    * optin to two factor
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
@@ -5253,36 +5299,6 @@ public class UiMain extends UiServiceLogicBase {
         
         twoFactorRequestContainer.getTwoFactorProfileContainer().setProfileForOptin(true);
         
-        boolean hasEmail = false;
-        
-        if (twoFactorRequestContainer.isEditableEmail()) {
-          hasEmail = !StringUtils.isBlank(twoFactorUser.getEmail0());
-        } else {
-  
-          //if not editable, get from the subject source
-          Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-              loggedInUser, true, false, true);
-          if (subject != null) {
-            hasEmail = !StringUtils.isBlank(TfSourceUtils.retrieveEmail(subject));
-          }
-        }
-        //lets validate the profile
-        if (!hasEmail) {
-          profileLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorEmailRequired"));
-          return OptinWizardWelcomeView.profile;
-        }
-        
-        if (lifelineCount(twoFactorUser.getColleagueUserUuid0(), twoFactorUser.getColleagueUserUuid1(),
-            twoFactorUser.getColleagueUserUuid2(), twoFactorUser.getColleagueUserUuid3(), 
-            twoFactorUser.getColleagueUserUuid4(), twoFactorUser.getPhone0(), twoFactorUser.getPhone1(),
-            twoFactorUser.getPhone2()) < 2) {
-          profileLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, subjectSource);
-          return OptinWizardWelcomeView.profile;    
-        }
-
-        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
-
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
 
@@ -6016,8 +6032,14 @@ public class UiMain extends UiServiceLogicBase {
         }
 
         twoFactorUser.setPhone0(phone0);
+        twoFactorUser.setPhoneIsText0(TwoFactorServerUtils.booleanObjectValue(phoneText0));
+        twoFactorUser.setPhoneIsVoice0(TwoFactorServerUtils.booleanObjectValue(phoneVoice0));
         twoFactorUser.setPhone1(phone1);
+        twoFactorUser.setPhoneIsText1(TwoFactorServerUtils.booleanObjectValue(phoneText1));
+        twoFactorUser.setPhoneIsVoice1(TwoFactorServerUtils.booleanObjectValue(phoneVoice1));
         twoFactorUser.setPhone2(phone2);
+        twoFactorUser.setPhoneIsText2(TwoFactorServerUtils.booleanObjectValue(phoneText2));
+        twoFactorUser.setPhoneIsVoice2(TwoFactorServerUtils.booleanObjectValue(phoneVoice2));
 
         twoFactorUser.store(twoFactorDaoFactory);
         
@@ -6436,6 +6458,206 @@ public class UiMain extends UiServiceLogicBase {
         emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
         
         return OptinWizardSubmitPhoneCodeView.optinPrintCodes;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitFobSerial(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+    
+    String serialNumber = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumber");
+  
+    String twoFactorCode = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+    
+    String twoFactorCode2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode2");
+    
+    OptinWizardSubmitFobSerialView optinWizardSubmitFobSerialView = optinWizardSubmitFobSerialLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid, serialNumber, twoFactorCode, twoFactorCode2);
+  
+    showJsp(optinWizardSubmitFobSerialView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @param serialNumber
+   * @param twoFactorCodeString
+   * @param twoFactorCode2String
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitFobSerialView optinWizardSubmitFobSerialLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final String serialNumber, final String twoFactorCodeString,
+      final String twoFactorCode2String) {
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    if (!userOk) {
+      return OptinWizardSubmitFobSerialView.index;
+    }
+
+    OptinWizardSubmitFobSerialView result =  (OptinWizardSubmitFobSerialView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardSubmitFobSerialView.optinWelcome;
+        }
+
+        if (StringUtils.isBlank(serialNumber)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRequired"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+
+        //lets make sure the serial number exists
+        TwoFactorDeviceSerial twoFactorDeviceSerial = TwoFactorDeviceSerial.retrieveBySerial(twoFactorDaoFactory, serialNumber);
+       
+        if (twoFactorDeviceSerial == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialNotFound"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+        }
+
+        //lets see if this device has been registered to someone else
+        if (!StringUtils.isBlank(twoFactorDeviceSerial.getUserUuid()) 
+            && !StringUtils.equals(twoFactorDeviceSerial.getUserUuid(), twoFactorUser.getUuid())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRegisteredToSomeoneElse"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+        }
+
+        String twoFactorSecret = twoFactorDeviceSerial.getTwoFactorSecretUnencrypted();
+
+        Base32 codec = new Base32();
+        byte[] twoFactorSecretPlainText = codec.decode(twoFactorSecret);
+
+        if (StringUtils.isBlank(twoFactorCodeString)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode1Required"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+
+        if (StringUtils.isBlank(twoFactorCode2String)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode2Required"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+
+        int twoFactorCode = -1;
+
+        try {
+          twoFactorCode = TwoFactorServerUtils.intObjectValue(twoFactorCodeString, true);
+        } catch (Exception e) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode1Invalid"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+
+        int twoFactorCode2 = -1;
+
+        try {
+          twoFactorCode2 = TwoFactorServerUtils.intObjectValue(twoFactorCode2String, true);
+        } catch (Exception e) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode2Invalid"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+
+        int nextIndex = -1;
+        boolean foundTokenIndex = false;
+        for (int i=0;i<20000;i++) {
+          if (twoFactorCode == new TwoFactorLogic().hotpPassword(twoFactorSecretPlainText, i)
+              && twoFactorCode2 == new TwoFactorLogic().hotpPassword(twoFactorSecretPlainText, i+1)) {
+            nextIndex = i+2;
+            foundTokenIndex = true;
+            break;
+          }
+        }
+        
+        if (!foundTokenIndex) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodesInvalid"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+        }
+
+        twoFactorUser.setTokenIndex((long)nextIndex);
+        twoFactorUser.setPhoneOptIn(false);
+
+        twoFactorUser.setOptedIn(true);
+        twoFactorUser.setOptInOnlyIfRequired(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+        twoFactorUser.setDatePhoneCodeSent(null);
+
+        //move from temp to real code
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
+        twoFactorUser.setTwoFactorSecretTemp(null);
+  
+        twoFactorUser.store(twoFactorDaoFactory);
+  
+        //opt in to duo
+        if (duoRegisterUsers()) {
+  
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+  
+        }
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+            twoFactorRequestContainer, ipAddress, userAgent);
+  
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+  
+        emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+        
+        return OptinWizardSubmitFobSerialView.optinPrintCodes;
       }
     });
   

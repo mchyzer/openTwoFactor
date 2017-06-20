@@ -77,7 +77,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       
       //for UI
       "birthMonth", "birthDay", "birthYear", "birthdayTextfield", "optInTypeName",
-      "twoFactorCode", "twoFactorCustomCode", "profileForOptin",
+      "twoFactorCode", "twoFactorCode2", "twoFactorCustomCode", "profileForOptin",
       "userIdOperatingOnName", "userIdOperatingOn", "email0", "colleagueLogin0Name", "colleagueLogin1Name",
       "colleagueLogin2Name", "colleagueLogin3Name", "colleagueLogin4Name", "optinTypeName", "phone0",
       "phoneVoice0", "phoneText0", 
