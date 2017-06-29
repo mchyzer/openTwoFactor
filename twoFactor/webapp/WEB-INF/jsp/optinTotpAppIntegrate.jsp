@@ -20,7 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitAppIntegrate" method="post">
+  <form action="UiMain.optinWizardSubmitTotpAppIntegrate" method="post">
     <div class="paragraphs">
 
     <h2>${textContainer.text['optinTotpAppIntegrateSubheader']}</h2>
@@ -28,6 +28,16 @@
     <%@ include file="../assetsJsp/commonError.jsp"%>
     <br />
     ${textContainer.text['optinTotpAppIntegrateText']}
+    
+    <br /><br />
+    
+    <img src="UiMain.qrCode.gif?key=${twoFactorRequestContainer.twoFactorUserLoggedIn.lastUpdated}" height="300" width="300" 
+      alt="${textContainer.textEscapeDouble['optinAppIntegrateQrAlt']}" />
+    
+    <br />
+    
+    ${textContainer.text['optinTotpAppIntegrateTextBottom']}
+    
     <br /><br />
     <input type="hidden" name="birthdayTextfield" 
       value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
@@ -51,13 +61,6 @@
 
   </div>
 </form>
-
-<c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.showSerialSection && twoFactorRequestContainer.twoFactorAdminContainer.allowSerialNumberRegistration}">
-  <script type="text/javascript">
-    $('#activeHardwareTokenButtonId').click();
-    $('#serialRadioId').click();
-  </script>
-</c:if>
 
 </body></html>
 

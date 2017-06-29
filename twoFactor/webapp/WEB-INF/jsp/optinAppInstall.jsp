@@ -53,7 +53,7 @@
     </form>
 
     <div class="buttonBox" style="width: 30em"> 
-      <form action="UiMain.optinWizardTotpAppInstall" method="post">
+      <form action="UiMain.optinWizardTotpAppInstallSelectType" method="post">
         <input type="hidden" name="birthdayTextfield" 
           value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
         <input value="${textContainer.text['optinTotpInstallLink']}" class="tfLinkButton" style="font-size: smaller; color: #01256e;"

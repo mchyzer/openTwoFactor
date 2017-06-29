@@ -2681,7 +2681,7 @@ public class DuoCommands {
     try {
     
       if (StringUtils.isBlank(theId)) {
-        throw new RuntimeException("Why is netId blank?");
+        throw new RuntimeException("Why is id blank?");
       }
       
       //retrieve user

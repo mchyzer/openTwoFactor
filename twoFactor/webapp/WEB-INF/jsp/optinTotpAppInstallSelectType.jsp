@@ -1,7 +1,7 @@
 <%@ include file="../assetsJsp/commonTop.jsp"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
 
-<title>${textContainer.text['optinProfileEmailTitle']}</title>
+<title>${textContainer.text['optinTotpAppInstallSelectTypeTitle']}</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
@@ -20,44 +20,41 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitEmail" method="post">
+  <form action="UiMain.optinWizardTotpAppInstall" method="post">
     <div class="paragraphs">
 
-    <h2>${textContainer.text['optinProfileEmailSubheader']}</h2>
+    <h2>${textContainer.text['optinTotpAppInstallSelectTypeSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
     <br />
-
-    ${textContainer.text['optinProfileEmailText']}
-    <br /><br />
-
-    <div class="formBox profileFormBoxNarrow profileFormBox">
-      <div class="formRow">
-          <c:choose>
-            <c:when test="twoFactorRequestContainer.editableEmail" >
-              <div class="formLabelNarrow formLabel"><b><label for="email0">${textContainer.text['profileEmailLabel']}</label></b></div>
-              <div class="formValue">
-                <input type="text" name="email0" size="18" style="width: 16em;"
-                  class="textfield" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) }" />
-              </div>
-            </c:when>
-            <c:otherwise>
-              <div class="formLabelNarrow formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
-              <div class="formValue">
-                ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 
-                ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
-                href="${textContainer.textEscapeDouble['profileEditEmailLinkUrl']}" 
-                target="_blank">${textContainer.textEscapeXml['profileEditEmailLinkText']}</a>${textContainer.text['profileEditEmailSuffix']}
-              </div>
-            </c:otherwise>
-          </c:choose>
-        <div class="formFooter">&nbsp;</div>
-      </div>
-    </div>
-    
+    <%-- ${textContainer.text['optinTotpAppInstallSelectTypeText']}
+    <br /><br /> --%>
     <input type="hidden" name="birthdayTextfield" 
       value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
     
+    <table>
+      <tr style="vertical-align: top">
+        <td style="padding-top: 0.25em; padding-right: 0.5em">
+          <input type="radio" id="optinTotpTypeGeneratedId" name="optinTotpTypeName" value="generated" checked="checked" /></td>
+        <td>
+          <label for="optinTotpTypeGeneratedId">${textContainer.text['optinTotpAppInstallGeneratedLabel']}</label>
+          <div class="formElementHelp">${textContainer.text['optinTotpAppInstallGeneratedHelp']}</div>
+          <br />
+        </td>
+      </tr>
+      <tr style="vertical-align: top">
+        <td style="padding-top: 0.25em; padding-right: 0.5em">
+          <input type="radio" id="optinTotpTypeUploadedId" name="optinTotpTypeName" value="uploaded" /></td>
+        <td>
+          <label for="optinTotpTypeUploadedId">${textContainer.text['optinTotpAppInstallUploadedLabel']}</label>
+          <div class="formElementHelp">${textContainer.text['optinTotpAppInstallUploadedHelp']}</div>
+          <br />
+        </td>
+      </tr>
+    </table>
+
+    <br />
+    <br />
     <br />
     <br />
     <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
@@ -77,6 +74,5 @@
 
   </div>
 </form>
-
 </body></html>
 

@@ -1,7 +1,7 @@
 <%@ include file="../assetsJsp/commonTop.jsp"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
 
-<title>${textContainer.text['optinTotpAppInstallTitle']}</title>
+<title>${textContainer.text['optinTotpAppUploadSecretTitle']}</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
@@ -20,18 +20,27 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardTotpAppIntegrate" method="post">
+  <form action="UiMain.optinWizardTotpAppInstall" method="post">
     <div class="paragraphs">
 
-    <h2>${textContainer.text['optinTotpAppInstallSubheader']}</h2>
+    <h2>${textContainer.text['optinTotpAppUploadSecretSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
     <br />
-    ${textContainer.text['optinTotpAppInstallText']}
+    ${textContainer.text['optinTotpAppUploadSecretText']}
     <br /><br />
     <input type="hidden" name="birthdayTextfield" 
       value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
-    
+    <input type="hidden" name="optinTotpTypeName" value="uploadedSubmit" />
+    <div class="formBox profileFormBox profileFormBoxNarrow">
+      <div class="formRow">
+        <div class="formLabel formLabelNarrow"><b><label for="twoFactorCustomCodeId">${textContainer.text['optinTotpAppUploadSecretLabel']}</label></b></div>
+        <div class="formValue">
+          <input id="twoFactorCustomCodeId" type="text" name="twoFactorCustomCode" size="45" autocomplete="off" class="textfield" />
+        </div>
+        <div class="formFooter">&nbsp;</div>
+      </div>
+    </div>    
     <br />
     <br />
     <br />

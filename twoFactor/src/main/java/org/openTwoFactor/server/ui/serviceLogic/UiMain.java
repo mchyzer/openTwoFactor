@@ -2038,11 +2038,6 @@ public class UiMain extends UiServiceLogicBase {
           return OptinTestSubmitView.optin;
         }
 
-        if (StringUtils.isBlank(twoFactorPass)) {
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
-          return OptinTestSubmitView.optin;
-        }
-
         TwoFactorDeviceSerial twoFactorDeviceSerial = null;
 
         if (optinBySerialNumber) {
@@ -4988,7 +4983,11 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    optinTotpAppInstall("optinTotpAppInstall.jsp");
+    optinTotpAppInstall("optinTotpAppInstall.jsp"),
+    
+    /**
+     */
+    optinTotpAppInstallUploadSecret("optinTotpAppUploadSecret.jsp");
     
     /**
      * 
@@ -5173,6 +5172,131 @@ public class UiMain extends UiServiceLogicBase {
      * @param theJsp
      */
     private OptinWizardSubmitFobSerialView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum OptinWizardTotpAppInstallSelectTypeView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinTotpAppInstallSelectType("optinTotpAppInstallSelectType.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardTotpAppInstallSelectTypeView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitTotpAppIntegrateView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinTotpAppConfirmCode("optinTotpAppConfirmCode.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitTotpAppIntegrateView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum OptinWizardSubmitTotpAppCodeView {
+    
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+    
+    /**
+     */
+    optinPrintCodes("showOneTimeCodes.jsp"),
+    
+    /**
+     * 
+     */
+    optinTotpAppConfirmCode("optinTotpAppConfirmCode.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardSubmitTotpAppCodeView(String theJsp) {
       this.jsp = theJsp;
     }
     
@@ -5720,11 +5844,15 @@ public class UiMain extends UiServiceLogicBase {
     
     String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
   
+    String optinTotpTypeName = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optinTotpTypeName");
+
+    String twoFactorCustomCode = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCustomCode");
+    
     OptinWizardTotpAppInstallView optinWizardTotpAppInstallView = optinWizardTotpAppInstallLogic(
         TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource,
-        birthDayUuid);
+        birthDayUuid, optinTotpTypeName, twoFactorCustomCode);
   
     showJsp(optinWizardTotpAppInstallView.getJsp());
   }
@@ -5733,33 +5861,36 @@ public class UiMain extends UiServiceLogicBase {
   /**
    * optin to two factor submit app integrate
    * @param twoFactorDaoFactory
-   * @param twoFactorRequestContainer 
-   * @param ipAddress 
-   * @param userAgent 
+   * @param twoFactorRequestContainer
+   * @param ipAddress
+   * @param userAgent
    * @param loggedInUser
    * @param subjectSource
-   * @param birthDayUuid 
+   * @param birthDayUuid
+   * @param optinTotpTypeName
+   * @param twoFactorCustomCode
    * @return error message if there is one and jsp
    */
   public OptinWizardTotpAppInstallView optinWizardTotpAppInstallLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final Source subjectSource, final String birthDayUuid) {
-  
+      final String userAgent, final Source subjectSource, final String birthDayUuid,
+      final String optinTotpTypeName, final String twoFactorCustomCode) {
+
     boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
-  
+
     if (userOk) {
       userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
     }
-  
+
     if (!userOk) {
       return OptinWizardTotpAppInstallView.index;
     }
-  
+
     OptinWizardTotpAppInstallView result =  (OptinWizardTotpAppInstallView)HibernateSession.callbackHibernateSession(
         TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
-  
+
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
   
@@ -5774,6 +5905,45 @@ public class UiMain extends UiServiceLogicBase {
           return OptinWizardTotpAppInstallView.optinWelcome;
         }
   
+        if (StringUtils.equals(optinTotpTypeName, "uploaded")) {
+          return OptinWizardTotpAppInstallView.optinTotpAppInstallUploadSecret;
+        } else if (StringUtils.equals(optinTotpTypeName, "generated")) {
+
+          // if there is already a secret (e.g. from fob), then keep it
+          if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
+            String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
+            initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+          } else {
+            twoFactorUser.setTwoFactorSecretTempUnencrypted(twoFactorUser.getTwoFactorSecretUnencrypted());
+          }
+          
+
+        } else if (StringUtils.equals(optinTotpTypeName, "uploadedSubmit")) {
+          //submitted code from user
+          if (!StringUtils.isBlank(twoFactorCustomCode)) {
+            
+            String[] error = new String[1];
+            
+            String twoFactorCustomCodeFormatted = validateCustomCode(twoFactorCustomCode, error);
+
+            if (!StringUtils.isBlank(error[0])) {
+              twoFactorRequestContainer.setError(error[0]);
+              return OptinView.index;
+            }
+            twoFactorUser.setTwoFactorSecret(null);
+            initNewOathCode(twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser);
+
+          } else {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinTotpAppUploadSecretRequired"));
+            return OptinWizardTotpAppInstallView.optinTotpAppInstallUploadSecret;
+          }
+         
+        } else {
+          throw new RuntimeException("Invalid value for optinTotpTypeName");
+        }
+        
+           
         return OptinWizardTotpAppInstallView.optinTotpAppInstall;
       }
     });
@@ -6661,6 +6831,328 @@ public class UiMain extends UiServiceLogicBase {
       }
     });
   
+    return result;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardTotpAppInstallSelectType(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardTotpAppInstallSelectTypeView optinWizardTotpAppInstallSelectTypeView = optinWizardTotpAppInstallSelectTypeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardTotpAppInstallSelectTypeView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardTotpAppInstallSelectTypeView optinWizardTotpAppInstallSelectTypeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardTotpAppInstallSelectTypeView.index;
+    }
+  
+    OptinWizardTotpAppInstallSelectTypeView result =  (OptinWizardTotpAppInstallSelectTypeView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardTotpAppInstallSelectTypeView.optinWelcome;
+        }
+  
+        return OptinWizardTotpAppInstallSelectTypeView.optinTotpAppInstallSelectType;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitTotpAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    OptinWizardSubmitTotpAppIntegrateView optinWizardSubmitTotpAppIntegrateView = optinWizardSubmitTotpAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid);
+  
+    showJsp(optinWizardSubmitTotpAppIntegrateView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitTotpAppIntegrateView optinWizardSubmitTotpAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardSubmitTotpAppIntegrateView.index;
+    }
+  
+    OptinWizardSubmitTotpAppIntegrateView result =  (OptinWizardSubmitTotpAppIntegrateView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardSubmitTotpAppIntegrateView.optinWelcome;
+        }
+        
+        return OptinWizardSubmitTotpAppIntegrateView.optinTotpAppConfirmCode;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitTotpAppCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    OptinWizardSubmitTotpAppCodeView optinWizardSubmitTotpAppCodeView = optinWizardSubmitTotpAppCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid, twoFactorPass);
+  
+    showJsp(optinWizardSubmitTotpAppCodeView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardSubmitTotpAppCodeView optinWizardSubmitTotpAppCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final String twoFactorPass) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardSubmitTotpAppCodeView.index;
+    }
+  
+    OptinWizardSubmitTotpAppCodeView result =  (OptinWizardSubmitTotpAppCodeView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
+          return OptinWizardSubmitTotpAppCodeView.optinWelcome;
+        }
+  
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          return OptinWizardSubmitTotpAppCodeView.optinTotpAppConfirmCode;
+        }
+
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code not number, now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "optinErrorCodeInvalid"));
+          return OptinWizardSubmitTotpAppCodeView.optinTotpAppConfirmCode;
+        }
+
+        String twoFactorSecret = twoFactorUser.getTwoFactorSecretTempUnencrypted();
+
+        //no need to validate the password, the password checker will do that
+        TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
+            twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
+
+        if (!twoFactorPassResult.isPasswordCorrect()) {
+
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code, now: " 
+              + System.currentTimeMillis() + ": " + TwoFactorServerUtils.hostname()
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "optinErrorCodeInvalid"));
+          return OptinWizardSubmitTotpAppCodeView.optinTotpAppConfirmCode;
+        }
+        
+        //set the object
+        twoFactorUser.setDatePhoneCodeSent(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
+        twoFactorUser.setTwoFactorSecretTemp(null);
+        twoFactorUser.setOptedIn(true);
+        twoFactorUser.setTokenIndex(0L);
+        twoFactorUser.setLastTotpTimestampUsed(null);
+        twoFactorUser.setPhoneOptIn(false);
+        twoFactorUser.setOptInOnlyIfRequired(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+
+        if (twoFactorPassResult.getNextHotpIndex() != null) {
+          twoFactorUser.setSequentialPassIndex(twoFactorPassResult.getNextHotpIndex());
+        }
+        if (twoFactorPassResult.getLastTotp30TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp30TimestampUsed());
+        }
+        if (twoFactorPassResult.getLastTotp60TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp60TimestampUsed());
+        }
+        if (twoFactorPassResult.getNextTokenIndex() != null) {
+          twoFactorUser.setTokenIndex(twoFactorPassResult.getNextTokenIndex());
+        }
+
+        //move from temp to real code
+        if (!StringUtils.isBlank(twoFactorUser.getTwoFactorSecretTempUnencrypted())) {
+          twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
+          twoFactorUser.setTwoFactorSecretTemp(null);
+        }
+
+        twoFactorUser.store(twoFactorDaoFactory);
+
+        //opt in to duo
+        if (duoRegisterUsers()) {
+
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+
+        }
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+            twoFactorRequestContainer, ipAddress, userAgent);
+  
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+  
+        emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+        
+        return OptinWizardSubmitTotpAppCodeView.optinPrintCodes;
+      }
+    });
+
     return result;
   }
 
