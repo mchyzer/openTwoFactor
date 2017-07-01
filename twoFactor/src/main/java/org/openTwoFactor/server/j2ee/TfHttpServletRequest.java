@@ -85,7 +85,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "tfBackdoorLoginName", "phoneIndex", "phoneType", "name", "id", "checkedApproval",
       "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId", "serialNumbers", "serialNumber",
       "reportUuid", "reportType", "reportNameSystem", "reportNameDisplay", "reportNameSystemSelect",
-      "reportPrivilegeUuid", "parentReportUuid", "childReportUuid", "reportRollupUuid", 
+      "reportPrivilegeUuid", "parentReportUuid", "childReportUuid", "reportRollupUuid", "relay",
       
       //for status calls
       "status", "diagnosticType",

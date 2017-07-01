@@ -51,6 +51,7 @@ public class TwoFactorUiServlet extends HttpServlet {
   /** uris that it is ok to get (e.g. auto complete and other ajax components */
   private static Set<String> operationsOkGet = TwoFactorServerUtils.toSet(
       UiMainPublic.class.getSimpleName() + ".index",
+      UiMainPublic.class.getSimpleName() + ".phoneIndex",
       UiMainUnprotected.class.getSimpleName() + ".index",
       UiMainUnprotected.class.getSimpleName() + ".logout",
       UiMain.class.getSimpleName() + ".qrCode",

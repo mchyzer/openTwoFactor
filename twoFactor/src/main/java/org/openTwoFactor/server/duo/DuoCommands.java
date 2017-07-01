@@ -3287,7 +3287,7 @@ public class DuoCommands {
    * 
    * @return tx id
    */
-  private static String duoInitiatePhoneCallBySomeId(String someId, String phoneIdOrNumber, boolean isIdOrNumber, Integer timeoutSeconds) {
+  public static String duoInitiatePhoneCallBySomeId(String someId, String phoneIdOrNumber, boolean isIdOrNumber, Integer timeoutSeconds) {
   
     String userId = retrieveDuoUserIdBySomeId(someId);
     JSONObject duoPhone = duoPhoneByIdOrNumber(phoneIdOrNumber, isIdOrNumber);

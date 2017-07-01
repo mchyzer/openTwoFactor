@@ -4,6 +4,7 @@
  */
 package org.openTwoFactor.server.ui.serviceLogic;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
 import org.openTwoFactor.server.beans.TwoFactorAuditAction;
+import org.openTwoFactor.server.beans.TwoFactorBrowser;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
@@ -207,7 +209,7 @@ public class UiMainPublic extends UiServiceLogicBase {
     final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
 
     sendPhoneCode(twoFactorDaoFactory,
-        twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, phoneIndex, phoneType, true);
+        twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, phoneIndex, phoneType, true, false, null);
 
     setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
 
@@ -223,11 +225,13 @@ public class UiMainPublic extends UiServiceLogicBase {
    * @param phoneIndex
    * @param phoneType
    * @param useDuoForPasscode 
+   * @param useDuoVoicePush if true send the duo voice push
+   * @param browserUuid 
    */
   public void sendPhoneCode(final TwoFactorDaoFactory twoFactorDaoFactory,
       final TwoFactorRequestContainer twoFactorRequestContainer, final String loggedInUser,
       final String ipAddress, final String userAgent, final int phoneIndex, 
-      final String phoneType, final boolean useDuoForPasscode) {
+      final String phoneType, final boolean useDuoForPasscode, final boolean useDuoVoicePush, final String browserUuid) {
 
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
 
@@ -291,66 +295,82 @@ public class UiMainPublic extends UiServiceLogicBase {
             throw new RuntimeException("Invalid phone index, must be 0,1,2: " + phoneIndex);
           
         }
-        
-        //store code and when sent
-        String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
-        
-        //make this since 9 since thats what duo is
-        secretCode = StringUtils.leftPad(secretCode, 9, '0');
 
-        //maybe going from duo
-        //opt in to duo
-        if (useDuoForPasscode && UiMain.duoRegisterUsers()) {
-
-          secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
+        if (useDuoVoicePush && isVoice && !StringUtils.isBlank(browserUuid)) {
           
-        }
-        
-        twoFactorUser.setPhoneCodeUnencrypted(secretCode);
-        twoFactorUser.setDatePhoneCodeSent(System.currentTimeMillis());
-
-        //send code to phone
-        if (isText) {
-          String message = TextContainer.retrieveFromRequest().getText().get("havingTroubleTextPhonePrefix") + " " + secretCode;
-          TwoFactorServerConfig.retrieveConfig().twoFactorContact().text(phoneNumber, message);
+          String txId = DuoCommands.duoInitiatePhoneCallBySomeId(
+              twoFactorUser.getDuoUserId(), phoneNumber, false, null);
           
-        } else if (isVoice) {
+          String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserUuid) + "__" + txId;
+          twoFactorUser.setDuoPushTransactionId(duoTxId);
 
-          char[] secretCodeCharArray = secretCode.toCharArray();
-          StringBuilder secretCodeCommaSeparated = new StringBuilder();
-          for (int i=0;i<secretCodeCharArray.length;i++) {
-            secretCodeCommaSeparated.append(secretCodeCharArray[i]);
-            if (i < secretCodeCharArray.length-1) {
-              secretCodeCommaSeparated.append(",");
-            } else {
-              //note if it is a period, they actually say "period"... weird
-              secretCodeCommaSeparated.append(",");
-            }
-          }
-            
-          String message = 
-              TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
-              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
-              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
-              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
-              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
-              + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
-              + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() + "  ";
-
-          TwoFactorServerConfig.retrieveConfig().twoFactorContact().voice(phoneNumber, message);
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.SEND_CODE_TO_PHONE, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+              TextContainer.retrieveFromRequest().getText().get("havingTroubleAuditPrefix"), null);
           
+
         } else {
-          //this should never happen
-          throw new RuntimeException("Not text or voice???");
-        }
-
-        twoFactorUser.store(twoFactorDaoFactory);
         
-        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-            TwoFactorAuditAction.SEND_CODE_TO_PHONE, ipAddress, 
-            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
-            TextContainer.retrieveFromRequest().getText().get("havingTroubleAuditPrefix") + " "
-            + secretCode.charAt(0) + "#####", null);
+          //store code and when sent
+          String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
+          
+          //make this since 9 since thats what duo is
+          secretCode = StringUtils.leftPad(secretCode, 9, '0');
+  
+          //maybe going from duo
+          //opt in to duo
+          if (useDuoForPasscode && UiMain.duoRegisterUsers()) {
+  
+            secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
+            
+          }
+          
+          twoFactorUser.setPhoneCodeUnencrypted(secretCode);
+          twoFactorUser.setDatePhoneCodeSent(System.currentTimeMillis());
+  
+          //send code to phone
+          if (isText) {
+            String message = TextContainer.retrieveFromRequest().getText().get("havingTroubleTextPhonePrefix") + " " + secretCode;
+            TwoFactorServerConfig.retrieveConfig().twoFactorContact().text(phoneNumber, message);
+            
+          } else if (isVoice) {
+            
+            char[] secretCodeCharArray = secretCode.toCharArray();
+            StringBuilder secretCodeCommaSeparated = new StringBuilder();
+            for (int i=0;i<secretCodeCharArray.length;i++) {
+              secretCodeCommaSeparated.append(secretCodeCharArray[i]);
+              if (i < secretCodeCharArray.length-1) {
+                secretCodeCommaSeparated.append(",");
+              } else {
+                //note if it is a period, they actually say "period"... weird
+                secretCodeCommaSeparated.append(",");
+              }
+            }
+              
+            String message = 
+                TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
+                + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+                + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
+                + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+                + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() 
+                + ",  " + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoiceInfix") + " " 
+                + TextContainer.retrieveFromRequest().getText().get("havingTroubleVoicePhonePrefix") + " " + secretCodeCommaSeparated.toString() + "  ";
+  
+            TwoFactorServerConfig.retrieveConfig().twoFactorContact().voice(phoneNumber, message);
+            
+          } else {
+            //this should never happen
+            throw new RuntimeException("Not text or voice???");
+          }
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.SEND_CODE_TO_PHONE, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+              TextContainer.retrieveFromRequest().getText().get("havingTroubleAuditPrefix") + " "
+              + secretCode.charAt(0) + "#####", null);
+          
+        }
+        twoFactorUser.store(twoFactorDaoFactory);
         
         return null;
       }
@@ -652,5 +672,124 @@ public class UiMainPublic extends UiServiceLogicBase {
     
     TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, loggedInUser);
     setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
+  }
+
+  /**
+   * main page
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void phoneIndex(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+    
+    phoneIndexLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    
+    showJsp("nonTwoFactorPhoneIndex.jsp");
+    
+  }
+
+  /**
+   * 
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   */
+  public void phoneIndexLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser) {
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, loggedInUser);
+    setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
+  }
+
+  /**
+     * if a user wants their colleagues to opt them out
+     * @param httpServletRequest
+     * @param httpServletResponse
+     */
+    public void phoneCodeIndexSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+      TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+      String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+      twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+  
+      int phoneIndex = Integer.parseInt(httpServletRequest.getParameter("phoneIndex"));
+      String phoneType = httpServletRequest.getParameter("phoneType");
+      String relay = httpServletRequest.getParameter("relay");
+      String userBrowserUuid = httpServletRequest.getParameter("userBrowserUuid");
+
+      if (!StringUtils.isBlank(userBrowserUuid)) {
+        if (!StringUtils.equals(httpServletRequest.getMethod(), "GET")) {
+          throw new RuntimeException("Cannot send in userBrowserUuid if the HTTP method is GET... you should use POST");
+        }
+      }
+      
+      phoneCodeIndexSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser,
+          httpServletRequest.getRemoteAddr(), 
+          httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, userBrowserUuid);
+      
+      // see if the relay is allowed
+      if (!StringUtils.isBlank(relay)) {
+        
+        String relayPrefixes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.relay.prefixes");
+        
+        if (!StringUtils.isBlank(relayPrefixes)) {
+          
+          List<String> relayPrefixesList = TwoFactorServerUtils.splitTrimToList(relayPrefixes, ",");
+          boolean allowed = false;
+          
+          for (String relayPrefix : relayPrefixesList) {
+            
+            if (relay.startsWith(relayPrefix)) {
+              allowed = true;
+              break;
+            }
+            
+          }
+          
+          if (!allowed) {
+            throw new RuntimeException("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes");
+          }
+          
+        }
+        
+        try {
+          httpServletResponse.sendRedirect(relay);
+        } catch (IOException ioe) {
+          throw new RuntimeException(ioe);
+        }
+      }
+      showJsp("nonTwoFactorIndex.jsp");
+    }
+
+  /**
+   * 
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress 
+   * @param userAgent 
+   * @param phoneIndex 0, 1, 2 the phone index to call
+   * @param phoneType voice or text
+   * @param browserUuid 
+   */
+  public void phoneCodeIndexSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final int phoneIndex, final String phoneType, final String browserUuid) {
+  
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+    sendPhoneCode(twoFactorDaoFactory,
+        twoFactorRequestContainer, loggedInUser, ipAddress, userAgent, phoneIndex, phoneType, true, true, browserUuid);
+  
+    setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorUser);
+  
+    
   }
 }

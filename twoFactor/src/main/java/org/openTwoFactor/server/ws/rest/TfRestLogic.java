@@ -848,7 +848,7 @@ public class TfRestLogic {
                 
                 new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
                     TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
-                    tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
+                    tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false, false, null);
               } catch (RuntimeException re) {
                 LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
                 throw re;
@@ -1071,7 +1071,7 @@ public class TfRestLogic {
                           
                           new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
                               TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
-                              tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false);
+                              tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false, false, null);
                           
                         } catch (RuntimeException re) {
                           LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
@@ -1089,16 +1089,57 @@ public class TfRestLogic {
           }
         }
 
+        boolean hasOutstandingPhonePush = false;
+        
+        {
+          String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
+          boolean alreadyUsed = TwoFactorServerUtils.length(pieces) == 4;
+
+          if (TwoFactorServerUtils.length(pieces) == 3 || alreadyUsed) {
+            
+            String browserIdFromDb = pieces[1];
+
+            if (!StringUtils.isBlank(browserId) && StringUtils.equals(TwoFactorBrowser.encryptBrowserUserUuid(browserId), browserIdFromDb)) {
+              
+              if (alreadyUsed) {
+                String timestampString = pieces[3];
+
+                long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+
+                //see if used recently enough...
+
+                int duoTransactionIdLastsAfterFirstUseSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("duoTransactionIdLastsAfterFirstUseSeconds", 3);
+                if (((System.currentTimeMillis() - timestampLong) / 1000) < duoTransactionIdLastsAfterFirstUseSeconds) {
+                  hasOutstandingPhonePush = true;
+                }
+                
+              } else {
+                //10 minutes young?
+                String timestampString = pieces[0];
+
+                long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+                if (((System.currentTimeMillis() - timestampLong) / 1000) < 10*60) {
+                  hasOutstandingPhonePush = true;
+                }
+              }
+            }
+          }
+        }
+
         boolean phoneOrPush = !StringUtils.isBlank(twoFactorUser.getPhoneAutoDuoPhoneId()) && StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId());
         String pushPhoneLogLabel = phoneOrPush ? "PhoneCall" : "Push"; 
-        if (duoRegisterUsers && (phoneOrPush || (duoPushByDefaultEnabled 
+        if (duoRegisterUsers && (phoneOrPush || hasOutstandingPhonePush || (duoPushByDefaultEnabled 
             && TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false)
             && !StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())))
             && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)) {
           try {
-             
+
             boolean needsPush = true;
-            
+
+            if (!phoneOrPush && (StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId()) || !TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false) ) ) {
+              needsPush = false;
+            }
+
             if (!StringUtils.isBlank(timestampBrowserTxId)) {
 
               String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");

@@ -6,7 +6,10 @@ package org.openTwoFactor.server.ui.beans;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 
 
 /**
@@ -14,6 +17,30 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
  */
 public class TwoFactorHelpLoggingInContainer {
 
+  /**
+   * 
+   * @return the relay param
+   */
+  public String getRelay() {
+    HttpServletRequest httpServletRequest = TwoFactorFilterJ2ee.retrieveHttpServletRequest();
+    if (httpServletRequest != null) {
+      return httpServletRequest.getParameter("relay");
+    }
+    return null;
+  }
+  
+  /**
+   * 
+   * @return the userBrowserUuid param
+   */
+  public String getUserBrowserUuid() {
+    HttpServletRequest httpServletRequest = TwoFactorFilterJ2ee.retrieveHttpServletRequest();
+    if (httpServletRequest != null) {
+      return httpServletRequest.getParameter("userBrowserUuid");
+    }
+    return null;
+  }
+  
   /**
    * if user is required to opt in but is not opted in
    */
