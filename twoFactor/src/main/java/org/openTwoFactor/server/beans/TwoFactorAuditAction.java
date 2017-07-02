@@ -167,6 +167,38 @@ public enum TwoFactorAuditAction {
   },
   
   /**
+   * if a colleague generated a code
+   */
+  COLLEAGUE_GENERATED_ME_A_CODE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsFriendGeneratedMeCode";
+    }
+    
+  },
+  
+  /**
+   * error authenticating
+   */
+  GENERATED_CODE_FOR_A_COLLEAGUE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsGeneratedCodeForFriend";
+    }
+    
+  },
+  
+  /**
    * enable push for web
    */
   DUO_ENABLE_PUSH_FOR_WEB {

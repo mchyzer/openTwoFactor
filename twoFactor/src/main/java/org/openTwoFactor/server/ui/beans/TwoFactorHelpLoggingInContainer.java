@@ -18,6 +18,27 @@ import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 public class TwoFactorHelpLoggingInContainer {
 
   /**
+   * code for friend
+   */
+  private String codeForFriend;
+  
+  /**
+   * code for friend
+   * @return the codeForFriend
+   */
+  public String getCodeForFriend() {
+    return this.codeForFriend;
+  }
+  
+  /**
+   * code for friend
+   * @param codeForFriend1 the codeForFriend to set
+   */
+  public void setCodeForFriend(String codeForFriend1) {
+    this.codeForFriend = codeForFriend1;
+  }
+
+  /**
    * 
    * @return the relay param
    */
