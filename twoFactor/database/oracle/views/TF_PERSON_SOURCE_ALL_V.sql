@@ -1,4 +1,4 @@
-/* Formatted on 1/6/2017 2:09:22 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 7/3/2017 11:00:20 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ALL_V
 (
    PENN_ID,
@@ -8,7 +8,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ALL_V
    NAME,
    EMAIL,
    ACTIVE,
-   BIRTH_DATE
+   BIRTH_DATE,
+   last_four
 )
    BEQUEATH DEFINER
 AS
@@ -19,7 +20,8 @@ AS
           name,
           email,
           'T' AS active,
-          BIRTH_DATE
+          BIRTH_DATE,
+          last_four
      FROM tf_person_source_v;
 
 COMMENT ON TABLE TF_PERSON_SOURCE_ALL_V IS 'for test, all people are active';
