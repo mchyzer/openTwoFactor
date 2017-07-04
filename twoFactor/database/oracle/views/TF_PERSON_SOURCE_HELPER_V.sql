@@ -1,4 +1,4 @@
-/* Formatted on 1/8/2017 8:41:23 AM (QP5 v5.252.13127.32847) */
+/* Formatted on 7/3/2017 1:45:43 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_HELPER_V
 (
    PENN_ID,
@@ -11,7 +11,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_HELPER_V
    NAME_PENN,
    EMAIL,
    ACTIVE,
-   BIRTH_DATE
+   BIRTH_DATE,
+   LAST_FOUR
 )
    BEQUEATH DEFINER
 AS
@@ -34,7 +35,8 @@ AS
              ELSE 'F'
           END
              AS active,
-          TO_CHAR(cpv.BIRTH_DATE, 'YYYY-MM-DD')
+          TO_CHAR (cpv.BIRTH_DATE, 'YYYY-MM-DD') as birth_date,
+          nvl(cpv.usa_ssn4, cpv.srs_ssn4) as last_four
      /* (select 'T' from authzadm.PROJECT_TF_ACTIVE_USERS_V ptauv where ptauv.penn_id = cpv.penn_id) as active */
      FROM pcdadmin.computed_person_v cpv, tf_source_make_active tsma
     WHERE     kerberos_principal IS NOT NULL
@@ -63,3 +65,5 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.EMAIL IS 'email of user';
 COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.ACTIVE IS 'T if active, F if not';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.BIRTH_DATE IS 'birth date if we have it: yyyy-mm-dd';
+
+COMMENT ON COLUMN TF_PERSON_SOURCE_HELPER_V.LAST_FOUR IS 'last four of SSN if we have it';
