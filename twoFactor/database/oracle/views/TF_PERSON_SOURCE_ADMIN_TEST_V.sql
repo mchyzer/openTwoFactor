@@ -1,4 +1,4 @@
-/* Formatted on 1/8/2017 8:45:42 AM (QP5 v5.252.13127.32847) */
+/* Formatted on 7/3/2017 11:06:42 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_TEST_V
 (
    PENN_ID,
@@ -8,7 +8,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_TEST_V
    NAME,
    EMAIL,
    ACTIVE,
-   BIRTH_DATE
+   BIRTH_DATE,
+   last_four
 )
    BEQUEATH DEFINER
 AS
@@ -19,7 +20,8 @@ AS
           NAME,
           EMAIL,
           ACTIVE,
-          BIRTH_DATE
+          BIRTH_DATE,
+          last_four
      FROM tf_person_source_helper_v
    UNION
    SELECT PENN_ID,
@@ -29,5 +31,6 @@ AS
           NAME,
           EMAIL,
           ACTIVE,
-          TO_CHAR(BIRTH_DATE, 'YYYY-MM-DD')
+          TO_CHAR (BIRTH_DATE, 'YYYY-MM-DD'),
+          last_four
      FROM TF_TEST_PERSON;
