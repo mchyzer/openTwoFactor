@@ -1,4 +1,4 @@
-/* Formatted on 1/6/2017 2:04:56 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 7/3/2017 11:03:38 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_V
 (
    PENN_ID,
@@ -8,7 +8,8 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_V
    NAME,
    EMAIL,
    ACTIVE,
-   BIRTH_DATE
+   BIRTH_DATE,
+   last_four
 )
    BEQUEATH DEFINER
 AS
@@ -19,7 +20,8 @@ AS
           NAME,
           EMAIL,
           ACTIVE,
-          BIRTH_DATE
+          BIRTH_DATE,
+          last_four
      FROM tf_person_source_helper_v;
 
 COMMENT ON TABLE TF_PERSON_SOURCE_ADMIN_V IS 'person source to lookup and search for subjects in the two factor project for admin users';
@@ -39,6 +41,8 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.EMAIL IS 'email of user';
 COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.ACTIVE IS 'T if active, F if not';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.BIRTH_DATE IS 'birth date of the user used in optin if it exists for the user';
+
+COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.LAST_FOUR IS 'last four of SSN if we have it';
 
 
 GRANT SELECT ON TF_PERSON_SOURCE_ADMIN_V TO TWO_FACTOR_ADMIN;
