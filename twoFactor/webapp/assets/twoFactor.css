@@ -291,6 +291,10 @@ ol.bold {
   width: 13em;
 }
 
+.profileFormBoxWide .formLabel {
+  width: 22em;
+}
+
 .formLabelNarrow {
   width: 8em;
 }
@@ -481,6 +485,10 @@ table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
 
 .profileFormBoxNarrow {
   width: 36em;
+}
+
+.profileFormBoxWide {
+  width: 50em;
 }
 
 

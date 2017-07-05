@@ -63,12 +63,5 @@
     </div>  
   </div>
 
-<c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.showSerialSection && twoFactorRequestContainer.twoFactorAdminContainer.allowSerialNumberRegistration}">
-  <script type="text/javascript">
-    $('#activeHardwareTokenButtonId').click();
-    $('#serialRadioId').click();
-  </script>
-</c:if>
-
 </body></html>
 

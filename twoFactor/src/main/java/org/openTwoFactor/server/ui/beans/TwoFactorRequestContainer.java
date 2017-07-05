@@ -117,7 +117,11 @@ public class TwoFactorRequestContainer {
    * @return true if editable email
    */
   public boolean isEditableEmail() {
-    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.editableEmail", true);
+    
+    TwoFactorUser twoFactorUser = this.getTwoFactorUserLoggedIn();
+    
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.editableEmail", true)
+        || (twoFactorUser != null && StringUtils.isBlank(twoFactorUser.getEmail0()) );
   }
   
   /**

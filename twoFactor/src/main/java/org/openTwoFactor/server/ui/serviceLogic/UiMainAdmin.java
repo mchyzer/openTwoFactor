@@ -64,6 +64,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(UiMainAdmin.class);
 
+  
 
   /**
    * admin page combobox
@@ -2390,6 +2391,130 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
 
   /**
+   * manage a user from the admin console
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void manageUser(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    ManageUserView manageUserView = manageUserLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn, subjectSource);
+  
+    showJsp(manageUserView.getJsp());
+    
+  }
+
+  /**
+   * manage a user
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param userIdOperatingOn 
+   * @param subjectSource
+   * @return page to go to
+   */
+  public ManageUserView manageUserLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
+  
+    final boolean[] success = new boolean[]{false};
+  
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+    
+    final TwoFactorUser[] twoFactorUserGettingOptedOut = new TwoFactorUser[1];
+  
+    ManageUserView manageUserView = (ManageUserView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp[0].isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return ManageUserView.index;
+        }
+  
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(userIdOperatingOn)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
+          return ManageUserView.admin;
+        }
+  
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false, true);
+  
+        String theUserIdOperatingOn = userIdOperatingOn;
+        
+        if (subject != null) {
+          
+          theUserIdOperatingOn = subject.getId();
+          
+        }
+        
+        twoFactorUserGettingOptedOut[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        
+        if (twoFactorUserGettingOptedOut[0] == null) {
+          
+          if (subject == null) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotFound"));
+            return AdminSubmitView.admin;
+  
+          }
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotInSystem"));
+          return AdminSubmitView.admin;
+        }
+        
+        //we found a user!
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserGettingOptedOut[0]);
+  
+        twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
+        twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+        
+        twoFactorUserGettingOptedOut[0].setDuoUserId(null);
+        
+        
+        if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
+            
+        }
+        
+        success[0] = true;
+        
+        return ManageUserView.adminConfirmUser;
+      }
+    });
+    
+    return manageUserView;
+    
+  }
+
+
+  /**
    * 
    */
   public static enum AdminSubmitView {
@@ -2490,6 +2615,45 @@ public class UiMainAdmin extends UiServiceLogicBase {
      * @param theJsp
      */
     private AdminImportSerialsSubmitView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum ManageUserView {
+    
+    /**
+     */
+    adminConfirmUser("adminConfirmUser.jsp"),
+    
+    /**
+     */
+    index("index.jsp"),
+    
+    /**
+     */
+    admin("admin.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private ManageUserView(String theJsp) {
       this.jsp = theJsp;
     }
     

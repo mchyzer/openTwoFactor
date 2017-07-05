@@ -408,6 +408,16 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * last four if we have it
+   */
+  private String lastFour = null;
+
+  /**
+   * if the last four was searched yet
+   */
+  private boolean lastFourSearched = false;
+  
+  /**
    * 
    */
   private Date birthDate = null;
@@ -463,6 +473,36 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     
   }
   
+  /**
+   * 
+   * @return the last four
+   */
+  public String getLastFour() {
+    
+    if (!this.lastFourSearched) {
+      
+      // get the subject, should be found but ok if not i guess
+      Source theSource = this.subjectSource;
+      
+      if (theSource == null) {
+        theSource = TfSourceUtils.mainSource();
+      }
+      
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(theSource, this.getLoginid(), false, false, true);
+      if (subject != null) {
+        
+        this.lastFour = subject.getAttributeValue("lastFour");
+        
+      }
+      
+      this.lastFourSearched = true;
+      
+    }
+    
+    return this.lastFour;
+    
+  }
+
   /**
    * 
    * @return the date submitted from the page

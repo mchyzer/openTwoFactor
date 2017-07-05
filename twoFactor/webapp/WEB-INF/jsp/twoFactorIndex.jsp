@@ -42,6 +42,9 @@
           <h2>${textContainer.text['indexNotOptedInSubheader']}</h2>
           <br />
           <br />
+          <%@ include file="../assetsJsp/commonError.jsp"%>
+          <br />
+          
           ${textContainer.text['indexNotOptedInSubtext1']}
           <br />
           <br />

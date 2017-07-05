@@ -79,45 +79,13 @@
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
         
         <br /><br />
-        <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.allowAdminsToGenerateCodesforUsers}">
-          <form action="UiMainAdmin.generateCodeSubmit" method="post" style="display: inline">
-            <input value="${textContainer.textEscapeDouble['adminGenerateCodeFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
-              class="tfBlueButton"
-               type="submit"
-              onclick="return confirm('${textContainer.textEscapeSingleDouble['adminGenerateCodeConfirm']}');" />
-            <input type="hidden" name="userIdOperatingOn" 
-              value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
-          </form>
-          &nbsp;&nbsp;
-        </c:if>
-        <form action="UiMainAdmin.optOutSubmit" method="post" style="display: inline">
-          <input value="${textContainer.textEscapeDouble['adminOptOutPerson']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
+        <form action="UiMainAdmin.manageUser" method="post" style="display: inline">
+          <input value="${textContainer.textEscapeDouble['adminManageUser']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
             class="tfBlueButton"
-             type="submit"
-            onclick="return confirm('${textContainer.textEscapeSingleDouble['adminOptOutConfirm']}');" />
+             type="submit" />
           <input type="hidden" name="userIdOperatingOn" 
             value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
         </form>
-        &nbsp;&nbsp;
-        <c:choose>
-          <c:when test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.trustedBrowserCount > 0}">
-            <form action="UiMainAdmin.untrustBrowsers" method="post" style="display: inline">
-              <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
-              class="tfBlueButton"
-               type="submit"
-              onclick="return confirm('${textContainer.textEscapeSingleDouble['adminUntrustConfirm']}');" />
-              <input type="hidden" name="userIdOperatingOn" 
-                value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
-            </form>
-          </c:when>
-          <c:otherwise>
-              <input value="${textContainer.textEscapeDouble['adminUntrustBrowsersFor']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
-                class="tfBlueButton"
-                 type="submit"
-                onclick="alert('${textContainer.textEscapeSingleDouble['buttonUntrustBrowsersNone']}'); return false;" />
-          </c:otherwise>
-          
-        </c:choose>
         
       </c:when>
       <c:otherwise>
