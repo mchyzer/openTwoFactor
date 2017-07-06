@@ -37,6 +37,7 @@ import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
@@ -276,7 +277,21 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   public boolean isOptedIn() {
     return TwoFactorServerUtils.booleanValue(this.attributeValueBoolean(TwoFactorUserAttrName.opted_in), false);
   }
-  
+
+  /**
+   * if the user is in push in two step
+   * @return if enrolled in push
+   */
+  public boolean isEnrolledInPush() {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(this);
+    
+    return twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush();
+    
+    
+  }
+
   /**
    * 
    */

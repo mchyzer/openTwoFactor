@@ -138,6 +138,13 @@
          type="submit" />
       </form>
       &nbsp;
+      <c:if test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn && !twoFactorRequestContainer.twoFactorUserLoggedIn.enrolledInPush}">
+        <form action="../../twoFactorUi/app/UiMain.optinWizardAddPush" method="post" style="display: inline">
+          <input value="${textContainer.textEscapeDouble['buttonAddPushDevice']}" class="tfBlueButton"
+           type="submit" />
+        </form>
+        &nbsp;
+      </c:if>
 
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.admin}">

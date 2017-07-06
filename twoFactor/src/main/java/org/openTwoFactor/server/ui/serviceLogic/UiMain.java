@@ -4318,17 +4318,19 @@ public class UiMain extends UiServiceLogicBase {
           return OptinWizardSetupAppDoneView.optinWelcome;
         }
         
-        String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
-
-        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
-
-        //move from temp to real code
-        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
-        twoFactorUser.setTwoFactorSecretTemp(null);
-        twoFactorUser.store(twoFactorDaoFactory);
-        
-        //sync user to duo
-        DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+        if (!twoFactorUser.isOptedIn()) {
+          String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
+  
+          initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+  
+          //move from temp to real code
+          twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
+          twoFactorUser.setTwoFactorSecretTemp(null);
+          twoFactorUser.store(twoFactorDaoFactory);
+          
+          //sync user to duo
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+        }
         
         boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
             loggedInUser, ipAddress, 
@@ -5312,6 +5314,46 @@ public class UiMain extends UiServiceLogicBase {
 
 
   /**
+   * 
+   */
+  public static enum OptinWizardAddPushView {
+
+    /**
+     */
+    optinWelcome("optinWelcome.jsp"),
+
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+
+    /**
+     */
+    optinAppInstall("optinAppInstall.jsp");
+
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardAddPushView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
    * optin to two factor
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
@@ -5542,26 +5584,39 @@ public class UiMain extends UiServiceLogicBase {
         }
 
         if (validPush) {
-
+          boolean wasOptedIn = twoFactorUser.isOptedIn();
+          if (!wasOptedIn) {
+            twoFactorUser.setOptedIn(true);
+            twoFactorUser.setOptInOnlyIfRequired(null);
+            TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+                TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
+                userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+          } else {
+            TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+                TwoFactorAuditAction.DUO_ENABLE_PUSH, ipAddress, 
+                userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+            TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+                TwoFactorAuditAction.DUO_ENABLE_PUSH_FOR_WEB, ipAddress, 
+                userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+          }
           twoFactorUser.setDuoPushByDefault(true);
           twoFactorUser.setDuoPushTransactionId(null);
-          twoFactorUser.setOptedIn(true);
-          twoFactorUser.setOptInOnlyIfRequired(null);
           twoFactorUser.store(twoFactorDaoFactory);
 
-          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
-              TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
-              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
 
-          setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
-              twoFactorRequestContainer, ipAddress, userAgent);
+          if (!wasOptedIn) {
+            setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+                twoFactorRequestContainer, ipAddress, userAgent);
+            //opt the user in
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
 
-          //opt the user in
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
+            emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+            
+            return OptinWizardSubmitAppTestView.optinPrintCodes;
+          }
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolledInPushForWeb"));
           
-          emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
-          
-          return OptinWizardSubmitAppTestView.optinPrintCodes;
+          return OptinWizardSubmitAppTestView.index;
         }
 
         //problem, try again?
@@ -7394,6 +7449,83 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorRequestContainer,
         loggedInUser, subjectSource);
   
+  }
+
+
+  /**
+   * submit which type of optin
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardAddPush(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    OptinWizardAddPushView optinWizardAddPushView = optinWizardAddPushLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp(optinWizardAddPushView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @return error message if there is one and jsp
+   */
+  public OptinWizardAddPushView optinWizardAddPushLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress,
+      final String userAgent, final Source subjectSource) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return OptinWizardAddPushView.index;
+    }
+  
+    new UiMainPublic().setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, 
+        twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+  
+    OptinWizardAddPushView result =  (OptinWizardAddPushView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        //add bday so it isnt checked again
+        String birthDayUuid = TwoFactorServerUtils.uuid();
+        twoFactorUser.setBirthDayUuid(birthDayUuid);
+        twoFactorUser.store(twoFactorDaoFactory);
+        
+        return OptinWizardAddPushView.optinAppInstall;
+      }
+    });
+  
+    return result;
   }
 
 

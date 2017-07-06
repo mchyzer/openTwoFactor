@@ -6,6 +6,7 @@ package org.openTwoFactor.server.ui.beans;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
@@ -106,14 +107,19 @@ public class TwoFactorDuoPushContainer {
    * @param twoFactorUser
    */
   public void init(TwoFactorUser twoFactorUser) {
-    
-    String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorUser.getLoginid(), false);
-    
-    this.duoUser = DuoCommands.retrieveDuoUserByIdOrUsername(duoUserId, true);
-            
-    this.enrolledInDuoPush = DuoCommands.enrolledInPush(this.duoUser);
-    
-    this.pushForWeb = TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false);
+
+    if (this.duoUser == null) {
+      
+      String duoUserId = DuoCommands.retrieveDuoUserIdBySomeId(twoFactorUser.getLoginid(), false);
+      
+      if (!StringUtils.isBlank(duoUserId)) {
+        this.duoUser = DuoCommands.retrieveDuoUserByIdOrUsername(duoUserId, true);
+                
+        this.enrolledInDuoPush = this.duoUser == null ? false : DuoCommands.enrolledInPush(this.duoUser);
+        
+        this.pushForWeb = TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false);
+      }
+    }
   }
   
   /**
