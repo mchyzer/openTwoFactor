@@ -20,7 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitPhoneCode" method="post">
+  <form action="UiMainAdmin.confirmUserRemote" method="post">
     <div class="paragraphs">
 
     <h2>${textContainer.text['adminConfirmUserRemoteSubheader']}</h2>
@@ -38,9 +38,9 @@
         <b><label for="checkedNameId">${textContainer.text['adminConfirmName']}</label></b>
       </div>
       <div class="formRow">
-        <input type="checkbox" id="checkedNameId" name="checkedNameName" value="true" />
+        <input type="checkbox" id="checkedDeptId" name="checkedDeptName" value="true" />
         &nbsp;
-        <b><label for="checkedNameId">${textContainer.text['adminConfirmDepartmentTitle']}</label></b>
+        <b><label for="checkedDeptId">${textContainer.text['adminConfirmDepartmentTitle']}</label></b>
       </div>
       <div class="formRow">
         <div class="formLabel">
@@ -79,49 +79,6 @@
         <div class="formFooter">&nbsp;</div>
       </div>
     </div>
-
-
-
-<%--
-        <div class="formValue"><input type="text" name="phone0" size="12" 
-          class="textfield" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.phone0) }" />
-          &nbsp; <input type="checkbox" name="phoneVoice0" value="true" 
-          ${twoFactorRequestContainer.twoFactorProfileContainer.phoneVoice0 == 'true' ? 'checked="checked"' : ''} />
-          ${textContainer.text['profilePhoneVoiceOptionLabel']} &nbsp;&nbsp;
-          <input type="checkbox" name="phoneText0" value="true"
-          ${twoFactorRequestContainer.twoFactorProfileContainer.phoneText0 == 'true' ? 'checked="checked"' : ''} />
-          ${textContainer.text['profilePhoneTextOptionLabel']}  </div>
-      </div>
-    </div>
-
-
-    <table>
-      <tr style="vertical-align: top">
-        <td style="padding-top: 0.25em; padding-right: 0.5em"></td>
-        <td>
-          <label for="optinTypeAppId">${textContainer.text['optinTypeAppLabel']}</label>
-          <div class="formElementHelp">${textContainer.text['optinTypeAppHelp']}</div>
-          <br />
-        </td>
-      </tr>
-      <tr style="vertical-align: top">
-        <td style="padding-top: 0.25em; padding-right: 0.5em"><input type="radio" id="optinTypePhoneId" name="optInTypeName" value="phone" /></td>
-        <td>
-          <label for="optinTypePhoneId">${textContainer.text['optinTypePhoneLabel']}</label>
-          <div class="formElementHelp">${textContainer.text['optinTypePhoneHelp']}</div>
-          <br />
-        </td>
-      </tr>
-      <tr style="vertical-align: top">
-        <td style="padding-top: 0.25em; padding-right: 0.5em"><input type="radio" id="optinTypeFobId" name="optInTypeName" value="fob" /></td>
-        <td>
-          <label for="optinTypeFobId">${textContainer.text['optinTypeFobLabel']}</label>
-          <div class="formElementHelp">${textContainer.text['optinTypeFobHelp']}</div>
-        </td>
-      </tr>
-    </table>
-    
-    --%>
 
     <br /><br />
     <input type="hidden" name="userIdOperatingOn" 

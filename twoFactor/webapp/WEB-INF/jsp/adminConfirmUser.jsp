@@ -20,7 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitPhoneCode" method="post">
+  <form action="UiMainAdmin.confirmUser" method="post">
     <div class="paragraphs">
 
     <h2>${textContainer.text['adminConfirmUserSubheader']}</h2>
@@ -39,7 +39,7 @@
         </div>
         <div class="formValue">
           <input type="radio" id="checkedIdNoId" name="checkedIdName" value="false" /> ${textContainer.text['adminConfirmNo']} &nbsp;&nbsp;
-          <input type="radio" id="checkedIdYesId" name="checkedIdName" value="false" />  ${textContainer.text['adminConfirmYes']}
+          <input type="radio" id="checkedIdYesId" name="checkedIdName" value="true" />  ${textContainer.text['adminConfirmYes']}
         </div>
         <div class="formFooter">&nbsp;</div>
       </div>

@@ -761,7 +761,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         twoFactorUserGettingOptedOut[0].setDuoUserId(null);
         
         
-        if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
+        if (!twoFactorUserGettingOptedOut[0].isOptedIn()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
           
@@ -1090,7 +1090,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         
         twoFactorUserOperatingOn.setTwoFactorSecretTemp(null);
         
-        if (StringUtils.isBlank(twoFactorUserOperatingOn.getTwoFactorSecret())) {
+        if (!twoFactorUserOperatingOn.isOptedIn()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
           return AdminSubmitView.admin;
@@ -2432,7 +2432,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
   
     final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
     
-    final TwoFactorUser[] twoFactorUserGettingOptedOut = new TwoFactorUser[1];
+    final TwoFactorUser[] twoFactorUserManaged = new TwoFactorUser[1];
   
     ManageUserView manageUserView = (ManageUserView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
@@ -2473,34 +2473,31 @@ public class UiMainAdmin extends UiServiceLogicBase {
           
         }
         
-        twoFactorUserGettingOptedOut[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        twoFactorUserManaged[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
         
-        if (twoFactorUserGettingOptedOut[0] == null) {
+        if (twoFactorUserManaged[0] == null) {
           
           if (subject == null) {
             
             twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotFound"));
-            return AdminSubmitView.admin;
+            return ManageUserView.admin;
   
           }
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotInSystem"));
-          return AdminSubmitView.admin;
+          return ManageUserView.admin;
         }
         
         //we found a user!
-        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserGettingOptedOut[0]);
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserManaged[0]);
   
-        twoFactorUserGettingOptedOut[0].setTwoFactorSecretTemp(null);
-        twoFactorUserGettingOptedOut[0].setSubjectSource(subjectSource);
+        twoFactorUserManaged[0].setSubjectSource(subjectSource);
+                
         
-        twoFactorUserGettingOptedOut[0].setDuoUserId(null);
-        
-        
-        if (StringUtils.isBlank(twoFactorUserGettingOptedOut[0].getTwoFactorSecret())) {
+        if (!twoFactorUserManaged[0].isOptedIn()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
-            
+          return ManageUserView.admin;
         }
         
         success[0] = true;
@@ -2511,6 +2508,384 @@ public class UiMainAdmin extends UiServiceLogicBase {
     
     return manageUserView;
     
+  }
+
+
+  /**
+   * manage a user from the admin console
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void confirmUser(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+    
+    String checkedIdString = httpServletRequest.getParameter("checkedIdName");
+    
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    ConfirmUserView confirmUserView = confirmUserLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn, subjectSource, checkedIdString);
+  
+    showJsp(confirmUserView.getJsp());
+    
+  }
+
+  /**
+   * manage a user
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress
+   * @param userAgent
+   * @param loggedInUser
+   * @param userIdOperatingOn
+   * @param subjectSource
+   * @param checkedIdString
+   * @return page to go to
+   */
+  public ConfirmUserView confirmUserLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String userIdOperatingOn, final Source subjectSource, final String checkedIdString) {
+
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+
+    final TwoFactorUser[] twoFactorUserConfirmed = new TwoFactorUser[1];
+
+    ConfirmUserView manageUserView = (ConfirmUserView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp[0].isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return ConfirmUserView.index;
+        }
+  
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(userIdOperatingOn)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
+          return ConfirmUserView.admin;
+        }
+  
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false, true);
+  
+        String theUserIdOperatingOn = userIdOperatingOn;
+        
+        if (subject != null) {
+          
+          theUserIdOperatingOn = subject.getId();
+          
+        }
+        
+        twoFactorUserConfirmed[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        
+        if (twoFactorUserConfirmed[0] == null) {
+          
+          if (subject == null) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotFound"));
+            return ConfirmUserView.admin;
+  
+          }
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotInSystem"));
+          return ConfirmUserView.admin;
+        }
+        
+        //we found a user!
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserConfirmed[0]);
+  
+        twoFactorUserConfirmed[0].setSubjectSource(subjectSource);
+
+        if (!twoFactorUserConfirmed[0].isOptedIn()) {
+
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
+          return ConfirmUserView.admin;
+
+        }
+
+        if (StringUtils.isBlank(checkedIdString)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminManageUserCheckedIdRequired"));
+          
+          return ConfirmUserView.adminConfirmUser;
+        }
+
+        if (TwoFactorServerUtils.booleanValue(checkedIdString, false)) {
+          
+          StringBuilder message = new StringBuilder();
+          
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmCheckedPhysicalId") + "<br />");
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteRecommendYes") + "<br />");
+
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.ADMIN_CONFIRM_USER, ipAddress, 
+              userAgent, twoFactorUserConfirmed[0].getUuid(), 
+              twoFactorUserUsingApp[0].getUuid(), StringUtils.replace(message.toString(), "<br />", ", "), null);
+
+          twoFactorRequestContainer.setError(message.toString());
+
+          return ConfirmUserView.adminManageUser;
+        }
+
+        return ConfirmUserView.adminConfirmUserRemote;
+      }
+    });
+
+    return manageUserView;
+    
+  }
+
+
+  /**
+   * manage a user from the admin console
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void confirmUserRemote(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+    
+    String checkedNameString = httpServletRequest.getParameter("checkedNameName");
+    String userIdString = httpServletRequest.getParameter("userIdName");
+    String netIdString = httpServletRequest.getParameter("netIdName");
+    String lastFourString = httpServletRequest.getParameter("lastFourName");
+    String checkedDeptString = httpServletRequest.getParameter("checkedDeptName");
+    
+    
+    String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
+    String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
+    String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
+    
+    String birthdayTextfield = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    ConfirmUserRemoteView confirmUserRemoteView = confirmUserRemoteLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), userIdOperatingOn, subjectSource, checkedNameString, checkedDeptString,
+        userIdString, netIdString, lastFourString, birthMonthString, birthDayString, birthYearString, birthdayTextfield);
+
+    showJsp(confirmUserRemoteView.getJsp());
+
+  }
+
+  /**
+   * manage a user
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress
+   * @param userAgent
+   * @param loggedInUser
+   * @param userIdOperatingOn
+   * @param subjectSource
+   * @param checkedNameString 
+   * @param checkedDeptString 
+   * @param userIdString 
+   * @param netIdString 
+   * @param lastFourString 
+   * @param birthMonthString 
+   * @param birthDayString 
+   * @param birthYearString 
+   * @param birthdayTextfield 
+   * @return page to go to
+   */
+  public ConfirmUserRemoteView confirmUserRemoteLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String userIdOperatingOn, final Source subjectSource, final String checkedNameString, 
+      final String checkedDeptString,
+      final String userIdString, final String netIdString, final String lastFourString, final String birthMonthString, 
+      final String birthDayString, final String birthYearString, final String birthdayTextfield) {
+  
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+  
+    final TwoFactorUser[] twoFactorUserConfirmed = new TwoFactorUser[1];
+  
+    ConfirmUserRemoteView confirmUserRemoteView = (ConfirmUserRemoteView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp[0].isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return ConfirmUserRemoteView.index;
+        }
+  
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
+  
+        //make sure searching for a user id
+        if (StringUtils.isBlank(userIdOperatingOn)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
+          return ConfirmUserRemoteView.admin;
+        }
+  
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdOperatingOn, true, false, true);
+  
+        String theUserIdOperatingOn = userIdOperatingOn;
+        
+        if (subject != null) {
+          
+          theUserIdOperatingOn = subject.getId();
+          
+        }
+        
+        twoFactorUserConfirmed[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        
+        if (twoFactorUserConfirmed[0] == null) {
+          
+          if (subject == null) {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotFound"));
+            return ConfirmUserRemoteView.admin;
+  
+          }
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnNotInSystem"));
+          return ConfirmUserRemoteView.admin;
+        }
+        
+        //we found a user!
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserConfirmed[0]);
+  
+        twoFactorUserConfirmed[0].setSubjectSource(subjectSource);
+  
+        if (!twoFactorUserConfirmed[0].isOptedIn()) {
+  
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
+          return ConfirmUserRemoteView.admin;
+  
+        }
+  
+        boolean deptCorrect = StringUtils.equals("true", checkedDeptString);
+        boolean nameCorrect = StringUtils.equals("true", checkedNameString);
+        boolean idCorrect = StringUtils.equals(userIdString, twoFactorUserConfirmed[0].getLoginid());
+        boolean netIdCorrect = StringUtils.equals(netIdString, TfSourceUtils.convertSubjectIdToNetId(subjectSource, twoFactorUserConfirmed[0].getLoginid()));
+
+        Boolean lastFourCorrect = StringUtils.isBlank(twoFactorUserConfirmed[0].getLastFour()) ? null : StringUtils.equals(lastFourString, twoFactorUserConfirmed[0].getLastFour());
+
+        Boolean birthdayCorrect = null;
+        
+        if (twoFactorUserConfirmed[0].getBirthDate() != null) {
+          birthdayCorrect = UiMain.checkBirthday(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, 
+              userAgent, subjectSource, twoFactorUserConfirmed[0], birthMonthString, birthDayString, 
+              birthYearString, birthdayTextfield);
+        }
+
+        StringBuilder message = new StringBuilder();
+
+        boolean recommendYes = false;
+        
+        if (!nameCorrect) {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteNameIncorrect") + "<br />\n");
+        } else {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteNameCorrect") + "<br />\n");
+        }
+
+        if (!deptCorrect) {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteDeptIncorrect") + "<br />\n");
+        } else {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteDeptCorrect") + "<br />\n");
+        }
+        
+        if (!idCorrect) {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemotePennIdIncorrect") + "<br />\n");
+        } else {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemotePennIdCorrect") + "<br />\n");
+        }
+        if (!netIdCorrect) {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemotePennkeyIncorrect") + "<br />\n");
+        } else {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemotePennkeyCorrect") + "<br />\n");
+        }
+        
+        if (lastFourCorrect != null) {
+          if (!lastFourCorrect) {
+            message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteLastFourIncorrect") + "<br />\n");
+          } else {
+            recommendYes = true;
+            message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteLastFourCorrect") + "<br />\n");
+          }
+        }
+        if (birthdayCorrect != null) {
+          if (!birthdayCorrect) {
+            message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteBirthdayIncorrect") + "<br />\n");
+          } else {
+            recommendYes = true;
+            message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteBirthdayCorrect") + "<br />\n");
+          }
+        }
+
+        if (deptCorrect && nameCorrect) {
+          recommendYes = true;
+        }
+
+        if (!StringUtils.isBlank(userIdString) && !idCorrect) {
+          recommendYes = false;
+        }
+        if (!StringUtils.isBlank(netIdString) && !netIdCorrect) {
+          recommendYes = false;
+        }
+
+        //if we have last four and its not right
+        if (lastFourCorrect != null && !lastFourCorrect) {
+          recommendYes = false;
+        }
+        if (birthdayCorrect != null && !birthdayCorrect) {
+          recommendYes = false;
+        }
+
+        if (recommendYes) {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteRecommendYes") + "<br />\n");
+        } else {
+          message.append(TextContainer.retrieveFromRequest().getText().get("adminConfirmRemoteRecommendNo") + "<br />\n");
+        }
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_CONFIRM_USER, ipAddress, 
+            userAgent, twoFactorUserConfirmed[0].getUuid(), 
+            twoFactorUserUsingApp[0].getUuid(), StringUtils.replace(message.toString(), "<br />", ", "), null);
+        
+        twoFactorRequestContainer.setError(message.toString());
+                
+        return ConfirmUserRemoteView.adminManageUser;
+      }
+    });
+
+    return confirmUserRemoteView;
+
   }
 
 
@@ -2654,6 +3029,96 @@ public class UiMainAdmin extends UiServiceLogicBase {
      * @param theJsp
      */
     private ManageUserView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum ConfirmUserView {
+    
+    /**
+     */
+    adminManageUser("adminManageUser.jsp"),
+    
+    /**
+     */
+    adminConfirmUserRemote("adminConfirmUserRemote.jsp"),
+
+    /**
+     */
+    adminConfirmUser("adminConfirmUser.jsp"),
+
+    /**
+     */
+    index("index.jsp"),
+    
+    /**
+     */
+    admin("admin.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private ConfirmUserView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+  /**
+   * 
+   */
+  public static enum ConfirmUserRemoteView {
+    
+    /**
+     */
+    adminManageUser("adminManageUser.jsp"),
+    
+    /**
+     */
+    adminConfirmUserRemote("adminConfirmUserRemote.jsp"),
+  
+    /**
+     */
+    index("index.jsp"),
+    
+    /**
+     */
+    admin("admin.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private ConfirmUserRemoteView(String theJsp) {
       this.jsp = theJsp;
     }
     

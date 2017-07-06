@@ -2287,7 +2287,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param birthdayTextfield
    * @return true if ok and false if problem
    */
-  private boolean checkBirthday(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+  public static boolean checkBirthday(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
       final String userAgent, final Source subjectSource, TwoFactorUser twoFactorUser, 
       String submittedBirthMonthString, String submittedBirthDayString, 

@@ -74,7 +74,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "twoFactorPass", "userBrowserUuid",
       "userIpAddress", "username", "duoDontPush", "dontTrustBrowser",
       "asyncAuth",
-      
+
       //for UI
       "birthMonth", "birthDay", "birthYear", "birthdayTextfield", "optInTypeName",
       "twoFactorCode", "twoFactorCode2", "twoFactorCustomCode", "profileForOptin",
@@ -86,7 +86,8 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "checkedAdminAllReallySend", "emailBody", "emailSubject", "imageId", "serialNumbers", "serialNumber",
       "reportUuid", "reportType", "reportNameSystem", "reportNameDisplay", "reportNameSystemSelect",
       "reportPrivilegeUuid", "parentReportUuid", "childReportUuid", "reportRollupUuid", "relay",
-      
+      "checkedIdName", "checkedNameName", "userIdName", "netIdName", "lastFourName", "checkedDeptName",
+
       //for status calls
       "status", "diagnosticType",
 
