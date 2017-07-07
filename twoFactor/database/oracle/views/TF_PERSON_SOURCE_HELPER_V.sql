@@ -1,4 +1,4 @@
-/* Formatted on 7/3/2017 1:45:43 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 7/7/2017 4:30:01 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_HELPER_V
 (
    PENN_ID,
@@ -35,8 +35,8 @@ AS
              ELSE 'F'
           END
              AS active,
-          TO_CHAR (cpv.BIRTH_DATE, 'YYYY-MM-DD') as birth_date,
-          nvl(cpv.usa_ssn4, cpv.srs_ssn4) as last_four
+          TO_CHAR (cpv.BIRTH_DATE, 'YYYY-MM-DD') AS birth_date,
+          NVL (cpv.usa_ssn4, nvl(cpv.srs_ssn4, substr(cpv.penncomm_entry_ssn, 5, 4))) AS last_four
      /* (select 'T' from authzadm.PROJECT_TF_ACTIVE_USERS_V ptauv where ptauv.penn_id = cpv.penn_id) as active */
      FROM pcdadmin.computed_person_v cpv, tf_source_make_active tsma
     WHERE     kerberos_principal IS NOT NULL
