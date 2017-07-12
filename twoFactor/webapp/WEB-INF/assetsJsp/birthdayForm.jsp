@@ -1,5 +1,5 @@
 <%@ include file="../assetsJsp/commonTaglib.jsp"%>
-              <span id="birthdaySelectsId" style="display: none"><%-- TODO remove --%>
+              <span id="birthdaySelectsId"><%-- TODO remove --%>
               <select name="birthMonth" id="birthMonthId">
                 <option value="">${textContainer.text['optinStep3enterBdayMonth']}</option>
                 <option value="1"
@@ -74,12 +74,12 @@
                 style="font-size: x-small;"
                 >${textContainer.text['optinBirthdayHide']}</a>
               </span>
-              <span id="birthdayTextfieldDivId" style="display: inline;"> <%-- TODO display none, take out hyzer bday value --%>
+              <span id="birthdayTextfieldDivId" style="display: none;"> <%-- TODO display none, take out hyzer bday value --%>
                 <input type="password" style="width: 4em" size="20" name="birthdayTextfield" 
                   value="${twoFactorRequestContainer.twoFactorProfileContainer.defaultBirthdayForTesting}" /> 
                 <span style="color: graytext; font-size: 0.75em;">(yyyy-mm-dd)</span>
                 <a href="#"  
-                  style="font-size: x-small;"
+                  style="font-size: x-small; "
                   onclick="$('#birthdaySelectsId').show(); $('#birthdayTextfieldDivId').hide(); return false;">${textContainer.text['optinBirthdayShow']}</a>
 
               </span>

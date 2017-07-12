@@ -49,7 +49,7 @@
           <br />
           <br />
   
-          <a href="../../twoFactorUi/app/UiMain.optin">${textContainer.text['indexNotOptedInLoginLink']}</a>
+          <a href="../../twoFactorUi/app/UiMain.optinWizard">${textContainer.text['indexNotOptedInLoginLink']}</a>
   
           <br />
           ${textContainer.text['indexNotOptedInSubtext2']}

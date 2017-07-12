@@ -23,4 +23,4 @@
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactor.css?v=1.0.14" />
 <link type="text/css" rel="stylesheet" href="../../assets/twoFactorPrint.css?v=1.0.14" media="print" />
 
-<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Gentium+Basic:italic,regular|Open+Sans:300,600&amp;subset=latin" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Gentium+Basic:italic,regular|Open+Sans:300,600&amp;subset=latin" />
