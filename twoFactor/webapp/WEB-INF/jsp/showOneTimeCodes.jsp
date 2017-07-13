@@ -45,6 +45,12 @@
   <br />
   <br />
   <button class="tfBlueButton tfPrinterFriendlyNot" onclick="window.print(); return false;">${textContainer.text['buttonPrint']}</button>
+  <c:if test="${twoFactorRequestContainer.twoFactorOptinContainer.optinWizardInProgress}">
+    &nbsp;
+    <form action="../../twoFactorUi/app/UiMain.optinWizardDone" method="post" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonNextStep']}" class="tfBlueButton" type="submit" />
+    </form>
+  </c:if>
   <br />
   <br />
   <div class="tfPrinterFriendlyNot">

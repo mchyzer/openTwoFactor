@@ -5354,6 +5354,42 @@ public class UiMain extends UiServiceLogicBase {
 
 
   /**
+   * 
+   */
+  public static enum OptinWizardDoneView {
+    
+    /**
+     */
+    index("twoFactorIndex.jsp"),
+  
+    /**
+     */
+    optinWizardDone("optinWizardDone.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private OptinWizardDoneView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
    * optin to two factor
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer 
@@ -5611,6 +5647,8 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSuccessMessage"));
 
             emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
+            
+            twoFactorRequestContainer.getTwoFactorOptinContainer().setOptinWizardInProgress(true);
             
             return OptinWizardSubmitAppTestView.optinPrintCodes;
           }
@@ -6683,6 +6721,8 @@ public class UiMain extends UiServiceLogicBase {
 
         emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
         
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setOptinWizardInProgress(true);
+
         return OptinWizardSubmitPhoneCodeView.optinPrintCodes;
       }
     });
@@ -6883,6 +6923,8 @@ public class UiMain extends UiServiceLogicBase {
   
         emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
         
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setOptinWizardInProgress(true);
+
         return OptinWizardSubmitFobSerialView.optinPrintCodes;
       }
     });
@@ -7205,6 +7247,8 @@ public class UiMain extends UiServiceLogicBase {
   
         emailUserAfterOptin(twoFactorRequestContainer, loggedInUser, subjectSource);
         
+        twoFactorRequestContainer.getTwoFactorOptinContainer().setOptinWizardInProgress(true);
+
         return OptinWizardSubmitTotpAppCodeView.optinPrintCodes;
       }
     });
@@ -7526,6 +7570,56 @@ public class UiMain extends UiServiceLogicBase {
     });
   
     return result;
+  }
+
+
+  /**
+   * optin to the service
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardDone(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    OptinWizardDoneView optinWizardDoneView = optinWizardDoneLogic(TwoFactorDaoFactory.getFactory(), 
+        twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+    
+    showJsp(optinWizardDoneView.getJsp());
+    
+  }
+
+
+  /**
+   * optin wizard to two factor
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource 
+   * @return the view
+   */
+  public OptinWizardDoneView optinWizardDoneLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (twoFactorUser.isOptedIn()) {
+      return OptinWizardDoneView.optinWizardDone;
+    }
+    return OptinWizardDoneView.index;
+    
   }
 
 

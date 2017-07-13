@@ -25,7 +25,28 @@ public class TwoFactorOptinContainer {
    */
   private int birthYearSubmitted = -1;
 
+  /**
+   * if the optin wizard is in progress
+   */
+  private boolean optinWizardInProgress = false;
   
+  /**
+   * if the optin wizard is in progress
+   * @return the optinWizardInProgress
+   */
+  public boolean isOptinWizardInProgress() {
+    return this.optinWizardInProgress;
+  }
+  
+  /**
+   * if the optin wizard is in progress
+   * @param optinWizardInProgress1 the optinWizardInProgress to set
+   */
+  public void setOptinWizardInProgress(boolean optinWizardInProgress1) {
+    this.optinWizardInProgress = optinWizardInProgress1;
+  }
+
+
   /**
    * birth day submitted by screen
    * @return the birthDaySubmitted
