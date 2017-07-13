@@ -33,7 +33,7 @@
   ${textContainer.text['codesLabel']}
   <br /><br />
   </div>
-  
+
 </div>
   <span class="tfPrinterFriendlyOnlyInline" style="font-size: 0.5625em">
   ${textContainer.text['codesPrintedInstructions']}
@@ -41,9 +41,10 @@
   <pre class="codes" style="width: 30em" >
     <c:forEach items="${twoFactorRequestContainer.oneTimePassRows}" var="oneTimePassRow">
   ${oneTimePassRow.oneTimePassCol1}   ${oneTimePassRow.oneTimePassCol2}</c:forEach>
-  </pre>  
+  </pre>
   <br />
   <br />
+  <button class="tfBlueButton tfPrinterFriendlyNot" onclick="window.print(); return false;">${textContainer.text['buttonPrint']}</button>
   <br />
   <br />
   <div class="tfPrinterFriendlyNot">
