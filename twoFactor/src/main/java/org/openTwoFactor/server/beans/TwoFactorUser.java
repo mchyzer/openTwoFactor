@@ -1594,6 +1594,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * date the user sent a auto phone code to their phone
+   * @return date user sent a phone code to their phone
+   */
+  public Long getDateAutoPhoneCodeSent() {
+    return attributeValueInteger(TwoFactorUserAttrName.date_auto_phone_code_sent);
+  }
+
+  /**
+   * date the user sent a auto phone code to their phone
+   * @param dateAutoPhoneCodeSent
+   */
+  public void setDateAutoPhoneCodeSent(Long dateAutoPhoneCodeSent) {
+    this.attribute(TwoFactorUserAttrName.date_auto_phone_code_sent, true).setAttributeValueInteger(dateAutoPhoneCodeSent);
+  }
+  
+  /**
    * encrypted 6 digit code sent to users phone
    * @return phone code encrypted
    */

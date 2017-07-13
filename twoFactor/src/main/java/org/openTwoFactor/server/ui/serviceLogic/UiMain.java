@@ -2294,7 +2294,7 @@ public class UiMain extends UiServiceLogicBase {
       String submittedBirthYearString, String birthdayTextfield) {
 
     boolean showBirthdayOnScreen = true;
-    
+
     //check birthday
     if (twoFactorUser.isRequireBirthdayOnOptin()) {
       

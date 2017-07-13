@@ -71,6 +71,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     date_phone_code_sent(TwoFactorUserAttrType.integer),
     
     /**
+     * when the auto phone code was sent
+     */
+    date_auto_phone_code_sent(TwoFactorUserAttrType.integer),
+    
+    /**
      * date in millis since 1970 that the user invited colleagues to opt him out
      */
     date_invited_colleagues(TwoFactorUserAttrType.integer),

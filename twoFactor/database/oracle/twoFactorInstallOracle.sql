@@ -568,6 +568,8 @@ CREATE OR REPLACE FORCE VIEW TWO_FACTOR_USER_V
    PHONE_CODE_ENCRYPTED,
    DATE_PHONE_CODE_SENT,
    DATE_PHONE_CODE_SENT_DATE,
+   DATE_AUTO_PHONE_CODE_SENT,
+   DATE_AUTO_PHONE_CODE_SENT_DATE,
    DUO_USER_ID,
    DUO_PUSH_TRANSACTION_ID,
    DUO_PUSH_PHONE_ID,
@@ -775,6 +777,23 @@ AS
             WHERE     TFUA.USER_UUID = TFU.UUID
                   AND TFUA.ATTRIBUTE_NAME = 'date_phone_code_sent')
              AS date_phone_code_sent_date,
+          (SELECT TFUA.ATTRIBUTE_VALUE_INTEGER
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'date_auto_phone_code_sent')
+             AS date_auto_phone_code_sent,
+          (SELECT CASE
+                     WHEN TFUA.ATTRIBUTE_VALUE_INTEGER = 0
+                     THEN
+                        NULL
+                     ELSE
+                          DATE '1970-01-01'
+                        + TFUA.ATTRIBUTE_VALUE_INTEGER / 1000 / 60 / 60 / 24
+                  END
+             FROM two_factor_user_attr tfua
+            WHERE     TFUA.USER_UUID = TFU.UUID
+                  AND TFUA.ATTRIBUTE_NAME = 'date_auto_phone_code_sent')
+             AS date_auto_phone_code_sent_date,
           (SELECT TFUA.ATTRIBUTE_VALUE_STRING
              FROM two_factor_user_attr tfua
             WHERE     TFUA.USER_UUID = TFU.UUID
