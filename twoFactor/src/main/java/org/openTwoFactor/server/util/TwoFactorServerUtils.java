@@ -12582,6 +12582,10 @@ public class TwoFactorServerUtils {
    */
   public static String histogramIncrementForDate(Date today, String previousHistogramJson) {
     
+    if (today == null) {
+      today = new Date();
+    }
+    
     JSONObject jsonObject = isBlank(previousHistogramJson) ? new JSONObject() : JSONObject.fromObject( previousHistogramJson);
     
     String key = histogramKey(today);
