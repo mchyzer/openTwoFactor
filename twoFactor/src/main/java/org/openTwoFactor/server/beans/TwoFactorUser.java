@@ -1894,9 +1894,9 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     
     Long dateInvitedColleagues = this.getDateInvitedColleagues();
 
-    int daysInvitesLast = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.daysInviteColleaguesLast", 7);
+    int hoursInvitesLast = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.hoursInviteColleaguesLast", 2);
 
-    if (dateInvitedColleagues != null && (System.currentTimeMillis() - dateInvitedColleagues) / (24D * 60 * 60 * 1000) < daysInvitesLast ) {
+    if (dateInvitedColleagues != null && (System.currentTimeMillis() - dateInvitedColleagues) / (60 * 60 * 1000) < hoursInvitesLast ) {
 
       return true;
     }
