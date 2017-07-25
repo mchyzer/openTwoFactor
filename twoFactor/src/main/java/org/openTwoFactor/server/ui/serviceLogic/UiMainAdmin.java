@@ -2878,6 +2878,9 @@ public class UiMainAdmin extends UiServiceLogicBase {
             userAgent, twoFactorUserConfirmed[0].getUuid(), 
             twoFactorUserUsingApp[0].getUuid(), StringUtils.replace(message.toString(), "<br />", ", "), null);
         
+        if (!StringUtils.isBlank(twoFactorRequestContainer.getError())) {
+          message.insert(0, twoFactorRequestContainer.getError() + "<br />\n");
+        }
         twoFactorRequestContainer.setError(message.toString());
                 
         return ConfirmUserRemoteView.adminManageUser;

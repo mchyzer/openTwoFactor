@@ -2037,7 +2037,6 @@ public class UiMain extends UiServiceLogicBase {
             userAgent, subjectSource, twoFactorUser, 
             SUBMITTED_BIRTHDAY_MONTH, SUBMITTED_BIRTHDAY_DAY, 
             SUBMITTED_BIRTHDAY_YEAR, birthdayTextfield)) {
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinTestSubmitView.optin;
         }
         
@@ -2430,9 +2429,10 @@ public class UiMain extends UiServiceLogicBase {
             }
             
           }
-          
-        }            
-        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayInvalid"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayPassedThreshold"));
+        } else {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorBirthDayInvalid"));
+        }
         return false;
       }
     }
@@ -5445,7 +5445,6 @@ public class UiMain extends UiServiceLogicBase {
             userAgent, subjectSource, twoFactorUser, 
             birthMonthString, birthDayString, 
             birthYearString, birthdayTextfield)) {
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
           return OptinWizardSubmitBirthdayView.optinWelcome;
         }
         
