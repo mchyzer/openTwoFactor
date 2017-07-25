@@ -5636,9 +5636,9 @@ public class UiMain extends UiServiceLogicBase {
                 userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
           }
           twoFactorUser.setDuoPushByDefault(true);
+          twoFactorUser.setPhoneOptIn(false);
           twoFactorUser.setDuoPushTransactionId(null);
           twoFactorUser.store(twoFactorDaoFactory);
-
 
           if (!wasOptedIn) {
             setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
@@ -6695,6 +6695,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setOptInOnlyIfRequired(null);
         twoFactorUser.setPhoneCodeEncrypted(null);
         twoFactorUser.setDatePhoneCodeSent(null);
+        twoFactorUser.setDuoPushByDefault(false);
         
         //move from temp to real code
         twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());

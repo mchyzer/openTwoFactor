@@ -991,10 +991,14 @@ public class TfRestLogic {
         //lets see if we are over the limit
         String autoVoiceTextHistogram = twoFactorUser.getPhoneAutoCalltextsInMonth();
         
+        //if an auto call or text or push was sent so we dont do both
+        boolean sentAnAutoThingAlready = false;
+        
         //maybe autocall
         if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
             && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true)) {
-          if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn()
+          if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn() 
+              && (twoFactorUser.getDuoPushByDefault() == null || !twoFactorUser.getDuoPushByDefault())
               && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
             if (!StringUtils.isBlank(twoFactorUser.getPhoneAutoCalltext() )) {
 
@@ -1057,40 +1061,42 @@ public class TfRestLogic {
 
                     } else {
 
-                      TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "autosend " + phoneType + " to index " + phoneIndex, null);
-                      trafficLogMap.put("autosendToIndex_" + phoneType, phoneIndex);
-        
-                      //reset when last was sent
-                      twoFactorUser.setDateAutoPhoneCodeSent(System.currentTimeMillis());
-                      
-                      twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
-                      if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
-                        twoFactorUser.store(twoFactorDaoFactory);
-                      }
-
-                      //run this in a thread so it doesnt slow things down
-                      Thread thread = new Thread(new Runnable() {
-        
-                        public void run() {
-                          
-                          try {
-                            TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
-                            
-                            twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
-                            
-                            new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
-                                TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
-                                tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false, false, null);
-                            
-                          } catch (RuntimeException re) {
-                            LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
-                            throw re;
-                          }
-                        }
+                      if (!sentAnAutoThingAlready) {
+                        sentAnAutoThingAlready = true;
+                        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "autosend " + phoneType + " to index " + phoneIndex, null);
+                        trafficLogMap.put("autosendToIndex_" + phoneType, phoneIndex);
+          
+                        //reset when last was sent
+                        twoFactorUser.setDateAutoPhoneCodeSent(System.currentTimeMillis());
                         
-                      });
-                      
-                      thread.start();
+                        twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
+                        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
+                          twoFactorUser.store(twoFactorDaoFactory);
+                        }
+                        //run this in a thread so it doesnt slow things down
+                        Thread thread = new Thread(new Runnable() {
+          
+                          public void run() {
+                            
+                            try {
+                              TwoFactorRequestContainer twoFactorRequestContainer = new TwoFactorRequestContainer();
+                              
+                              twoFactorRequestContainer.setTwoFactorUserLoggedIn(TWO_FACTOR_USER);
+                              
+                              new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+                                  TWO_FACTOR_USER.getLoginid(), tfCheckPasswordRequest.getUserIpAddress(), 
+                                  tfCheckPasswordRequest.getBrowserUserAgent(), PHONE_INDEX, PHONE_TYPE, false, false, null);
+                              
+                            } catch (RuntimeException re) {
+                              LOG.error("Cant send phone code from WS for " + TWO_FACTOR_USER.getLoginid() + ", " + PHONE_INDEX + ", " + PHONE_TYPE);
+                              throw re;
+                            }
+                          }
+                          
+                        });
+                        
+                        thread.start();
+                      }
                     }
                   }
                 }
@@ -1348,72 +1354,75 @@ public class TfRestLogic {
               needsPush = false;
             }
             
-            if (needsPush) {
-              String message = TextContainer.retrieveFromRequest().getText().get("duoPushWebPrompt");
-              
-              String txId = null;
-              
-              try {
-                Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuo" + pushPhoneLogLabel + "TimeoutSeconds", 3);
-                if (timeoutSeconds == -1) {
-                  timeoutSeconds = null;
-                }
-
-                if (autoDuoCall) {
-                  
-                  twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
-                  twoFactorUser.store(twoFactorDaoFactory);
-
-                  txId = DuoCommands.duoInitiatePhoneCallByPhoneId(
-                      twoFactorUser.getDuoUserId(), twoFactorUser.getPhoneAutoDuoPhoneId(), timeoutSeconds);
-
-                } else {
+            if (!sentAnAutoThingAlready) {
+              sentAnAutoThingAlready = true;
+              if (needsPush) {
+                String message = TextContainer.retrieveFromRequest().getText().get("duoPushWebPrompt");
                 
-                  txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
-                      twoFactorUser.getDuoPushPhoneId(), message, timeoutSeconds);
-                }
-              } catch (RuntimeException re) {
-                //if its a timeout, then no tx id, else rethrow
-                if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
-                  txId = null;
-                } else {
-                  throw re;
-                }
-              }
-
-              if (!StringUtils.isBlank(txId)) {
-
-                //20150622 MCH had trouble with no browserId giving problems
-                if (StringUtils.isBlank(browserId)) {
-                  
-                  twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
-                      tfCheckPasswordResponse, debug, twoFactorUser,
-                      cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
-                      requestIsTrusted, false);
-                  performedTrustedBrowserLogic = true;
-                  if (twoFactorBrowser != null) {
-
-                    browserId = tfCheckPasswordResponse.getChangeUserBrowserUuid();
-                    if (StringUtils.isBlank(browserId)) {
-                      throw new RuntimeException("Why is browserId null????");
-                    }
-                    
-                  } else {
-                    //shouldnt happen
-                    throw new RuntimeException("why is two factor browser null????");
+                String txId = null;
+                
+                try {
+                  Integer timeoutSeconds = TwoFactorServerConfig.retrieveConfig().propertyValueInt("tfWsDuo" + pushPhoneLogLabel + "TimeoutSeconds", 3);
+                  if (timeoutSeconds == -1) {
+                    timeoutSeconds = null;
                   }
-
+  
+                  if (autoDuoCall) {
+                    
+                    twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
+                    twoFactorUser.store(twoFactorDaoFactory);
+  
+                    txId = DuoCommands.duoInitiatePhoneCallByPhoneId(
+                        twoFactorUser.getDuoUserId(), twoFactorUser.getPhoneAutoDuoPhoneId(), timeoutSeconds);
+  
+                  } else {
+                  
+                    txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(),
+                        twoFactorUser.getDuoPushPhoneId(), message, timeoutSeconds);
+                  }
+                } catch (RuntimeException re) {
+                  //if its a timeout, then no tx id, else rethrow
+                  if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+                    txId = null;
+                  } else {
+                    throw re;
+                  }
                 }
-                
-                trafficLogMap.put("duo" + pushPhoneLogLabel, true);
-                TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " initiated", null);
-                String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserId) + "__" + txId;
-                twoFactorUser.setDuoPushTransactionId(duoTxId);
-                if (HibernateSession.isReadonlyMode()) {
-                  //note this field is already hashed
-                  readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoTxId);
+  
+                if (!StringUtils.isBlank(txId)) {
+  
+                  //20150622 MCH had trouble with no browserId giving problems
+                  if (StringUtils.isBlank(browserId)) {
+                    
+                    twoFactorBrowser = trustBrowserLogic(twoFactorDaoFactory, tfCheckPasswordRequest,
+                        tfCheckPasswordResponse, debug, twoFactorUser,
+                        cookieUserUuid, needsNewCookieUuid, twoFactorBrowser,
+                        requestIsTrusted, false);
+                    performedTrustedBrowserLogic = true;
+                    if (twoFactorBrowser != null) {
+  
+                      browserId = tfCheckPasswordResponse.getChangeUserBrowserUuid();
+                      if (StringUtils.isBlank(browserId)) {
+                        throw new RuntimeException("Why is browserId null????");
+                      }
+                      
+                    } else {
+                      //shouldnt happen
+                      throw new RuntimeException("why is two factor browser null????");
+                    }
+  
+                  }
+                  
+                  trafficLogMap.put("duo" + pushPhoneLogLabel, true);
+                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "duo " + pushPhoneLogLabel + " initiated", null);
+                  String duoTxId = System.currentTimeMillis() + "__" + TwoFactorBrowser.encryptBrowserUserUuid(browserId) + "__" + txId;
+                  twoFactorUser.setDuoPushTransactionId(duoTxId);
+                  if (HibernateSession.isReadonlyMode()) {
+                    //note this field is already hashed
+                    readonlyBrowserIdToDuoTxIdTemp.put(twoFactorBrowser.getBrowserTrustedUuid(), duoTxId);
+                  }
+                  storeUser = true;
                 }
-                storeUser = true;
               }
             }
           } catch (Exception e) {
