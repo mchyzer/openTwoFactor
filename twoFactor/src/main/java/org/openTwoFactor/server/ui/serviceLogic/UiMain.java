@@ -50,6 +50,7 @@ import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
+import org.openTwoFactor.server.exceptions.TfInvalidSecret;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
@@ -3873,7 +3874,20 @@ public class UiMain extends UiServiceLogicBase {
 
     }
 
-    return twoFactorCustomCode.toUpperCase();
+    twoFactorCustomCode = twoFactorCustomCode.toUpperCase();
+    
+    //make sure this is a valid secret.  if this doesnt run, its not valid
+    try {
+      TwoFactorOath.twoFactorCheckPassword(
+          twoFactorCustomCode, "000000", null, null, null, 0L, null);
+    } catch (Exception e) {
+      error[0] = TextContainer.retrieveFromRequest().getText().get("optinErrorCustomSecretInvalid");
+      return null;
+    }
+
+    
+    return twoFactorCustomCode;
+    
   }
   
   /**
@@ -3948,7 +3962,9 @@ public class UiMain extends UiServiceLogicBase {
           return OptinView.profile;    
         }
 
-        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+          return OptinView.index;
+        }
         
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR_STEP1, ipAddress, userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -4328,7 +4344,10 @@ public class UiMain extends UiServiceLogicBase {
         if (!twoFactorUser.isOptedIn()) {
           String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
   
-          initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+          if (!initNewOathCode(twoFactorRequestContainer, 
+              twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+            return OptinWizardSetupAppDoneView.index;
+          }
   
           //move from temp to real code
           twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorUser.getTwoFactorSecretTempUnencrypted());
@@ -6010,13 +6029,21 @@ public class UiMain extends UiServiceLogicBase {
         } else if (StringUtils.equals(optinTotpTypeName, "generated")) {
 
           // if there is already a secret (e.g. from fob), then keep it
+          if (!StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
+            String[] error = new String[1];
+            validateCustomCode(twoFactorUser.getTwoFactorSecretUnencrypted(), error);
+            if (!StringUtils.isBlank(error[0])) {
+              twoFactorUser.setTwoFactorSecret(null);
+            }
+          }
           if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
             String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
-            initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+              return OptinWizardTotpAppInstallView.index;
+            }
           } else {
             twoFactorUser.setTwoFactorSecretTempUnencrypted(twoFactorUser.getTwoFactorSecretUnencrypted());
           }
-          
 
         } else if (StringUtils.equals(optinTotpTypeName, "uploadedSubmit")) {
           //submitted code from user
@@ -6028,10 +6055,12 @@ public class UiMain extends UiServiceLogicBase {
 
             if (!StringUtils.isBlank(error[0])) {
               twoFactorRequestContainer.setError(error[0]);
-              return OptinView.index;
+              return OptinWizardTotpAppInstallView.index;
             }
             twoFactorUser.setTwoFactorSecret(null);
-            initNewOathCode(twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser);
+            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser)) {
+              return OptinWizardTotpAppInstallView.index;
+            }
 
           } else {
             
@@ -6360,7 +6389,7 @@ public class UiMain extends UiServiceLogicBase {
     String colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2Name");
     String colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3Name");
     String colleagueLogin4 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin4Name");
-
+    
     OptinWizardSubmitFriendsView optinWizardSubmitFriendsView = optinWizardSubmitFriendsLogic(
         TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
@@ -6591,10 +6620,23 @@ public class UiMain extends UiServiceLogicBase {
    * @param twoFactorDaoFactory
    * @param twoFactorCode
    * @param twoFactorUser
+   * @return false if invalid
    */
-  private void initNewOathCode(final TwoFactorDaoFactory twoFactorDaoFactory,
+  private boolean initNewOathCode(TwoFactorRequestContainer twoFactorRequestContainer, 
+      final TwoFactorDaoFactory twoFactorDaoFactory,
       final String twoFactorCode, TwoFactorUser twoFactorUser) {
+    
     String pass = twoFactorCode.toUpperCase();
+    
+    String[] error = new String[1];
+
+    validateCustomCode(pass, error);
+    
+    if (!StringUtils.isBlank(error[0])) {
+      twoFactorRequestContainer.setError(error[0]);
+      return false;
+    }
+
     twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
     twoFactorUser.setOptedIn(false);
     twoFactorUser.setDatePhoneCodeSent(null);
@@ -6612,6 +6654,8 @@ public class UiMain extends UiServiceLogicBase {
       twoFactorBrowser.setWhenTrusted(0);
       twoFactorBrowser.store(twoFactorDaoFactory);
     }
+    
+    return true;
   }
 
 
@@ -6694,7 +6738,9 @@ public class UiMain extends UiServiceLogicBase {
 
         String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
 
-        initNewOathCode(twoFactorDaoFactory, twoFactorCode, twoFactorUser);
+        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+          return OptinWizardSubmitPhoneCodeView.optinWelcome;
+        }
 
         twoFactorUser.setOptedIn(true);
         twoFactorUser.setPhoneOptIn(true);

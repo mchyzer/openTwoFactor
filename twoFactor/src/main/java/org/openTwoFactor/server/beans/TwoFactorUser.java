@@ -28,7 +28,9 @@ import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrName;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrType;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.encryption.EncryptionKey;
+import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
+import org.openTwoFactor.server.exceptions.TfInvalidSecret;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
@@ -1002,8 +1004,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
    * @param twoFactorSecretTempUnencrypted
    */
   public void setTwoFactorSecretTempUnencrypted(String twoFactorSecretTempUnencrypted) {
-    
-    
+        
     this.setTwoFactorSecretTemp(EncryptionKey.encrypt(twoFactorSecretTempUnencrypted));
     
   }
