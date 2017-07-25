@@ -33,7 +33,8 @@
     <img src="${twoFactorRequestContainer.twoFactorDuoPushContainer.barcodeUrl}" 
       alt="${textContainer.textEscapeDouble['optinAppIntegrateQrAlt']}"/>
     <br /><br />
-    
+    ${textContainer.text['duoPushEnrollUrl']}<br />
+    <br />
     ${textContainer.text['optinAppIntegrateTextBottom']}
     <br /><br />
     <input type="hidden" name="birthdayTextfield" 

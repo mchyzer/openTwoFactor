@@ -69,7 +69,26 @@ public class TwoFactorDuoPushContainer {
   public String getBarcodeUrl() {
     return this.barcodeUrl;
   }
+
+  /**
+   * duo qr code url text
+   */
+  private String duoQrUrlText;
   
+  /**
+   * @return the duoQrUrl
+   */
+  public String getDuoQrUrlText() {
+    return this.duoQrUrlText;
+  }
+  
+  /**
+   * @param duoQrUrlText1 the duoQrUrl to set
+   */
+  public void setDuoQrUrlText(String duoQrUrlText1) {
+    this.duoQrUrlText = duoQrUrlText1;
+  }
+
   /**
    * barcode url for enrolling in push
    * @param barcodeUrl1 the barcodeUrl to set

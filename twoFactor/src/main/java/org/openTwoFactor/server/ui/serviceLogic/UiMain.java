@@ -768,6 +768,13 @@ public class UiMain extends UiServiceLogicBase {
     
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().setBarcodeUrl(barcode);
 
+    //barcode is e.g. https://api-84f782e2.duosecurity.com/frame/qr?value=duo%3A%2F%2F6nlhjDGKLCXz05eW0PSh-YXBpLTg0Zjc4MmUyLmR1b3NlY3VyaXR5LmNvbQ
+    //get the url from that
+    String duoUrlText = TwoFactorServerUtils.prefixOrSuffix(barcode, "?value=", false);
+    //url decode
+    duoUrlText = TwoFactorServerUtils.escapeUrlDecode(duoUrlText);
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().setDuoQrUrlText(duoUrlText);
+    
     TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
         TwoFactorAuditAction.DUO_ENABLE_PUSH, ipAddress, 
         userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
