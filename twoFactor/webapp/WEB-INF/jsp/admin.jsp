@@ -20,7 +20,7 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <h3>${textContainer.text['adminSubheader']}</h3>
+  <h2>${textContainer.text['adminSubheader']}</h2>
   <br />
   <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
