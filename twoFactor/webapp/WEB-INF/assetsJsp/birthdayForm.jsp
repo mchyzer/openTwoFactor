@@ -77,7 +77,7 @@
               <span id="birthdayTextfieldDivId" style="display: none;"> <%-- TODO display none, take out hyzer bday value --%>
                 <input type="password" style="width: 4em" size="20" name="birthdayTextfield" 
                   value="${twoFactorRequestContainer.twoFactorProfileContainer.defaultBirthdayForTesting}" /> 
-                <span style="color: graytext; font-size: 0.75em;">(yyyy-mm-dd)</span>
+                <span style="color: graytext; font-size: 0.75em;">${textContainer.text['lastFourMask']}</span>
                 <a href="#"  
                   style="font-size: x-small; "
                   onclick="$('#birthdaySelectsId').show(); $('#birthdayTextfieldDivId').hide(); return false;">${textContainer.text['optinBirthdayShow']}</a>

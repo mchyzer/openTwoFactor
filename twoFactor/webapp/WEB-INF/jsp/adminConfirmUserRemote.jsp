@@ -31,7 +31,7 @@
     <br /><br />
     ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.description) }
     <br /><br />
-    <div class="formBox profileFormBox">
+    <div class="formBox profileFormBox profileFormBoxWide">
       <div class="formRow">
         <input type="checkbox" id="checkedNameId" name="checkedNameName" value="true" />
         &nbsp;
