@@ -47,8 +47,8 @@
               <c:if test="${colleagueIdentifiedUser.invitedColleaguesWithinAllottedTime}">
                   
                 <form action="UiMain.generateCodeForColleague" method="post" style="display: inline">
-                  <spap style="white-space: nowrap"><input type="checkbox" name="checkedApproval" value="true" /> &nbsp; ${textContainer.text['helpFriendCheckboxPrefix']}${fn:escapeXml(colleagueIdentifiedUser.name)}${textContainer.text['helpFriendCheckboxSuffix']}</spap>
-                  <br /><input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" 
+                  <spap style="white-space: nowrap"><input type="checkbox" name="checkedApproval" value="true" /> &nbsp; ${textContainer.text['helpFriendCheckboxPrefix']}${fn:escapeXml(colleagueIdentifiedUser.name)}${textContainer.text['helpFriendCheckboxSuffix']}</span>
+                  <br /><br /><input value="${textContainer.textEscapeDouble['helpFriendOptOutButtonPrefix'] } ${fn:escapeXml(colleagueIdentifiedUser.name) }" 
                     class="tfBlueButton" style="margin-top: 0.3em"
                      type="submit"
                     onclick="return confirm('${textContainer.textEscapeSingleDouble['helpFriendGenerateCodeConfirmPrefix']} ${twoFactor:escapeSingleQuotesAndXml(colleagueIdentifiedUser.name)} ${textContainer.textEscapeSingleDouble['helpFriendGenerateCodeConfirmSuffix']}');" />
