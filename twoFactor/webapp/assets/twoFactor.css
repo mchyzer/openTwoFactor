@@ -54,6 +54,7 @@ a:hover {
   cursor: pointer;
   background: #011D5C;
   color: #fff;
+  margin-bottom: 1em;
 }
 
 .tfBlueButton:hover {
