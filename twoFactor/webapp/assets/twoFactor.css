@@ -349,9 +349,9 @@ body {
 
 div.error {
   font-weight: bold;
-  font-size:0.6875em;
+  font-size:1em;
   color: #990000;
-  border: 0.125em solid #cc6666;
+/*  border: 0.125em solid #cc6666;*/
   padding-top: 0.3125em;
   padding-left: 0.3125em;
   padding-right: 0.3125em;
