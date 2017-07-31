@@ -41,16 +41,4 @@ public class TfInvalidSecret extends RuntimeException {
 
   }
 
-  /**
-   * @param message
-   * @param cause
-   * @param enableSuppression
-   * @param writableStackTrace
-   */
-  public TfInvalidSecret(String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-
-  }
-
 }

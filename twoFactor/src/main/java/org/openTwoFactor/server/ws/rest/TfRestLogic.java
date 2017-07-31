@@ -827,7 +827,7 @@ public class TfRestLogic {
           }
         }
         
-        if (phoneIndex != -1) {
+        if (phoneIndex != -1 && !TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)) {
           
           final TwoFactorUser TWO_FACTOR_USER = twoFactorUser;
           final int PHONE_INDEX = phoneIndex;
@@ -995,7 +995,8 @@ public class TfRestLogic {
         boolean sentAnAutoThingAlready = false;
         
         //maybe autocall
-        if (StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
+        if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getDuoDontPush(), false)
+            && StringUtils.isBlank(tfCheckPasswordRequest.getTwoFactorPass())
             && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.enableAutoCallText", true)) {
           if (twoFactorUser.getPhoneOptIn() != null && twoFactorUser.getPhoneOptIn() 
               && (twoFactorUser.getDuoPushByDefault() == null || !twoFactorUser.getDuoPushByDefault())
@@ -1007,13 +1008,13 @@ public class TfRestLogic {
               autoVoiceTextHistogram = TwoFactorServerUtils.histogramIncrementForDate(null, autoVoiceTextHistogram);
 
               //if we havent done too many
-              if (numberToday < TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxAutoCallsTextsPerDayPerUser", 5)) {
+              if (numberToday < TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.maxAutoCallsTextsPerDayPerUser", 15)) {
 
                 //if we have had one in the last 10 seconds...
                 Long datePhoneCodeSent = twoFactorUser.getDateAutoPhoneCodeSent();
                 if (datePhoneCodeSent == null 
                     || datePhoneCodeSent < System.currentTimeMillis() 
-                      - (1000*TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoSactorServer.ws.autoPhoneTextDontRepeatInSeconds", 10))) {
+                      - (1000*TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoSactorServer.ws.autoPhoneTextDontRepeatInSeconds", 60))) {
                   
                   int phoneIndex = -1;
                   String phoneType = null;
