@@ -548,45 +548,48 @@ public class TwoFactorIpAddress extends TwoFactorHibernateBeanBase {
             debugMap.put("command", command);
           }
           
-          String result = TwoFactorServerUtils.executeProgram(new String[]{command, ipAddress});
-
-          //Windows is:
-          //Server:  safedns1-svc.security.isc.UPENN.EDU
-          //Address:  128.91.19.240
-          //
-          //Name:    pool-96-245-109-183.phlapa.fios.verizon.net
-          //Address:  96.245.109.183
-
-          //Non-windows is:
-          //Server:         172.20.5.53
-          //Address:        172.20.5.53#53
-          //
-          //Non-authoritative answer:
-          //213.224.91.128.in-addr.arpa     name = flash.isc-seo.upenn.edu.
-          //
-          //Authoritative answers can be found from:
-
-          
-          Matcher matcher = Pattern.compile(regex, Pattern.DOTALL).matcher(result);
-          
-          boolean regexMatches = matcher.matches();
-          
-          if (debugMap != null) {
-            debugMap.put("regexMatches", regexMatches);
-          }
-          
-          if (regexMatches) {
-            String matcherGroup1 = matcher.group(1);
+          try {
+            String result = TwoFactorServerUtils.executeProgram(new String[]{command, ipAddress});
+  
+            //Windows is:
+            //Server:  safedns1-svc.security.isc.UPENN.EDU
+            //Address:  128.91.19.240
+            //
+            //Name:    pool-96-245-109-183.phlapa.fios.verizon.net
+            //Address:  96.245.109.183
+  
+            //Non-windows is:
+            //Server:         172.20.5.53
+            //Address:        172.20.5.53#53
+            //
+            //Non-authoritative answer:
+            //213.224.91.128.in-addr.arpa     name = flash.isc-seo.upenn.edu.
+            //
+            //Authoritative answers can be found from:
+  
+            
+            Matcher matcher = Pattern.compile(regex, Pattern.DOTALL).matcher(result);
+            
+            boolean regexMatches = matcher.matches();
+            
             if (debugMap != null) {
-              debugMap.put("matcherGroup1", matcherGroup1);
+              debugMap.put("regexMatches", regexMatches);
             }
-
-            return matcherGroup1;
+            
+            if (regexMatches) {
+              String matcherGroup1 = matcher.group(1);
+              if (debugMap != null) {
+                debugMap.put("matcherGroup1", matcherGroup1);
+              }
+  
+              return matcherGroup1;
+            }
+            
+            LOG.info("Why does regex not match? ipAddress: " + ipAddress 
+                + ", regex: '" + regex + "' result: " + result);
+          } catch (RuntimeException re) {
+            LOG.info("Error running nslookup on '" + ipAddress + "'", re);
           }
-          
-          LOG.info("Why does regex not match? ipAddress: " + ipAddress 
-              + ", regex: '" + regex + "' result: " + result);
-          
           break;
         }
       }

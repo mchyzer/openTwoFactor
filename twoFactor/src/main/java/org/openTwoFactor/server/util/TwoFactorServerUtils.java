@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12509,6 +12510,271 @@ public class TwoFactorServerUtils {
     }
   }
 
+  /**
+   * <pre>This will execute a command (with args). Under normal operation, 
+   * if the exit code of the command is not zero, an exception will be thrown.
+   * If the parameter exceptionOnExitValueNeZero is set to true, the 
+   * results of the call will be returned regardless of the exit status.
+   * Example call: execCommand(new String[]{"/bin/bash", "-c", "cd /someFolder; runSomeScript.sh"}, true);
+   * </pre>
+   * @param arguments are the commands
+   * @param exceptionOnExitValueNeZero if this is set to false, the 
+   * results of the call will be returned regardless of the exit status
+   * @param waitFor if we should wait for this process to end
+   * @param workingDirectory 
+   * @param envVariables are env vars with name=val
+   * @param outputFilePrefix will be the file prefix and Out.log and Err.log will be added to them
+   * @param printOutputErrorAsReceived if should print output error as received
+   * @param logError if error should be logged, otherwise it will only be thrown
+   * @return the output text of the command, and the error and return code if exceptionOnExitValueNeZero is false.
+   */
+  private static CommandResult execCommandHelper(String[] arguments, boolean exceptionOnExitValueNeZero, boolean waitFor, 
+      String[] envVariables, File workingDirectory, String outputFilePrefix, boolean printOutputErrorAsReceived, boolean logError) {
+    
+    if (printOutputErrorAsReceived && !isBlank(outputFilePrefix)) {
+      throw new RuntimeException("Cant print as received and have output file prefix");
+    }
+    
+    Process process = null;
+
+    StringBuilder commandBuilder = new StringBuilder();
+    for (int i = 0; i < arguments.length; i++) {
+      commandBuilder.append(arguments[i]).append(" ");
+    }
+    String command = commandBuilder.toString();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Running command: " + command);
+    }
+    StreamGobbler outputGobbler = null;
+    StreamGobbler errorGobbler = null;
+    try {
+      process = Runtime.getRuntime().exec(arguments, envVariables, workingDirectory);
+
+      if (!waitFor) {
+        return new CommandResult(null, null, -1);
+      }
+      outputGobbler = new StreamGobbler(process.getInputStream(), ".out", command, outputFilePrefix == null ? null : new File(outputFilePrefix + "Out.log"), printOutputErrorAsReceived, true);
+      errorGobbler = new StreamGobbler(process.getErrorStream(), ".err", command, outputFilePrefix == null ? null : new File(outputFilePrefix + "Err.log"), printOutputErrorAsReceived, false);
+
+      Thread outputThread = new Thread(outputGobbler);
+      outputThread.setDaemon(true);
+      outputThread.start();
+
+      Thread errorThread = new Thread(errorGobbler);
+      errorThread.setDaemon(true);
+      errorThread.start();
+
+      try {
+        process.waitFor();
+      } finally {
+        
+        //finish running these threads
+        try {
+          outputThread.join();
+        } catch (Exception e) {
+          
+        }
+        try {
+          errorThread.join();
+        } catch (Exception e) {
+          
+        }
+      }
+    } catch (Exception e) {
+      if (logError) {
+        LOG.error("Error running command: " + command, e);
+      }
+      throw new RuntimeException("Error running command: " + command + ", " + e.getMessage(), e);
+    } finally {
+      try {
+        process.destroy();
+      } catch (Exception e) {
+      }
+    }
+    
+    //was not successful???
+    if (process.exitValue() != 0 && exceptionOnExitValueNeZero) {
+      String message = "Process exit status=" + process.exitValue() + ": out: " + 
+        (outputGobbler == null ? null : outputGobbler.getResultString())
+        + ", err: " + (errorGobbler == null ? null : errorGobbler.getResultString());
+      if (logError) {
+        LOG.error(message + ", on command: " + command + (workingDirectory == null ? "" : (", workingDir: " + workingDirectory.getAbsolutePath())));
+      }
+      throw new RuntimeException(message);
+    }
+
+    int exitValue = process.exitValue();
+    return new CommandResult(errorGobbler.getResultString(), outputGobbler.getResultString(), exitValue);
+  }
+
+  /**
+   * Gobble up a stream from a runtime
+   * @author mchyzer
+   */
+  private static class StreamGobbler implements Runnable {
+    
+    /** stream to read */
+    private InputStream inputStream;
+    
+    /** where to put the result */
+    private String resultString;
+
+    /** type of the output for logging purposes */
+    private String type;
+    
+    /** command to log */
+    private String command;
+    
+    /** if print to stdout */
+    private File printToFile;
+
+    /** if this is out or error */
+    private boolean outOrErr;
+    
+    /**
+     * if should print stdout and stderr as received
+     */
+    private boolean printOutputErrorAsReceived;
+    
+    /**
+     * construct
+     * @param is
+     * @param theType 
+     * @param theCommand
+     * @param thePrintToFile 
+     * @param thePrintOutputErrorAsReceived
+     * @param theOutOrErr
+     */
+    private StreamGobbler(InputStream is, String theType, String theCommand, File thePrintToFile, 
+        boolean thePrintOutputErrorAsReceived, boolean theOutOrErr) {
+      this.inputStream = is;
+      this.type = theType;
+      this.command = theCommand;
+      this.printToFile = thePrintToFile;
+      this.printOutputErrorAsReceived = thePrintOutputErrorAsReceived;
+      this.outOrErr = theOutOrErr;
+    }
+
+    /**
+     * get the string result
+     * @return the result
+     */
+    public String getResultString() {
+      return this.resultString;
+    }
+
+    /**
+     * 
+     * @see java.lang.Runnable#run()
+     */
+    @Override
+    public void run() {
+      
+      
+      FileOutputStream fileOutputStream = null;
+      
+      try {
+        fileOutputStream = this.printToFile == null ? null : new FileOutputStream(this.printToFile);
+      } catch (IOException ioe) {
+        throw new RuntimeException(ioe);
+      }
+      
+      try {
+        
+        if (this.printOutputErrorAsReceived) {
+          if (this.outOrErr) {
+            copy(this.inputStream, System.out);
+          } else {
+            copy(this.inputStream, System.err);
+          }
+        } else if (this.printToFile  != null) {
+          copy(this.inputStream, fileOutputStream);
+          
+        } else {
+          StringWriter stringWriter = new StringWriter();
+          copy(this.inputStream, stringWriter);
+          this.resultString = stringWriter.toString();
+        }
+      } catch (Exception e) {
+
+        LOG.warn("Error saving output of executable: " + (this.resultString)
+            + ", " + this.type + ", " + this.command, e);
+        throw new RuntimeException(e);
+
+      } finally {
+        closeQuietly(fileOutputStream);
+      }
+    }
+  }
+  
+
+  /**
+   * The results of executing a command.
+   */
+  public static class CommandResult{
+    /**
+     * If any error text was generated by the call, it will be set here.
+     */
+    private String errorText;
+    
+    /**
+     * If any output text was generated by the call, it will be set here.
+     */
+    private String outputText;
+    
+    /**
+     * If any exit code was generated by the call, it will be set here.
+     */
+    private int exitCode;
+    
+    
+    /**
+     * Create a container to hold the results of an execution.
+     * @param _errorText
+     * @param _outputText
+     * @param _exitCode
+     */
+    public CommandResult(String _errorText, String _outputText, int _exitCode){
+      this.errorText = _errorText;
+      this.outputText = _outputText;
+      this.exitCode = _exitCode;
+    }
+
+
+    
+    /**
+     * If any error text was generated by the call, it will be set here.
+     * @return the errorText
+     */
+    public String getErrorText() {
+      return this.errorText;
+    }
+
+
+    
+    /**
+     * If any output text was generated by the call, it will be set here.
+     * @return the outputText
+     */
+    public String getOutputText() {
+      return this.outputText;
+    }
+
+
+    
+    /**
+     * If any exit code was generated by the call, it will be set here.
+     * @return the exitCode
+     */
+    public int getExitCode() {
+      return this.exitCode;
+    }
+    
+    
+    
+  }
+
+  
   /**
    * see if we are running on windows
    * @return true if windows
