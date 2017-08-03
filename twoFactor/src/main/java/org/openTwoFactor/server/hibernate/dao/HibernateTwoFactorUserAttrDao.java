@@ -9,9 +9,16 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.openTwoFactor.server.beans.TwoFactorUserAttr;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
+import org.openTwoFactor.server.exceptions.TfDaoException;
+import org.openTwoFactor.server.hibernate.BySql;
+import org.openTwoFactor.server.hibernate.HibernateHandler;
+import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
+import org.openTwoFactor.server.hibernate.TfAuditControl;
 import org.openTwoFactor.server.hibernate.TfQueryOptions;
+import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -86,11 +93,49 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
    * @see org.openTwoFactor.server.dao.TwoFactorUserAttrDao#store(org.openTwoFactor.server.beans.TwoFactorUserAttr)
    */
   @Override
-  public void store(TwoFactorUserAttr twoFactorUserAttr) {
+  public void store(final TwoFactorUserAttr twoFactorUserAttr) {
     if (twoFactorUserAttr == null) {
       throw new NullPointerException("twoFactorUser is null");
     }
-    HibernateSession.byObjectStatic().saveOrUpdate(twoFactorUserAttr);
+    
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
+      
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+
+        HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
+        
+        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfUserAttrUseUpdateStatement", true) 
+            && twoFactorUserAttr.getVersionNumber() != null && twoFactorUserAttr.getVersionNumber() != -1) {
+          if (!HibernateSession.isReadonlyMode()) {
+
+            hibernateSession.misc().flush();
+
+            BySql bySql = hibernateSession.bySql();
+            String sql = "update two_factor_user_attr tfua "
+                + "set attribute_value_string = ?, "
+                + "attribute_value_integer = ?, "
+                + "last_updated = ?, "
+                + "version_number = ? "
+                + "where uuid = ?" ;
+            int rows = bySql.executeSql(sql, 
+                TwoFactorServerUtils.toListObject(twoFactorUserAttr.getAttributeValueString(), 
+                    twoFactorUserAttr.getAttributeValueInteger(),
+                    System.currentTimeMillis(), twoFactorUserAttr.getVersionNumber()+1,
+                    twoFactorUserAttr.getUuid()));
+            if (rows != 1) {
+              throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
+            }
+            
+          }
+        } else {
+        
+          HibernateSession.byObjectStatic().saveOrUpdate(twoFactorUserAttr);
+        }
+
+        return null;
+      }
+    });
+        
   }
 
   /**
