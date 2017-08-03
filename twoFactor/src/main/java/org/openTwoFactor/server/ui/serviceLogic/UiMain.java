@@ -4047,7 +4047,7 @@ public class UiMain extends UiServiceLogicBase {
   
     new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
         loggedInUser, httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, false, false, null);
+        httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, true, false, null);
         
     showJsp("optin.jsp");
   
@@ -5859,7 +5859,7 @@ public class UiMain extends UiServiceLogicBase {
         
         new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
             loggedInUser, ipAddress, 
-            userAgent, phoneIndex, phoneType, false, false, null);        
+            userAgent, phoneIndex, phoneType, true, false, null);        
 
         return OptinWizardPhoneCodeSentView.optinConfirmPhoneCode;
       }
