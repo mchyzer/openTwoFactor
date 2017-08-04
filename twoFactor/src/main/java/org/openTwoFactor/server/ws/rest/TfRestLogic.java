@@ -219,7 +219,7 @@ public class TfRestLogic {
       tfCheckPasswordRequest.assignOriginalUsername(originalUserName);
 
       boolean rateLimit = rateLimit(username);
-      
+
       tfCheckPasswordRequest.assignRateLimit(rateLimit);
       
       //dont lookup the username if we are rate limiting
@@ -272,6 +272,11 @@ public class TfRestLogic {
   private static ExpirableCache<String, String> readonlyBrowserIdToDuoTxIdTemp = new ExpirableCache<String, String>();
   
   /**
+   * see if a user is opted in before we rate limit them
+   */
+  private static ExpirableCache<String, Boolean> rateLimitedOptedIn = new ExpirableCache<String, Boolean>(1);
+  
+  /**
    * @param twoFactorDaoFactory data access
    * @param tfCheckPasswordRequest 
    * @return the response
@@ -300,7 +305,26 @@ public class TfRestLogic {
       boolean debug = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.debugAllRequests", false) 
         || (tfCheckPasswordRequest.getDebug() != null && tfCheckPasswordRequest.getDebug());
 
+      String username = tfCheckPasswordRequest.getUsername();
+      
+      trafficLogMap.put("username", username);
+      
       if (tfCheckPasswordRequest.isRateLimit()) {
+
+//        Boolean optedIn = !StringUtils.isBlank(username) ? rateLimitedOptedIn.get(username) : false;
+//        
+//        if (optedIn == null) {
+//        
+//          final TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, username);
+//
+//          optedIn = twoFactorUser.isOptedIn();
+//          
+//          rateLimitedOptedIn.put(username, optedIn);
+//
+//        }
+//        
+//        if (optedIn) {
+          
         tfCheckPasswordResponse.setDebugMessage(TwoFactorServerUtils.trimToNull(tfCheckPasswordResponse.getDebugMessage()));
         tfCheckPasswordResponse.setErrorMessage(null);
         tfCheckPasswordResponse.setResponseMessage("User is rate limited since two many requests per minute on this node");
@@ -319,18 +343,15 @@ public class TfRestLogic {
         trafficLogMap.put("rateLimit", true);
 
         return tfCheckPasswordResponse;
+//        }
+        
       }
 
       tfCheckPasswordResponse.setRateLimitedUser(false);
       
-      String username = tfCheckPasswordRequest.getUsername();
-      
-      trafficLogMap.put("username", username);
-      
       DuoLog.assignUsername(StringUtils.defaultIfEmpty(tfCheckPasswordRequest.getOriginalUsername(), username));
       
       String twoFactorPassUnencrypted = tfCheckPasswordRequest.getTwoFactorPass();
-
 
       logTwoFactorLogic(tfCheckPasswordRequest, trafficLogMap, tfCheckPasswordResponse, debug);
 
