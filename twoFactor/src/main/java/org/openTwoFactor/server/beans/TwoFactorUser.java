@@ -1366,6 +1366,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       twoFactorUser.setAttributes(twoFactorUserAttrsSet);
       ((TwoFactorUser)twoFactorUser.dbVersion()).setAttributes(TwoFactorServerUtils.cloneValue(twoFactorUserAttrsSet));
     }
+    twoFactorUser.setTwoFactorDaoFactory(twoFactorDaoFactory);
   }
 
   
