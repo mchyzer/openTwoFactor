@@ -234,10 +234,9 @@ public class TwoFactorRestServlet extends HttpServlet {
               LOG.info("Sending error for username: " + username);
           
               throw new RuntimeException("Configured to send error for username: " + (sendErrorForUserIds.contains(username) ? username : netId));          
-            } else {
-              
-              LOG.info("Not sending error since not percent of time for username: " + username);
             }
+              
+            LOG.info("Not sending error since not percent of time for username: " + username);
           }
         }
           
@@ -599,10 +598,12 @@ public class TwoFactorRestServlet extends HttpServlet {
         
         String usernameForFilePath = "";
         
+        String username = null;
+        
         //maybe we want userids in the file name
         if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.log.requestsResponsesLogSubjectId", false)) {
           
-          String username = request.getParameter("username");
+          username = request.getParameter("username");
           
           if (!StringUtils.isBlank(username)) {
             String subjectAttributeName = TwoFactorServerConfig.retrieveConfig()
@@ -635,11 +636,40 @@ public class TwoFactorRestServlet extends HttpServlet {
           
         }
         
-        String logfileName = tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + usernameForFilePath + ".txt";
-        File file = new File(logfileName);
-        file.createNewFile();
-        TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
+        {
+          String requestsResponsesIncludes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.log.requestsResponses.includes");
+          if (!StringUtils.isBlank(requestsResponsesIncludes)) {
+            
+            Set<String> includesSet = TwoFactorServerUtils.splitTrimToSet(requestsResponsesIncludes, ",");
+            
+            if (!includesSet.contains(username)) {
+              logRequestsResponses = false;
+            }
+            
+          }
+        }
         
+        {
+          String requestsResponsesExcludes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.log.requestsResponses.excludes");
+          if (!StringUtils.isBlank(requestsResponsesExcludes)) {
+            
+            Set<String> excludesSet = TwoFactorServerUtils.splitTrimToSet(requestsResponsesExcludes, ",");
+            
+            if (excludesSet.contains(username)) {
+              logRequestsResponses = false;
+            }
+            
+          }
+        }
+        
+        if (logRequestsResponses) {
+        
+          String logfileName = tempDirLocation + "wsLogs" + File.separator + TwoFactorServerUtils.timestampToFileString(currentDate) + "_" + myRequestIndex + usernameForFilePath + ".txt";
+          File file = new File(logfileName);
+          file.createNewFile();
+          TwoFactorServerUtils.saveStringIntoFile(file, fileContents.toString());
+
+        }        
       }
     } finally {
       userLogMapThreadlocal.remove();
