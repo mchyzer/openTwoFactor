@@ -74,12 +74,34 @@
   </c:if>
 
   <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn != null}">
+
     <c:choose>
       <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.optedIn}">
         ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } 
-        
+
         ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
         <br />
+      </c:when>
+      <c:otherwise>
+        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } 
+        
+        ${textContainer.text['adminNotEnrolled']}
+        <br />
+      </c:otherwise>  
+    </c:choose>
+
+    <c:choose>
+      <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.requiredToOptin}">
+        ${textContainer.text['adminRequiredToOptin']}
+      </c:when>
+      <c:otherwise>
+        ${textContainer.text['adminNotRequiredToOptin']}
+      </c:otherwise>
+    </c:choose>
+    <br />
+    
+    <c:choose>
+      <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.optedIn}">
         
         ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfColleagues}
         ${textContainer.text['adminNumberOfColleagues']}
@@ -158,10 +180,6 @@
         <br />
         
       </c:when>
-      <c:otherwise>
-        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminNotEnrolled']}<br />
-        
-      </c:otherwise>  
     </c:choose>
     ${textContainer.text['adminEmailAddressIs']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.email0)}
     <br />

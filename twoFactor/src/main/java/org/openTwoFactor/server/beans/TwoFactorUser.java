@@ -28,9 +28,7 @@ import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrName;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrType;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.encryption.EncryptionKey;
-import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
-import org.openTwoFactor.server.exceptions.TfInvalidSecret;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
@@ -42,6 +40,7 @@ import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
+import org.openTwoFactor.server.ws.rest.TfRestLogic;
 
 import edu.internet2.middleware.grouperClient.util.ExpirableCache;
 import edu.internet2.middleware.subject.Source;
@@ -453,6 +452,38 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       }
     }
     return false;
+  }
+  
+  /**
+   * if null, not computed.  else false or true
+   */
+  private Boolean requiredToOptin;
+  
+  /**
+   * is required to optin.  will refresh cache if needed
+   * @return true if required to optin
+   */
+  public boolean isRequiredToOptin() {
+    
+    if (this.requiredToOptin == null) {
+
+      this.requiredToOptin = false;
+      
+      //if configured to do this
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean(
+          "twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn", false)) {
+        
+        //lets clear this cache
+        TfRestLogic.refreshUsersNotOptedInButRequiredIfNeeded(this.twoFactorDaoFactory, false, false);
+        
+        //is the user in the list?
+        if (TfRestLogic.usersNotOptedInButRequired().get(this.getLoginid()) != null) {
+          this.requiredToOptin = true;
+        }
+        
+      }
+    }    
+    return this.requiredToOptin;
   }
   
   /**
