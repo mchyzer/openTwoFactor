@@ -1278,6 +1278,13 @@ public class TfRestLogic {
             if (TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
               needsPush = false;
             }
+
+            //if text number then dont push
+            if (TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneOptIn(), false) 
+                && (twoFactorUser.getPhoneAutoCalltext() == null
+                || twoFactorUser.getPhoneAutoCalltext().endsWith("t"))) {
+              needsPush = false;
+            }
             
             if (!sentAnAutoThingAlready) {
               sentAnAutoThingAlready = true;
@@ -1292,7 +1299,7 @@ public class TfRestLogic {
                     timeoutSeconds = null;
                   }
   
-                  if (autoDuoCall) {
+                  if (autoDuoCall || phoneOrPush || TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneOptIn(), false)) {
                     
                     twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
                     twoFactorUser.store(twoFactorDaoFactory);

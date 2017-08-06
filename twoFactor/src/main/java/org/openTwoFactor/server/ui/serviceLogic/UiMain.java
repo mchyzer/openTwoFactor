@@ -2172,6 +2172,13 @@ public class UiMain extends UiServiceLogicBase {
         }
         twoFactorUser.store(twoFactorDaoFactory);
         
+        //opt in to duo
+        if (duoRegisterUsers()) {
+
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+
+        }
+
         TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
             TwoFactorAuditAction.OPTIN_TWO_FACTOR, ipAddress, 
             userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -5665,6 +5672,13 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorUser.setDuoPushTransactionId(null);
           twoFactorUser.store(twoFactorDaoFactory);
 
+          //opt in to duo
+          if (duoRegisterUsers()) {
+
+            DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+
+          }
+          
           if (!wasOptedIn) {
             setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
                 twoFactorRequestContainer, ipAddress, userAgent);
