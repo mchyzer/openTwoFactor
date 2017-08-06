@@ -320,7 +320,7 @@ public class UiMainPublic extends UiServiceLogicBase {
   
           //maybe going from duo
           //opt in to duo
-          if (useDuoForPasscode && UiMain.duoRegisterUsers()) {
+          if (useDuoForPasscode && UiMain.duoRegisterUsers() && !StringUtils.isBlank(twoFactorUser.getDuoUserId())) {
   
             secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
             

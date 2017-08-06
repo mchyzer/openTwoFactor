@@ -76,8 +76,97 @@
   <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn != null}">
     <c:choose>
       <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.optedIn}">
-        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
+        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } 
         
+        ${textContainer.text['adminIsAlreadyEnrolledInThisService']}
+        <br />
+        
+        ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfColleagues}
+        ${textContainer.text['adminNumberOfColleagues']}
+        <br />
+        
+        ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfPhones}
+        ${textContainer.text['adminNumberOfPhones']}
+        <br />
+        
+        <c:choose>
+          <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.invitedColleaguesWithinAllottedTime}">
+            ${textContainer.text['adminHasInvitedFriends']}
+          </c:when>
+          <c:otherwise>
+            ${textContainer.text['adminHasntInvitedFriends']}
+          </c:otherwise>
+        </c:choose>
+        <br />
+
+        <c:choose>
+          <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.duoPush}">
+            ${textContainer.text['adminPush']}
+            <br />
+            <c:choose>
+              <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.duoPushByDefaultBoolean}">
+
+                ${textContainer.text['adminPushByDefault']}
+              </c:when>
+              <c:otherwise>
+                ${textContainer.text['adminDontPushByDefault']}
+              </c:otherwise>
+            </c:choose>
+            <br />
+            
+          </c:when>
+          <c:otherwise>
+            ${textContainer.text['adminDontPush']}
+            <br />
+          </c:otherwise>
+        </c:choose>
+
+        <c:choose>
+          <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.phoneOptInBoolean}">
+            ${textContainer.text['adminPhoneOptIn']}
+            <br />
+            <c:choose>
+              <c:when test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.phoneAutoCallText}">
+                ${textContainer.text['adminAutoPhoneToNumber']}
+                <br />
+                ${textContainer.text['adminPhoneAutoCalltextsInMonth']}
+                ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.phoneAutoCalltextsInMonth}
+                <br />
+                
+              </c:when>
+              <c:otherwise>
+                ${textContainer.text['adminNotAutoPhoneToNumber']}
+                <br />
+              </c:otherwise>
+            </c:choose>
+
+          </c:when>
+          <c:otherwise>
+            ${textContainer.text['adminNotPhoneOptIn']}
+            <br />
+          </c:otherwise>
+        </c:choose>
+
+        <c:choose>
+          <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.optInOnlyIfRequiredBoolean}">
+            ${textContainer.text['adminOptinOnlyIfRequired']}
+          </c:when>
+          <c:otherwise>
+            ${textContainer.text['adminOptinForAll']}
+          </c:otherwise>
+        </c:choose>
+        <br />
+        
+      </c:when>
+      <c:otherwise>
+        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminNotEnrolled']}<br />
+        
+      </c:otherwise>  
+    </c:choose>
+    ${textContainer.text['adminEmailAddressIs']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.email0)}
+    <br />
+    <c:choose>
+      <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.optedIn}">
         <br /><br />
         <form action="UiMainAdmin.manageUser" method="post" style="display: inline">
           <input value="${textContainer.textEscapeDouble['adminManageUser']} ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) }" 
@@ -86,13 +175,8 @@
           <input type="hidden" name="userIdOperatingOn" 
             value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
         </form>
-        
       </c:when>
-      <c:otherwise>
-        ${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.name) } ${textContainer.text['adminNotEnrolled']}
-      </c:otherwise>  
-    </c:choose>
-    
+    </c:choose>    
     <br /><br />
         
     <%@ include file="../assetsJsp/auditsInclude.jsp"%>

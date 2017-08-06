@@ -2986,8 +2986,6 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorProfileContainer.setPhone1(twoFactorUser.getPhone1());
     twoFactorProfileContainer.setPhone2(twoFactorUser.getPhone2());
 
-    twoFactorProfileContainer.setPhoneAutoCalltext(twoFactorUser.getPhoneAutoCalltext());
-    
     twoFactorProfileContainer.setPhoneText0((twoFactorUser.getPhoneIsText0() != null && twoFactorUser.getPhoneIsText0()) ? "true" : "");
     twoFactorProfileContainer.setPhoneText1((twoFactorUser.getPhoneIsText1() != null && twoFactorUser.getPhoneIsText1()) ? "true" : "");
     twoFactorProfileContainer.setPhoneText2((twoFactorUser.getPhoneIsText2() != null && twoFactorUser.getPhoneIsText2()) ? "true" : "");

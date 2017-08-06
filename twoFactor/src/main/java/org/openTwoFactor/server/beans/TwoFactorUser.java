@@ -54,6 +54,52 @@ import edu.internet2.middleware.subject.Subject;
 @SuppressWarnings("serial")
 public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
+  /**
+   * get number of colleagues
+   * @return number of colleagues
+   */
+  public int getNumberOfColleagues() {
+    int colleagueCount = 0;
+    if (!StringUtils.isBlank(this.getColleagueUserUuid0())) {
+      colleagueCount++;
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid1())) {
+      colleagueCount++;
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid2())) {
+      colleagueCount++;
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid3())) {
+      colleagueCount++;
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid4())) {
+      colleagueCount++;
+    }
+    
+    return colleagueCount;
+    
+  }
+  
+  /**
+   * get number of phones
+   * @return number of phones
+   */
+  public int getNumberOfPhones() {
+    int phoneCount = 0;
+    if (!StringUtils.isBlank(this.getPhone0())) {
+      phoneCount++;
+    }
+    if (!StringUtils.isBlank(this.getPhone1())) {
+      phoneCount++;
+    }
+    if (!StringUtils.isBlank(this.getPhone2())) {
+      phoneCount++;
+    }
+    
+    return phoneCount;
+    
+  }
+  
   /** subject source if need to lookup name / description */
   private Source subjectSource = null;
 
@@ -617,6 +663,14 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   
   /**
    * if opt in for apps that require it, not for other apps
+   * @return if opt in only if required
+   */
+  public boolean isOptInOnlyIfRequiredBoolean() {
+    return TwoFactorServerUtils.booleanValue(this.getOptInOnlyIfRequired(), false);
+  }
+  
+  /**
+   * if opt in for apps that require it, not for other apps
    * @param theOptInOnlyIfRequired if should opt in only if required
    */
   public void setOptInOnlyIfRequired(Boolean theOptInOnlyIfRequired) {
@@ -629,6 +683,14 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
    */
   public Boolean getPhoneOptIn() {
     return attributeValueBoolean(TwoFactorUserAttrName.phone_opt_in);
+  }
+  
+  /**
+   * if opted in by phone (not phone or fob)
+   * @return if phone opt in
+   */
+  public boolean getPhoneOptInBoolean() {
+    return TwoFactorServerUtils.booleanValue(this.getPhoneOptIn(), false);
   }
   
   /**
@@ -662,6 +724,83 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   public String getPhoneAutoCalltext() {
     return attributeValueString(TwoFactorUserAttrName.phone_auto_calltext);
   }
+  
+  /**
+   * 
+   * @return if phone auto call text
+   */
+  public boolean isPhoneAutoCallText() {
+    return !StringUtils.isBlank(this.getPhoneAutoCallTextNumber());
+  }
+  
+  /**
+   * get the phone number of auto call text
+   * @return the phone number
+   */
+  public String getPhoneAutoCallTextNumber() {
+    
+    if (StringUtils.equals("0t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone0()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText0(), false)) {
+        return this.getPhone0();
+      }
+    } else if (StringUtils.equals("0v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone0()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice0(), false)) {
+        return this.getPhone0();
+      }
+    } else if (StringUtils.equals("1t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone1()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText1(), false)) {
+        return this.getPhone1();
+      }
+    } else if (StringUtils.equals("1v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone1()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice1(), false)) {
+        return this.getPhone1();
+      }
+    } else if (StringUtils.equals("2t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone2()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText2(), false)) {
+        return this.getPhone2();
+      }
+    } else if (StringUtils.equals("2v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone2()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice2(), false)) {
+        return this.getPhone2();
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * get the phone number of auto call text
+   * @return the phone number
+   */
+  public String getPhoneAutoCallTextType() {
+    
+    if (StringUtils.equals("0t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone0()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText0(), false)) {
+        return "text";
+      }
+    } else if (StringUtils.equals("0v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone0()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice0(), false)) {
+        return "voice";
+      }
+    } else if (StringUtils.equals("1t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone1()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText1(), false)) {
+        return "text";
+      }
+    } else if (StringUtils.equals("1v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone1()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice1(), false)) {
+        return "voice";
+      }
+    } else if (StringUtils.equals("2t", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone2()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsText2(), false)) {
+        return "text";
+      }
+    } else if (StringUtils.equals("2v", this.getPhoneAutoCalltext())) {
+      if (!StringUtils.isBlank(this.getPhone2()) && TwoFactorServerUtils.booleanValue(this.getPhoneIsVoice2(), false)) {
+        return "voice";
+      }
+    }
+    return null;
+  }
+  
   
   /**
    * if the web should autocall or autotext the user, this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc
@@ -1472,6 +1611,22 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     return attributeValueBoolean(TwoFactorUserAttrName.duo_push_by_default);
   }
 
+  /**
+   * boolean primitive if push by default
+   * @return true if push by default, false if not
+   */
+  public boolean isDuoPushByDefaultBoolean() {
+    return TwoFactorServerUtils.booleanValue(this.getDuoPushByDefault(), false);
+  }
+  
+  /**
+   * 
+   * @return if enrolled in duo push
+   */
+  public boolean isDuoPush() {
+    return !StringUtils.isBlank(this.getDuoPushPhoneId());
+  }
+  
   /**
    * if push by default
    * @param duoPushByDefault
