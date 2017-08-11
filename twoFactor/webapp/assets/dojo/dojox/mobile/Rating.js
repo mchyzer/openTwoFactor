@@ -1,33 +1,5 @@
 //>>built
-define("dojox/mobile/Rating",["dojo/_base/declare","dojo/_base/lang","dojo/dom-construct","dijit/_WidgetBase","./iconUtils"],function(_1,_2,_3,_4,_5){
-return _1("dojox.mobile.Rating",_4,{image:"",numStars:5,value:0,alt:"",baseClass:"mblRating",buildRendering:function(){
-this.inherited(arguments);
-this.domNode.style.display="inline-block";
-var _6=this.imgNode=_3.create("img");
-this.connect(_6,"onload",_2.hitch(this,function(){
-this.set("value",this.value);
-}));
-_5.createIcon(this.image,null,_6);
-},_setValueAttr:function(_7){
-this._set("value",_7);
-var h=this.imgNode.height;
-if(h==0){
-return;
-}
-_3.empty(this.domNode);
-var i,_8,w=this.imgNode.width/3;
-for(i=0;i<this.numStars;i++){
-if(i<=_7-1){
-_8=0;
-}else{
-if(i>=_7){
-_8=w;
-}else{
-_8=w*2;
-}
-}
-var _9=_3.create("div",{style:{"float":"left"}},this.domNode);
-_5.createIcon(this.image,"0,"+_8+","+w+","+h,null,this.alt,_9);
-}
-}});
-});
+define("dojox/mobile/Rating","dojo/_base/declare dojo/_base/lang dojo/dom-construct dijit/_WidgetBase ./iconUtils dojo/has dojo/has!dojo-bidi?dojox/mobile/bidi/Rating".split(" "),function(c,l,e,b,h,k,m){b=c(k("dojo-bidi")?"dojox.mobile.NonBidiRating":"dojox.mobile.Rating",[b],{image:"",numStars:5,value:0,alt:"",baseClass:"mblRating",buildRendering:function(){this.inherited(arguments);this.domNode.style.display="inline-block";var a=this.imgNode=e.create("img");this.connect(a,"onload",l.hitch(this,
+function(){this.set("value",this.value)}));h.createIcon(this.image,null,a)},_setValueAttr:function(a){this._set("value",a);var b=this.imgNode.height;if(0!=b){e.empty(this.domNode);var d,c,f=this.imgNode.width/3;for(d=0;d<this.numStars;d++){c=d<=a-1?0:d>=a?f:2*f;var g=e.create("div",{style:{"float":"left"}},this.domNode);this.isLeftToRight()||(g=this._setCustomTransform(g));h.createIcon(this.image,"0,"+c+","+f+","+b,null,this.alt,g)}}},_setCustomTransform:function(a){return a}});return k("dojo-bidi")?
+c("dojox.mobile.Rating",[b,m]):b});
+//# sourceMappingURL=Rating.js.map

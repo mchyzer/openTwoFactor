@@ -1,10 +1,4 @@
 //>>built
-define("dojox/mobile/_ListTouchMixin",["dojo/_base/declare","dijit/form/_ListBase"],function(_1,_2){
-return _1("dojox.mobile._ListTouchMixin",_2,{postCreate:function(){
-this.inherited(arguments);
-this._listConnect("click","_onClick");
-},_onClick:function(_3,_4){
-this._setSelectedAttr(_4);
-this.onClick(_4);
-}});
-});
+define("dojox/mobile/_ListTouchMixin",["dojo/_base/declare","dojo/touch","./sniff","dijit/form/_ListBase"],function(f,g,b,h){return f("dojox.mobile._ListTouchMixin",h,{postCreate:function(){this.inherited(arguments);if((10===b("ie")||!b("ie")&&6<b("trident"))&&"undefined"!==typeof MSGesture){this._listConnect(g.press,"_onPress");var c=this,a=new MSGesture,d;this._onPress=function(e){a.target=c.domNode;a.addPointer(e.pointerId);d=e.target};this.on("MSGestureTap",function(a){c._onClick(a,d)})}else this._listConnect("click",
+"_onClick")},_onClick:function(b,a){this._setSelectedAttr(a);this.onClick(a)}})});
+//# sourceMappingURL=_ListTouchMixin.js.map

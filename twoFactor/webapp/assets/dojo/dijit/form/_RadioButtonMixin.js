@@ -1,42 +1,5 @@
 //>>built
-define("dijit/form/_RadioButtonMixin",["dojo/_base/array","dojo/_base/declare","dojo/dom-attr","dojo/_base/event","dojo/_base/lang","dojo/query","../registry"],function(_1,_2,_3,_4,_5,_6,_7){
-return _2("dijit.form._RadioButtonMixin",null,{type:"radio",_getRelatedWidgets:function(){
-var _8=[];
-_6("input[type=radio]",this.focusNode.form||this.ownerDocument).forEach(_5.hitch(this,function(_9){
-if(_9.name==this.name&&_9.form==this.focusNode.form){
-var _a=_7.getEnclosingWidget(_9);
-if(_a){
-_8.push(_a);
-}
-}
-}));
-return _8;
-},_setCheckedAttr:function(_b){
-this.inherited(arguments);
-if(!this._created){
-return;
-}
-if(_b){
-_1.forEach(this._getRelatedWidgets(),_5.hitch(this,function(_c){
-if(_c!=this&&_c.checked){
-_c.set("checked",false);
-}
-}));
-}
-},_getSubmitValue:function(_d){
-return _d===null?"on":_d;
-},_onClick:function(e){
-if(this.checked||this.disabled){
-_4.stop(e);
-return false;
-}
-if(this.readOnly){
-_4.stop(e);
-_1.forEach(this._getRelatedWidgets(),_5.hitch(this,function(_e){
-_3.set(this.focusNode||this.domNode,"checked",_e.checked);
-}));
-return false;
-}
-return this.inherited(arguments);
-}});
-});
+define("dijit/form/_RadioButtonMixin","dojo/_base/array dojo/_base/declare dojo/dom-attr dojo/_base/lang dojo/query!css2 ../registry".split(" "),function(d,f,g,e,h,k){return f("dijit.form._RadioButtonMixin",null,{type:"radio",_getRelatedWidgets:function(){var a=[];h("input[type\x3dradio]",this.focusNode.form||this.ownerDocument).forEach(e.hitch(this,function(b){b.name==this.name&&b.form==this.focusNode.form&&(b=k.getEnclosingWidget(b))&&a.push(b)}));return a},_setCheckedAttr:function(a){this.inherited(arguments);
+this._created&&a&&d.forEach(this._getRelatedWidgets(),e.hitch(this,function(a){a!=this&&a.checked&&a.set("checked",!1)}))},_getSubmitValue:function(a){return null==a?"on":a},_onClick:function(a){if(this.checked||this.disabled)return a.stopPropagation(),a.preventDefault(),!1;if(this.readOnly)return a.stopPropagation(),a.preventDefault(),d.forEach(this._getRelatedWidgets(),e.hitch(this,function(a){g.set(this.focusNode||this.domNode,"checked",a.checked)})),!1;var b=!1,c;d.some(this._getRelatedWidgets(),
+function(a){return a.checked?(c=a,!0):!1});this.checked=!0;c&&(c.checked=!1);if(!1===this.onClick(a)||a.defaultPrevented)b=!0;this.checked=!1;c&&(c.checked=!0);b?a.preventDefault():this.set("checked",!0);return!b}})});
+//# sourceMappingURL=_RadioButtonMixin.js.map

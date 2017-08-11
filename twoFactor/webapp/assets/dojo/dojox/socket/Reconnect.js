@@ -1,36 +1,4 @@
 //>>built
-define("dojox/socket/Reconnect",["dijit","dojo","dojox"],function(_1,_2,_3){
-_2.provide("dojox.socket.Reconnect");
-_3.socket.Reconnect=function(_4,_5){
-_5=_5||{};
-var _6=_5.reconnectTime||10000;
-var _7=_2.connect(_4,"onclose",function(_8){
-clearTimeout(_9);
-if(!_8.wasClean){
-_4.disconnected(function(){
-_3.socket.replace(_4,_a=_4.reconnect());
-});
-}
-});
-var _9,_a;
-if(!_4.disconnected){
-_4.disconnected=function(_b){
-setTimeout(function(){
-_b();
-_9=setTimeout(function(){
-if(_a.readyState<2){
-_6=_5.reconnectTime||10000;
-}
-},10000);
-},_6);
-_6*=_5.backoffRate||2;
-};
-}
-if(!_4.reconnect){
-_4.reconnect=function(){
-return _4.args?_3.socket.LongPoll(_4.args):_3.socket.WebSocket({url:_4.URL||_4.url});
-};
-}
-return _4;
-};
-});
+define("dojox/socket/Reconnect",["dojox/socket","dojo/aspect"],function(c,h){c.Reconnect=function(a,b){b=b||{};var d=b.reconnectTime||1E4,k=b.backoffRate||2,e=d,f,g;h.after(a,"onclose",function(b){clearTimeout(f);b.wasClean||a.disconnected(function(){c.replace(a,g=a.reconnect())})},!0);a.disconnected||(a.disconnected=function(a){setTimeout(function(){a();f=setTimeout(function(){2>g.readyState&&(e=d)},d)},e);e*=k});a.reconnect||(a.reconnect=function(){return a.args?c.LongPoll(a.args):c.WebSocket({url:a.URL||
+a.url})});return a};return c.Reconnect});
+//# sourceMappingURL=Reconnect.js.map

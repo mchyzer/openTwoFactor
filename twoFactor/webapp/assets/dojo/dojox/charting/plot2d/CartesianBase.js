@@ -1,73 +1,11 @@
 //>>built
-define("dojox/charting/plot2d/CartesianBase",["dojo/_base/lang","dojo/_base/declare","dojo/_base/connect","./Base","../scaler/primitive","dojox/gfx/fx"],function(_1,_2,_3,_4,_5,fx){
-return _2("dojox.charting.plot2d.CartesianBase",_4,{constructor:function(_6,_7){
-this.axes=["hAxis","vAxis"];
-this.zoom=null,this.zoomQueue=[];
-this.lastWindow={vscale:1,hscale:1,xoffset:0,yoffset:0};
-},clear:function(){
-this.inherited(arguments);
-this._hAxis=null;
-this._vAxis=null;
-return this;
-},cleanGroup:function(_8){
-this.inherited(arguments,[_8||this.chart.plotGroup]);
-},setAxis:function(_9){
-if(_9){
-this[_9.vertical?"_vAxis":"_hAxis"]=_9;
-}
-return this;
-},toPage:function(_a){
-var ah=this._hAxis,av=this._vAxis,sh=ah.getScaler(),sv=av.getScaler(),th=sh.scaler.getTransformerFromModel(sh),tv=sv.scaler.getTransformerFromModel(sv),c=this.chart.getCoords(),o=this.chart.offsets,_b=this.chart.dim;
-var t=function(_c){
-var r={};
-r.x=th(_c[ah.name])+c.x+o.l;
-r.y=c.y+_b.height-o.b-tv(_c[av.name]);
-return r;
-};
-return _a?t(_a):t;
-},toData:function(_d){
-var ah=this._hAxis,av=this._vAxis,sh=ah.getScaler(),sv=av.getScaler(),th=sh.scaler.getTransformerFromPlot(sh),tv=sv.scaler.getTransformerFromPlot(sv),c=this.chart.getCoords(),o=this.chart.offsets,_e=this.chart.dim;
-var t=function(_f){
-var r={};
-r[ah.name]=th(_f.x-c.x-o.l);
-r[av.name]=tv(c.y+_e.height-_f.y-o.b);
-return r;
-};
-return _d?t(_d):t;
-},isDirty:function(){
-return this.dirty||this._hAxis&&this._hAxis.dirty||this._vAxis&&this._vAxis.dirty;
-},performZoom:function(dim,_10){
-var vs=this._vAxis.scale||1,hs=this._hAxis.scale||1,_11=dim.height-_10.b,_12=this._hScaler.bounds,_13=(_12.from-_12.lower)*_12.scale,_14=this._vScaler.bounds,_15=(_14.from-_14.lower)*_14.scale,_16=vs/this.lastWindow.vscale,_17=hs/this.lastWindow.hscale,_18=(this.lastWindow.xoffset-_13)/((this.lastWindow.hscale==1)?hs:this.lastWindow.hscale),_19=(_15-this.lastWindow.yoffset)/((this.lastWindow.vscale==1)?vs:this.lastWindow.vscale),_1a=this.group,_1b=fx.animateTransform(_1.delegate({shape:_1a,duration:1200,transform:[{name:"translate",start:[0,0],end:[_10.l*(1-_17),_11*(1-_16)]},{name:"scale",start:[1,1],end:[_17,_16]},{name:"original"},{name:"translate",start:[0,0],end:[_18,_19]}]},this.zoom));
-_1.mixin(this.lastWindow,{vscale:vs,hscale:hs,xoffset:_13,yoffset:_15});
-this.zoomQueue.push(_1b);
-_3.connect(_1b,"onEnd",this,function(){
-this.zoom=null;
-this.zoomQueue.shift();
-if(this.zoomQueue.length>0){
-this.zoomQueue[0].play();
-}
-});
-if(this.zoomQueue.length==1){
-this.zoomQueue[0].play();
-}
-return this;
-},initializeScalers:function(dim,_1c){
-if(this._hAxis){
-if(!this._hAxis.initialized()){
-this._hAxis.calculate(_1c.hmin,_1c.hmax,dim.width);
-}
-this._hScaler=this._hAxis.getScaler();
-}else{
-this._hScaler=_5.buildScaler(_1c.hmin,_1c.hmax,dim.width);
-}
-if(this._vAxis){
-if(!this._vAxis.initialized()){
-this._vAxis.calculate(_1c.vmin,_1c.vmax,dim.height);
-}
-this._vScaler=this._vAxis.getScaler();
-}else{
-this._vScaler=_5.buildScaler(_1c.vmin,_1c.vmax,dim.height);
-}
-return this;
-}});
-});
+define("dojox/charting/plot2d/CartesianBase","dojo/_base/lang dojo/_base/declare dojo/_base/connect dojo/has ./Base ../scaler/primitive dojox/gfx dojox/gfx/fx dojox/lang/utils".split(" "),function(p,q,r,x,t,m,u,v,w){var n=function(){return!1};return q("dojox.charting.plot2d.CartesianBase",t,{baseParams:{hAxis:"x",vAxis:"y",labels:!1,labelOffset:10,fixed:!0,precision:1,labelStyle:"inside",htmlLabels:!0,omitLabels:!0,labelFunc:null},constructor:function(b,a){this.axes=["hAxis","vAxis"];this.zoom=null;
+this.zoomQueue=[];this.lastWindow={vscale:1,hscale:1,xoffset:0,yoffset:0};this.hAxis=a&&a.hAxis||"x";this.vAxis=a&&a.vAxis||"y";this.series=[];this.opt=p.clone(this.baseParams);w.updateWithObject(this.opt,a)},clear:function(){this.inherited(arguments);this._vAxis=this._hAxis=null;return this},cleanGroup:function(b,a){this.inherited(arguments);if(!a&&this.chart._nativeClip){var c=this.chart.offsets,d=this.chart.dim;this.group.setClip({x:c.l,y:c.t,width:Math.max(0,d.width-c.l-c.r),height:Math.max(0,
+d.height-c.t-c.b)});this._clippedGroup||(this._clippedGroup=this.group.createGroup())}},purgeGroup:function(){this.inherited(arguments);this._clippedGroup=null},getGroup:function(){return this._clippedGroup||this.group},setAxis:function(b){b&&(this[b.vertical?"_vAxis":"_hAxis"]=b);return this},toPage:function(b){var a=this._hAxis,c=this._vAxis,d=a.getScaler(),e=c.getScaler(),g=d.scaler.getTransformerFromModel(d),f=e.scaler.getTransformerFromModel(e),h=this.chart.getCoords(),k=this.chart.offsets,l=
+this.chart.dim,d=function(b){var d={};d.x=g(b[a.name])+h.x+k.l;d.y=h.y+l.height-k.b-f(b[c.name]);return d};return b?d(b):d},toData:function(b){var a=this._hAxis,c=this._vAxis,d=a.getScaler(),e=c.getScaler(),g=d.scaler.getTransformerFromPlot(d),f=e.scaler.getTransformerFromPlot(e),h=this.chart.getCoords(),k=this.chart.offsets,l=this.chart.dim,d=function(b){var d={};d[a.name]=g(b.x-h.x-k.l);d[c.name]=f(h.y+l.height-b.y-k.b);return d};return b?d(b):d},isDirty:function(){return this.dirty||this._hAxis&&
+this._hAxis.dirty||this._vAxis&&this._vAxis.dirty},createLabel:function(b,a,c,d){if(this.opt.labels){var e,g=this.opt.labelFunc?this.opt.labelFunc.apply(this,[a,this.opt.fixed,this.opt.precision]):this._getLabel(isNaN(a.y)?a:a.y);if("inside"==this.opt.labelStyle){var f=u._base._getTextBox(g,{font:d.series.font});a=c.x+c.width/2;e=c.y+c.height/2+f.h/4;if(f.w>c.width||f.h>c.height)return}else a=c.x+c.width/2,e=c.y-this.opt.labelOffset;this.renderLabel(b,a,e,g,d,"inside"==this.opt.labelStyle)}},performZoom:function(b,
+a){var c=this._vAxis.scale||1,d=this._hAxis.scale||1,e=b.height-a.b,g=this._hScaler.bounds,g=(g.from-g.lower)*g.scale,f=this._vScaler.bounds,f=(f.from-f.lower)*f.scale,h=c/this.lastWindow.vscale,k=d/this.lastWindow.hscale,l=(this.lastWindow.xoffset-g)/(1==this.lastWindow.hscale?d:this.lastWindow.hscale),m=(f-this.lastWindow.yoffset)/(1==this.lastWindow.vscale?c:this.lastWindow.vscale),n=this.getGroup(),e=v.animateTransform(p.delegate({shape:n,duration:1200,transform:[{name:"translate",start:[0,0],
+end:[a.l*(1-k),e*(1-h)]},{name:"scale",start:[1,1],end:[k,h]},{name:"original"},{name:"translate",start:[0,0],end:[l,m]}]},this.zoom));p.mixin(this.lastWindow,{vscale:c,hscale:d,xoffset:g,yoffset:f});this.zoomQueue.push(e);r.connect(e,"onEnd",this,function(){this.zoom=null;this.zoomQueue.shift();0<this.zoomQueue.length&&this.zoomQueue[0].play()});1==this.zoomQueue.length&&this.zoomQueue[0].play();return this},initializeScalers:function(b,a){this._hAxis?(this._hAxis.initialized()||this._hAxis.calculate(a.hmin,
+a.hmax,b.width),this._hScaler=this._hAxis.getScaler()):this._hScaler=m.buildScaler(a.hmin,a.hmax,b.width);this._vAxis?(this._vAxis.initialized()||this._vAxis.calculate(a.vmin,a.vmax,b.height),this._vScaler=this._vAxis.getScaler()):this._vScaler=m.buildScaler(a.vmin,a.vmax,b.height);return this},isNullValue:function(b){if(null===b||"undefined"==typeof b)return!0;var a=this._hAxis?this._hAxis.isNullValue:n,c=this._vAxis?this._vAxis.isNullValue:n;return"number"==typeof b?a(1)||c(b):a(isNaN(b.x)?1:b.x)||
+null===b.y||c(b.y)}})});
+//# sourceMappingURL=CartesianBase.js.map

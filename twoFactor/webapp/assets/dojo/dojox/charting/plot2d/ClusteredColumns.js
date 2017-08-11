@@ -1,7 +1,3 @@
 //>>built
-define("dojox/charting/plot2d/ClusteredColumns",["dojo/_base/declare","./Columns","./common"],function(_1,_2,dc){
-return _1("dojox.charting.plot2d.ClusteredColumns",_2,{getBarProperties:function(){
-var f=dc.calculateBarSize(this._hScaler.bounds.scale,this.opt,this.series.length);
-return {gap:f.gap,width:f.size,thickness:f.size};
-}});
-});
+define("dojox/charting/plot2d/ClusteredColumns",["dojo/_base/declare","dojo/_base/array","./Columns","./common"],function(c,d,e,f){return c("dojox.charting.plot2d.ClusteredColumns",e,{getBarProperties:function(){var b=this.series.length;d.forEach(this.series,function(a){a.hidden&&b--});var a=f.calculateBarSize(this._hScaler.bounds.scale,this.opt,b);return{gap:a.gap,width:a.size,thickness:a.size,clusterSize:b}}})});
+//# sourceMappingURL=ClusteredColumns.js.map

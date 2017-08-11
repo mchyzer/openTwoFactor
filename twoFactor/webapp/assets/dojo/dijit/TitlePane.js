@@ -1,98 +1,10 @@
 //>>built
-require({cache:{"url:dijit/templates/TitlePane.html":"<div>\n\t<div data-dojo-attach-event=\"onclick:_onTitleClick, onkeydown:_onTitleKey\"\n\t\t\tclass=\"dijitTitlePaneTitle\" data-dojo-attach-point=\"titleBarNode\" id=\"${id}_titleBarNode\">\n\t\t<div class=\"dijitTitlePaneTitleFocus\" data-dojo-attach-point=\"focusNode\">\n\t\t\t<img src=\"${_blankGif}\" alt=\"\" data-dojo-attach-point=\"arrowNode\" class=\"dijitArrowNode\" role=\"presentation\"\n\t\t\t/><span data-dojo-attach-point=\"arrowNodeInner\" class=\"dijitArrowNodeInner\"></span\n\t\t\t><span data-dojo-attach-point=\"titleNode\" class=\"dijitTitlePaneTextNode\"></span>\n\t\t</div>\n\t</div>\n\t<div class=\"dijitTitlePaneContentOuter\" data-dojo-attach-point=\"hideNode\" role=\"presentation\">\n\t\t<div class=\"dijitReset\" data-dojo-attach-point=\"wipeNode\" role=\"presentation\">\n\t\t\t<div class=\"dijitTitlePaneContentInner\" data-dojo-attach-point=\"containerNode\" role=\"region\" id=\"${id}_pane\" aria-labelledby=\"${id}_titleBarNode\">\n\t\t\t\t<!-- nested divs because wipeIn()/wipeOut() doesn't work right on node w/padding etc.  Put padding on inner div. -->\n\t\t\t</div>\n\t\t</div>\n\t</div>\n</div>\n"}});
-define("dijit/TitlePane",["dojo/_base/array","dojo/_base/declare","dojo/dom","dojo/dom-attr","dojo/dom-class","dojo/dom-geometry","dojo/_base/event","dojo/fx","dojo/_base/kernel","dojo/keys","./_CssStateMixin","./_TemplatedMixin","./layout/ContentPane","dojo/text!./templates/TitlePane.html","./_base/manager"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_a,_b,_c,_d,_e,_f){
-return _2("dijit.TitlePane",[_d,_c,_b],{title:"",_setTitleAttr:{node:"titleNode",type:"innerHTML"},open:true,toggleable:true,tabIndex:"0",duration:_f.defaultDuration,baseClass:"dijitTitlePane",templateString:_e,doLayout:false,_setTooltipAttr:{node:"focusNode",type:"attribute",attribute:"title"},buildRendering:function(){
-this.inherited(arguments);
-_3.setSelectable(this.titleNode,false);
-},postCreate:function(){
-this.inherited(arguments);
-if(this.toggleable){
-this._trackMouseState(this.titleBarNode,"dijitTitlePaneTitle");
-}
-var _10=this.hideNode,_11=this.wipeNode;
-this._wipeIn=_8.wipeIn({node:_11,duration:this.duration,beforeBegin:function(){
-_10.style.display="";
-}});
-this._wipeOut=_8.wipeOut({node:_11,duration:this.duration,onEnd:function(){
-_10.style.display="none";
-}});
-},_setOpenAttr:function(_12,_13){
-_1.forEach([this._wipeIn,this._wipeOut],function(_14){
-if(_14&&_14.status()=="playing"){
-_14.stop();
-}
-});
-if(_13){
-var _15=this[_12?"_wipeIn":"_wipeOut"];
-_15.play();
-}else{
-this.hideNode.style.display=this.wipeNode.style.display=_12?"":"none";
-}
-if(this._started){
-if(_12){
-this._onShow();
-}else{
-this.onHide();
-}
-}
-this.containerNode.setAttribute("aria-hidden",_12?"false":"true");
-this.focusNode.setAttribute("aria-pressed",_12?"true":"false");
-this._set("open",_12);
-this._setCss();
-},_setToggleableAttr:function(_16){
-this.focusNode.setAttribute("role",_16?"button":"heading");
-if(_16){
-this.focusNode.setAttribute("aria-controls",this.id+"_pane");
-this.focusNode.setAttribute("tabIndex",this.tabIndex);
-this.focusNode.setAttribute("aria-pressed",this.open);
-}else{
-_4.remove(this.focusNode,"aria-controls");
-_4.remove(this.focusNode,"tabIndex");
-_4.remove(this.focusNode,"aria-pressed");
-}
-this._set("toggleable",_16);
-this._setCss();
-},_setContentAttr:function(_17){
-if(!this.open||!this._wipeOut||this._wipeOut.status()=="playing"){
-this.inherited(arguments);
-}else{
-if(this._wipeIn&&this._wipeIn.status()=="playing"){
-this._wipeIn.stop();
-}
-_6.setMarginBox(this.wipeNode,{h:_6.getMarginBox(this.wipeNode).h});
-this.inherited(arguments);
-if(this._wipeIn){
-this._wipeIn.play();
-}else{
-this.hideNode.style.display="";
-}
-}
-},toggle:function(){
-this._setOpenAttr(!this.open,true);
-},_setCss:function(){
-var _18=this.titleBarNode||this.focusNode;
-var _19=this._titleBarClass;
-this._titleBarClass="dijit"+(this.toggleable?"":"Fixed")+(this.open?"Open":"Closed");
-_5.replace(_18,this._titleBarClass,_19||"");
-this.arrowNodeInner.innerHTML=this.open?"-":"+";
-},_onTitleKey:function(e){
-if(e.keyCode==_a.ENTER||e.keyCode==_a.SPACE){
-if(this.toggleable){
-this.toggle();
-_7.stop(e);
-}
-}else{
-if(e.keyCode==_a.DOWN_ARROW&&this.open){
-this.containerNode.focus();
-e.preventDefault();
-}
-}
-},_onTitleClick:function(){
-if(this.toggleable){
-this.toggle();
-}
-},setTitle:function(_1a){
-_9.deprecated("dijit.TitlePane.setTitle() is deprecated.  Use set('title', ...) instead.","","2.0");
-this.set("title",_1a);
-}});
-});
+require({cache:{"url:dijit/templates/TitlePane.html":'\x3cdiv\x3e\n\t\x3cdiv data-dojo-attach-event\x3d"ondijitclick:_onTitleClick, onkeydown:_onTitleKey"\n\t\t\tclass\x3d"dijitTitlePaneTitle" data-dojo-attach-point\x3d"titleBarNode" id\x3d"${id}_titleBarNode"\x3e\n\t\t\x3cdiv class\x3d"dijitTitlePaneTitleFocus" data-dojo-attach-point\x3d"focusNode"\x3e\n\t\t\t\x3cspan data-dojo-attach-point\x3d"arrowNode" class\x3d"dijitInline dijitArrowNode" role\x3d"presentation"\x3e\x3c/span\n\t\t\t\x3e\x3cspan data-dojo-attach-point\x3d"arrowNodeInner" class\x3d"dijitArrowNodeInner"\x3e\x3c/span\n\t\t\t\x3e\x3cspan data-dojo-attach-point\x3d"titleNode" class\x3d"dijitTitlePaneTextNode"\x3e\x3c/span\x3e\n\t\t\x3c/div\x3e\n\t\x3c/div\x3e\n\t\x3cdiv class\x3d"dijitTitlePaneContentOuter" data-dojo-attach-point\x3d"hideNode" role\x3d"presentation"\x3e\n\t\t\x3cdiv class\x3d"dijitReset" data-dojo-attach-point\x3d"wipeNode" role\x3d"presentation"\x3e\n\t\t\t\x3cdiv class\x3d"dijitTitlePaneContentInner" data-dojo-attach-point\x3d"containerNode" role\x3d"region" id\x3d"${id}_pane" aria-labelledby\x3d"${id}_titleBarNode"\x3e\n\t\t\t\t\x3c!-- nested divs because wipeIn()/wipeOut() doesn\'t work right on node w/padding etc.  Put padding on inner div. --\x3e\n\t\t\t\x3c/div\x3e\n\t\t\x3c/div\x3e\n\t\x3c/div\x3e\n\x3c/div\x3e\n'}});
+define("dijit/TitlePane","dojo/_base/array dojo/_base/declare dojo/dom dojo/dom-attr dojo/dom-class dojo/dom-geometry dojo/fx dojo/has dojo/_base/kernel dojo/keys ./_CssStateMixin ./_TemplatedMixin ./layout/ContentPane dojo/text!./templates/TitlePane.html ./_base/manager ./a11yclick".split(" "),function(h,c,k,d,e,f,g,l,m,n,p,q,r,t,u){c=c("dijit.TitlePane",[r,q,p],{title:"",_setTitleAttr:{node:"titleNode",type:"innerHTML"},open:!0,toggleable:!0,tabIndex:"0",duration:u.defaultDuration,baseClass:"dijitTitlePane",
+templateString:t,doLayout:!1,_setTooltipAttr:{node:"focusNode",type:"attribute",attribute:"title"},buildRendering:function(){this.inherited(arguments);k.setSelectable(this.titleNode,!1)},postCreate:function(){this.inherited(arguments);this.toggleable&&this._trackMouseState(this.titleBarNode,this.baseClass+"Title");var a=this.hideNode,b=this.wipeNode;this._wipeIn=g.wipeIn({node:b,duration:this.duration,beforeBegin:function(){a.style.display=""}});this._wipeOut=g.wipeOut({node:b,duration:this.duration,
+onEnd:function(){a.style.display="none"}})},_setOpenAttr:function(a,b){h.forEach([this._wipeIn,this._wipeOut],function(a){a&&"playing"==a.status()&&a.stop()});b?this[a?"_wipeIn":"_wipeOut"].play():this.hideNode.style.display=this.wipeNode.style.display=a?"":"none";if(this._started)if(a)this._onShow();else this.onHide();this.containerNode.setAttribute("aria-hidden",a?"false":"true");this.focusNode.setAttribute("aria-pressed",a?"true":"false");this._set("open",a);this._setCss()},_setToggleableAttr:function(a){this.focusNode.setAttribute("role",
+a?"button":"heading");a?(this.focusNode.setAttribute("aria-controls",this.id+"_pane"),this.focusNode.setAttribute("tabIndex",this.tabIndex),this.focusNode.setAttribute("aria-pressed",this.open)):(d.remove(this.focusNode,"aria-controls"),d.remove(this.focusNode,"tabIndex"),d.remove(this.focusNode,"aria-pressed"));this._set("toggleable",a);this._setCss()},_setContentAttr:function(a){this.open&&this._wipeOut&&"playing"!=this._wipeOut.status()?(this._wipeIn&&"playing"==this._wipeIn.status()&&this._wipeIn.stop(),
+f.setMarginBox(this.wipeNode,{h:f.getMarginBox(this.wipeNode).h}),this.inherited(arguments),this._wipeIn?this._wipeIn.play():this.hideNode.style.display=""):this.inherited(arguments)},toggle:function(){this._setOpenAttr(!this.open,!0)},_setCss:function(){var a=this.titleBarNode||this.focusNode,b=this._titleBarClass;this._titleBarClass=this.baseClass+"Title"+(this.toggleable?"":"Fixed")+(this.open?"Open":"Closed");e.replace(a,this._titleBarClass,b||"");e.replace(a,this._titleBarClass.replace("TitlePaneTitle",
+""),(b||"").replace("TitlePaneTitle",""));this.arrowNodeInner.innerHTML=this.open?"-":"+"},_onTitleKey:function(a){a.keyCode==n.DOWN_ARROW&&this.open&&(this.containerNode.focus(),a.preventDefault())},_onTitleClick:function(){this.toggleable&&this.toggle()},setTitle:function(a){m.deprecated("dijit.TitlePane.setTitle() is deprecated.  Use set('title', ...) instead.","","2.0");this.set("title",a)}});l("dojo-bidi")&&c.extend({_setTitleAttr:function(a){this._set("title",a);this.titleNode.innerHTML=a;this.applyTextDir(this.titleNode)},
+_setTooltipAttr:function(a){this._set("tooltip",a);this.textDir&&(a=this.enforceTextDirWithUcc(null,a));d.set(this.focusNode,"title",a)},_setTextDirAttr:function(a){this._created&&this.textDir!=a&&(this._set("textDir",a),this.set("title",this.title),this.set("tooltip",this.tooltip))}});return c});
+//# sourceMappingURL=TitlePane.js.map

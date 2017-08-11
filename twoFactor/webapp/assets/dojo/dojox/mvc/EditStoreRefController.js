@@ -1,53 +1,5 @@
 //>>built
-define("dojox/mvc/EditStoreRefController",["dojo/_base/declare","dojo/_base/lang","dojo/when","./getPlainValue","./EditModelRefController","./StoreRefController"],function(_1,_2,_3,_4,_5,_6){
-return _1("dojox.mvc.EditStoreRefController",[_6,_5],{getPlainValueOptions:null,_removals:[],_resultsWatchHandle:null,_refSourceModelProp:"sourceModel",queryStore:function(_7,_8){
-if(!(this.store||{}).query){
-return;
-}
-if(this._resultsWatchHandle){
-this._resultsWatchHandle.unwatch();
-}
-this._removals=[];
-var _9=this;
-return _3(this.inherited(arguments),function(_a){
-if(_9._beingDestroyed){
-return;
-}
-if(_2.isArray(_a)){
-_9._resultsWatchHandle=_a.watchElements(function(_b,_c,_d){
-[].push.apply(_9._removals,_c);
-});
-}
-return _a;
-});
-},getStore:function(id,_e){
-if(this._resultsWatchHandle){
-this._resultsWatchHandle.unwatch();
-}
-return this.inherited(arguments);
-},commit:function(){
-if(this._removals){
-for(var i=0;i<this._removals.length;i++){
-this.store.remove(this.store.getIdentity(this._removals[i]));
-}
-this._removals=[];
-}
-var _f=_4(this.get(this._refEditModelProp),this.getPlainValueOptions);
-if(_2.isArray(_f)){
-for(var i=0;i<_f.length;i++){
-this.store.put(_f[i]);
-}
-}else{
-this.store.put(_f);
-}
-this.inherited(arguments);
-},reset:function(){
-this.inherited(arguments);
-this._removals=[];
-},destroy:function(){
-if(this._resultsWatchHandle){
-this._resultsWatchHandle.unwatch();
-}
-this.inherited(arguments);
-}});
-});
+define("dojox/mvc/EditStoreRefController","dojo/_base/declare dojo/_base/lang dojo/when ./getPlainValue ./EditModelRefController ./StoreRefController".split(" "),function(h,f,k,l,m,n){return h("dojox.mvc.EditStoreRefController",[n,m],{getPlainValueOptions:null,_removals:[],_resultsWatchHandle:null,_refSourceModelProp:"sourceModel",queryStore:function(a,b){if((this.store||{}).query){this._resultsWatchHandle&&this._resultsWatchHandle.unwatch();this._removals=[];var g=this,c=this.inherited(arguments),
+d=k(c,function(a){if(!g._beingDestroyed)return f.isArray(a)&&(g._resultsWatchHandle=a.watchElements(function(a,b,c){[].push.apply(g._removals,b)})),a});d.then&&(d=f.delegate(d));for(var e in c)isNaN(e)&&c.hasOwnProperty(e)&&f.isFunction(c[e])&&(d[e]=c[e]);return d}},getStore:function(a,b){this._resultsWatchHandle&&this._resultsWatchHandle.unwatch();return this.inherited(arguments)},commit:function(){if(this._removals){for(var a=0;a<this._removals.length;a++)this.store.remove(this.store.getIdentity(this._removals[a]));
+this._removals=[]}var b=l(this.get(this._refEditModelProp),this.getPlainValueOptions);if(f.isArray(b))for(a=0;a<b.length;a++)this.store.put(b[a]);else this.store.put(b);this.inherited(arguments)},reset:function(){this.inherited(arguments);this._removals=[]},destroy:function(){this._resultsWatchHandle&&this._resultsWatchHandle.unwatch();this.inherited(arguments)}})});
+//# sourceMappingURL=EditStoreRefController.js.map

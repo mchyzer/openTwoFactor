@@ -1,18 +1,6 @@
 //>>built
-define("dojox/mobile/ValuePickerDatePicker",["dojo/_base/declare","dojo/dom-class","./_DatePickerMixin","./ValuePicker","./ValuePickerSlot"],function(_1,_2,_3,_4,_5){
-return _1("dojox.mobile.ValuePickerDatePicker",[_4,_3],{readOnly:false,slotClasses:[_5,_5,_5],slotProps:[{labelFrom:1970,labelTo:2038,style:{width:"87px"}},{style:{width:"72px"}},{style:{width:"72px"}}],buildRendering:function(){
-var p=this.slotProps;
-p[0].readOnly=p[1].readOnly=p[2].readOnly=this.readOnly;
-this.initSlots();
-this.inherited(arguments);
-_2.add(this.domNode,"mblValuePickerDatePicker");
-this._conn=[this.connect(this.slots[0],"_setValueAttr","onYearSet"),this.connect(this.slots[1],"_setValueAttr","onMonthSet"),this.connect(this.slots[2],"_setValueAttr","onDaySet")];
-},disableValues:function(_6){
-var _7=this.slots[2].items;
-if(this._tail){
-this.slots[2].items=_7=_7.concat(this._tail);
-}
-this._tail=_7.slice(_6);
-_7.splice(_6);
-}});
-});
+define("dojox/mobile/ValuePickerDatePicker","dojo/_base/declare dojo/dom-class dojo/dom-attr ./_DatePickerMixin ./ValuePicker ./ValuePickerSlot".split(" "),function(d,e,h,f,g,c){return d("dojox.mobile.ValuePickerDatePicker",[g,f],{readOnly:!1,yearPlusBtnLabel:"",yearPlusBtnLabelRef:"",yearMinusBtnLabel:"",yearMinusBtnLabelRef:"",monthPlusBtnLabel:"",monthPlusBtnLabelRef:"",monthMinusBtnLabel:"",monthMinusBtnLabelRef:"",dayPlusBtnLabel:"",dayPlusBtnLabelRef:"",dayMinusBtnLabel:"",dayMinusBtnLabelRef:"",
+slotClasses:[c,c,c],slotProps:[{labelFrom:1970,labelTo:2038,style:{width:"87px"}},{style:{width:"72px"}},{style:{width:"72px"}}],buildRendering:function(){var a=this.slotProps;a[0].readOnly=a[1].readOnly=a[2].readOnly=this.readOnly;this._setBtnLabels(a);this.initSlots();this.inherited(arguments);e.add(this.domNode,"mblValuePickerDatePicker");this._conn=[this.connect(this.slots[0],"_spinToValue","_onYearSet"),this.connect(this.slots[1],"_spinToValue","_onMonthSet"),this.connect(this.slots[2],"_spinToValue",
+"_onDaySet")]},disableValues:function(a){var b=this.slots[2].items;this._tail&&(this.slots[2].items=b=b.concat(this._tail));this._tail=b.slice(a);b.splice(a)},_setBtnLabels:function(a){a[0].plusBtnLabel=this.yearPlusBtnLabel;a[0].plusBtnLabelRef=this.yearPlusBtnLabelRef;a[0].minusBtnLabel=this.yearMinusBtnLabel;a[0].minusBtnLabelRef=this.yearMinusBtnLabelRef;a[1].plusBtnLabel=this.monthPlusBtnLabel;a[1].plusBtnLabelRef=this.monthPlusBtnLabelRef;a[1].minusBtnLabel=this.monthMinusBtnLabel;a[1].minusBtnLabelRef=
+this.monthMinusBtnLabelRef;a[2].plusBtnLabel=this.dayPlusBtnLabel;a[2].plusBtnLabelRef=this.dayPlusBtnLabelRef;a[2].minusBtnLabel=this.dayMinusBtnLabel;a[2].minusBtnLabelRef=this.dayMinusBtnLabelRef}})});
+//# sourceMappingURL=ValuePickerDatePicker.js.map

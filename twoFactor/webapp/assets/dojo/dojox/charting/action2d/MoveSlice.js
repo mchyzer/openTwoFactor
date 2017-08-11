@@ -1,54 +1,6 @@
 //>>built
-define("dojox/charting/action2d/MoveSlice",["dojo/_base/connect","dojo/_base/declare","dojo/_base/array","./PlotAction","dojo/fx/easing","dojox/gfx/matrix","dojox/gfx/fx","dojox/lang/functional","dojox/lang/functional/scan","dojox/lang/functional/fold"],function(_1,_2,_3,_4,_5,m,gf,df,_6,_7){
-var _8=1.05,_9=7;
-return _2("dojox.charting.action2d.MoveSlice",_4,{defaultParams:{duration:400,easing:_5.backOut,scale:_8,shift:_9},optionalParams:{},constructor:function(_a,_b,_c){
-if(!_c){
-_c={};
-}
-this.scale=typeof _c.scale=="number"?_c.scale:_8;
-this.shift=typeof _c.shift=="number"?_c.shift:_9;
-this.connect();
-},process:function(o){
-if(!o.shape||o.element!="slice"||!(o.type in this.overOutEvents)){
-return;
-}
-if(!this.angles){
-var _d=m._degToRad(o.plot.opt.startAngle);
-if(typeof o.run.data[0]=="number"){
-this.angles=df.map(df.scanl(o.run.data,"+",0),"* 2 * Math.PI / this",df.foldl(o.run.data,"+",0));
-}else{
-this.angles=df.map(df.scanl(o.run.data,"a + b.y",0),"* 2 * Math.PI / this",df.foldl(o.run.data,"a + b.y",0));
-}
-this.angles=_3.map(this.angles,function(_e){
-return _e+_d;
-});
-}
-var _f=o.index,_10,_11,_12,_13,_14,_15=(this.angles[_f]+this.angles[_f+1])/2,_16=m.rotateAt(-_15,o.cx,o.cy),_17=m.rotateAt(_15,o.cx,o.cy);
-_10=this.anim[_f];
-if(_10){
-_10.action.stop(true);
-}else{
-this.anim[_f]=_10={};
-}
-if(o.type=="onmouseover"){
-_13=0;
-_14=this.shift;
-_11=1;
-_12=this.scale;
-}else{
-_13=this.shift;
-_14=0;
-_11=this.scale;
-_12=1;
-}
-_10.action=gf.animateTransform({shape:o.shape,duration:this.duration,easing:this.easing,transform:[_17,{name:"translate",start:[_13,0],end:[_14,0]},{name:"scaleAt",start:[_11,o.cx,o.cy],end:[_12,o.cx,o.cy]},_16]});
-if(o.type=="onmouseout"){
-_1.connect(_10.action,"onEnd",this,function(){
-delete this.anim[_f];
-});
-}
-_10.action.play();
-},reset:function(){
-delete this.angles;
-}});
-});
+define("dojox/charting/action2d/MoveSlice","dojo/_base/connect dojo/_base/declare dojo/_base/array ./PlotAction dojo/fx/easing dojox/gfx/matrix dojox/gfx/fx dojox/lang/functional dojox/lang/functional/scan dojox/lang/functional/fold".split(" "),function(p,e,q,f,g,h,r,d){return e("dojox.charting.action2d.MoveSlice",f,{defaultParams:{duration:400,easing:g.backOut,scale:1.05,shift:7},optionalParams:{},constructor:function(a,d,b){b||(b={});this.scale="number"==typeof b.scale?b.scale:1.05;this.shift="number"==
+typeof b.shift?b.shift:7;this.connect()},process:function(a){if(a.shape&&"slice"==a.element&&a.type in this.overOutEvents){if(!this.angles){var e=h._degToRad(a.plot.opt.startAngle);this.angles="number"==typeof a.run.data[0]?d.map(d.scanl(a.run.data,"+",0),"* 2 * Math.PI / this",d.foldl(a.run.data,"+",0)):d.map(d.scanl(a.run.data,"a + b.y",0),"* 2 * Math.PI / this",d.foldl(a.run.data,"a + b.y",0));this.angles=q.map(this.angles,function(a){return a+e})}var b=a.index,c,k,l,m,n;c=(this.angles[b]+this.angles[b+
+1])/2;var f=h.rotateAt(-c,a.cx,a.cy),g=h.rotateAt(c,a.cx,a.cy);(c=this.anim[b])?c.action.stop(!0):this.anim[b]=c={};"onmouseover"==a.type?(m=0,n=this.shift,k=1,l=this.scale):(m=this.shift,n=0,k=this.scale,l=1);c.action=r.animateTransform({shape:a.shape,duration:this.duration,easing:this.easing,transform:[g,{name:"translate",start:[m,0],end:[n,0]},{name:"scaleAt",start:[k,a.cx,a.cy],end:[l,a.cx,a.cy]},f]});"onmouseout"==a.type&&p.connect(c.action,"onEnd",this,function(){delete this.anim[b]});c.action.play()}},
+reset:function(){delete this.angles}})});
+//# sourceMappingURL=MoveSlice.js.map

@@ -1,5 +1,5 @@
 // wrapped by build app
-define("dojox/mobile/app/AlertDialog", ["dijit","dojo","dojox","dojo/require!dijit/_WidgetBase"], function(dijit,dojo,dojox){
+define("dojox/mobile/app/AlertDialog", ["dojo","dijit","dojox","dojo/require!dijit/_WidgetBase"], function(dojo,dijit,dojox){
 dojo.provide("dojox.mobile.app.AlertDialog");
 dojo.experimental("dojox.mobile.app.AlertDialog");
 dojo.require("dijit._WidgetBase");
@@ -103,7 +103,7 @@ dojo.declare("dojox.mobile.app.AlertDialog", dijit._WidgetBase, {
 
 			// Find the widget that was tapped.
 			while(!dijit.byNode(node)){
-				node - node.parentNode;
+				node = node.parentNode;
 			}
 		}
 

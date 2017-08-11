@@ -1,37 +1,5 @@
 //>>built
-define("dojox/mobile/_DataMixin",["dojo/_base/array","dojo/_base/declare","dojo/_base/lang","dojo/_base/Deferred"],function(_1,_2,_3,_4){
-return _2("dojox.mobile._DataMixin",null,{store:null,query:null,queryOptions:null,setStore:function(_5,_6,_7){
-if(_5===this.store){
-return null;
-}
-this.store=_5;
-this._setQuery(_6,_7);
-if(_5&&_5.getFeatures()["dojo.data.api.Notification"]){
-_1.forEach(this._conn||[],this.disconnect,this);
-this._conn=[this.connect(_5,"onSet","onSet"),this.connect(_5,"onNew","onNew"),this.connect(_5,"onDelete","onDelete"),this.connect(_5,"close","onStoreClose")];
-}
-return this.refresh();
-},setQuery:function(_8,_9){
-this._setQuery(_8,_9);
-return this.refresh();
-},_setQuery:function(_a,_b){
-this.query=_a;
-this.queryOptions=_b||this.queryOptions;
-},refresh:function(){
-if(!this.store){
-return null;
-}
-var d=new _4();
-var _c=_3.hitch(this,function(_d,_e){
-this.onComplete(_d,_e);
-d.resolve();
-});
-var _f=_3.hitch(this,function(_10,_11){
-this.onError(_10,_11);
-d.resolve();
-});
-var q=this.query;
-this.store.fetch({query:q,queryOptions:this.queryOptions,onComplete:_c,onError:_f,start:q&&q.start,count:q&&q.count});
-return d;
-}});
-});
+define("dojox/mobile/_DataMixin",["dojo/_base/kernel","dojo/_base/array","dojo/_base/declare","dojo/_base/lang","dojo/_base/Deferred"],function(f,g,h,e,k){f.deprecated("dojox/mobile/_DataMixin","Use dojox/mobile/_StoreMixin instead","2.0");return h("dojox.mobile._DataMixin",null,{store:null,query:null,queryOptions:null,setStore:function(a,b,d){if(a===this.store)return null;this.store=a;this._setQuery(b,d);a&&a.getFeatures()["dojo.data.api.Notification"]&&(g.forEach(this._conn||[],this.disconnect,
+this),this._conn=[this.connect(a,"onSet","onSet"),this.connect(a,"onNew","onNew"),this.connect(a,"onDelete","onDelete"),this.connect(a,"close","onStoreClose")]);return this.refresh()},setQuery:function(a,b){this._setQuery(a,b);return this.refresh()},_setQuery:function(a,b){this.query=a;this.queryOptions=b||this.queryOptions},refresh:function(){if(!this.store)return null;var a=new k,b=e.hitch(this,function(b,c){this.onComplete(b,c);a.resolve()}),d=e.hitch(this,function(b,c){this.onError(b,c);a.resolve()}),
+c=this.query;this.store.fetch({query:c,queryOptions:this.queryOptions,onComplete:b,onError:d,start:c&&c.start,count:c&&c.count});return a}})});
+//# sourceMappingURL=_DataMixin.js.map

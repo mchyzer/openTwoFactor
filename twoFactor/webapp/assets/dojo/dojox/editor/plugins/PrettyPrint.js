@@ -1,42 +1,6 @@
 //>>built
-define("dojox/editor/plugins/PrettyPrint",["dojo","dijit","dojox","dijit/_editor/_Plugin","dojo/_base/connect","dojo/_base/declare","dojox/html/format"],function(_1,_2,_3,_4){
-_1.declare("dojox.editor.plugins.PrettyPrint",_4,{indentBy:-1,lineLength:-1,useDefaultCommand:false,entityMap:null,_initButton:function(){
-delete this.command;
-},setToolbar:function(_5){
-},setEditor:function(_6){
-this.inherited(arguments);
-var _7=this;
-this.editor.onLoadDeferred.addCallback(function(){
-_7.editor._prettyprint_getValue=_7.editor.getValue;
-_7.editor.getValue=function(){
-var _8=_7.editor._prettyprint_getValue(arguments);
-return _3.html.format.prettyPrint(_8,_7.indentBy,_7.lineLength,_7.entityMap,_7.xhtml);
-};
-_7.editor._prettyprint_endEditing=_7.editor._endEditing;
-_7.editor._prettyprint_onBlur=_7.editor._onBlur;
-_7.editor._endEditing=function(_9){
-var v=_7.editor._prettyprint_getValue(true);
-_7.editor._undoedSteps=[];
-_7.editor._steps.push({text:v,bookmark:_7.editor._getBookmark()});
-};
-_7.editor._onBlur=function(e){
-this.inherited("_onBlur",arguments);
-var _a=_7.editor._prettyprint_getValue(true);
-if(_a!=_7.editor.savedContent){
-_7.editor.onChange(_a);
-_7.editor.savedContent=_a;
-}
-};
-});
-}});
-_1.subscribe(_2._scopeName+".Editor.getPlugin",null,function(o){
-if(o.plugin){
-return;
-}
-var _b=o.args.name.toLowerCase();
-if(_b==="prettyprint"){
-o.plugin=new _3.editor.plugins.PrettyPrint({indentBy:("indentBy" in o.args)?o.args.indentBy:-1,lineLength:("lineLength" in o.args)?o.args.lineLength:-1,entityMap:("entityMap" in o.args)?o.args.entityMap:_3.html.entities.html.concat([["¢","cent"],["£","pound"],["€","euro"],["¥","yen"],["©","copy"],["§","sect"],["…","hellip"],["®","reg"]]),xhtml:("xhtml" in o.args)?o.args.xhtml:false});
-}
-});
-return _3.editor.plugins.PrettyPrint;
-});
+define("dojox/editor/plugins/PrettyPrint","dojo dijit dojox dijit/_editor/_Plugin dojo/_base/connect dojo/_base/declare dojox/html/format".split(" "),function(d,g,e,h){var f=d.declare("dojox.editor.plugins.PrettyPrint",h,{indentBy:-1,lineLength:-1,useDefaultCommand:!1,entityMap:null,_initButton:function(){delete this.command},setToolbar:function(b){},setEditor:function(b){this.inherited(arguments);var a=this;this.editor.onLoadDeferred.addCallback(function(){a.editor._prettyprint_getValue=a.editor.getValue;
+a.editor.getValue=function(){var b=a.editor._prettyprint_getValue(arguments);return e.html.format.prettyPrint(b,a.indentBy,a.lineLength,a.entityMap,a.xhtml)};a.editor._prettyprint_endEditing=a.editor._endEditing;a.editor._prettyprint_onBlur=a.editor._onBlur;a.editor._endEditing=function(b){b=a.editor._prettyprint_getValue(!0);a.editor._undoedSteps=[];a.editor._steps.push({text:b,bookmark:a.editor._getBookmark()})};a.editor._onBlur=function(b){this.inherited("_onBlur",arguments);var c=a.editor._prettyprint_getValue(!0);
+c!=a.editor.savedContent&&(a.editor.onChange(c),a.editor.savedContent=c)}})}});d.subscribe(g._scopeName+".Editor.getPlugin",null,function(b){b.plugin||"prettyprint"!==b.args.name.toLowerCase()||(b.plugin=new f({indentBy:"indentBy"in b.args?b.args.indentBy:-1,lineLength:"lineLength"in b.args?b.args.lineLength:-1,entityMap:"entityMap"in b.args?b.args.entityMap:e.html.entities.html.concat([["\u00a2","cent"],["\u00a3","pound"],["\u20ac","euro"],["\u00a5","yen"],["\u00a9","copy"],["\u00a7","sect"],["\u2026",
+"hellip"],["\u00ae","reg"]]),xhtml:"xhtml"in b.args?b.args.xhtml:!1}))});return f});
+//# sourceMappingURL=PrettyPrint.js.map

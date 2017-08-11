@@ -1,35 +1,5 @@
 //>>built
-define("dojox/charting/plot2d/Base",["dojo/_base/declare","../Element","dojo/_base/array","./common"],function(_1,_2,_3,_4){
-return _1("dojox.charting.plot2d.Base",_2,{constructor:function(_5,_6){
-},clear:function(){
-this.series=[];
-this.dirty=true;
-return this;
-},setAxis:function(_7){
-return this;
-},assignAxes:function(_8){
-_3.forEach(this.axes,function(_9){
-if(this[_9]){
-this.setAxis(_8[this[_9]]);
-}
-},this);
-},addSeries:function(_a){
-this.series.push(_a);
-return this;
-},getSeriesStats:function(){
-return _4.collectSimpleStats(this.series);
-},calculateAxes:function(_b){
-this.initializeScalers(_b,this.getSeriesStats());
-return this;
-},initializeScalers:function(){
-return this;
-},isDataDirty:function(){
-return _3.some(this.series,function(_c){
-return _c.dirty;
-});
-},render:function(_d,_e){
-return this;
-},getRequiredColors:function(){
-return this.series.length;
-}});
-});
+define("dojox/charting/plot2d/Base","dojo/_base/declare dojo/_base/array dojo/_base/lang dojox/gfx ../Element ./common ../axis2d/common dojo/has".split(" "),function(c,e,f,g,k,d,l,m){c=c("dojox.charting.plot2d.Base",k,{constructor:function(a,b){b&&b.tooltipFunc&&(this.tooltipFunc=b.tooltipFunc)},clear:function(){this.series=[];this.dirty=!0;return this},setAxis:function(a){return this},assignAxes:function(a){e.forEach(this.axes,function(b){this[b]&&this.setAxis(a[this[b]])},this)},addSeries:function(a){this.series.push(a);
+return this},getSeriesStats:function(){return d.collectSimpleStats(this.series,f.hitch(this,"isNullValue"))},calculateAxes:function(a){this.initializeScalers(a,this.getSeriesStats());return this},initializeScalers:function(){return this},isDataDirty:function(){return e.some(this.series,function(a){return a.dirty})},render:function(a,b){return this},renderLabel:function(a,b,c,e,d,f,h){a=l.createText[this.opt.htmlLabels&&"vml"!=g.renderer?"html":"gfx"](this.chart,a,b,c,h?h:"middle",e,d.series.font,
+d.series.fontColor);f&&(this.opt.htmlLabels&&"vml"!=g.renderer?a.style.pointerEvents="none":a.rawNode&&(a.rawNode.style.pointerEvents="none"));this.opt.htmlLabels&&"vml"!=g.renderer&&this.htmlElements.push(a);return a},getRequiredColors:function(){return this.series.length},_getLabel:function(a){return d.getLabel(a,this.opt.fixed,this.opt.precision)}});m("dojo-bidi")&&c.extend({_checkOrientation:function(a,b,c){this.chart.applyMirroring(this.group,b,c)}});return c});
+//# sourceMappingURL=Base.js.map

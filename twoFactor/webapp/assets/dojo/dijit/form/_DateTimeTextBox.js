@@ -1,98 +1,11 @@
 //>>built
-require({cache:{"url:dijit/form/templates/DropDownBox.html":"<div class=\"dijit dijitReset dijitInline dijitLeft\"\n\tid=\"widget_${id}\"\n\trole=\"combobox\"\n\t><div class='dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitArrowButtonContainer'\n\t\tdata-dojo-attach-point=\"_buttonNode, _popupStateNode\" role=\"presentation\"\n\t\t><input class=\"dijitReset dijitInputField dijitArrowButtonInner\" value=\"&#9660; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"button presentation\" aria-hidden=\"true\"\n\t\t\t${_buttonInputDisabled}\n\t/></div\n\t><div class='dijitReset dijitValidationContainer'\n\t\t><input class=\"dijitReset dijitInputField dijitValidationIcon dijitValidationInner\" value=\"&#935; \" type=\"text\" tabIndex=\"-1\" readonly=\"readonly\" role=\"presentation\"\n\t/></div\n\t><div class=\"dijitReset dijitInputField dijitInputContainer\"\n\t\t><input class='dijitReset dijitInputInner' ${!nameAttrSetting} type=\"text\" autocomplete=\"off\"\n\t\t\tdata-dojo-attach-point=\"textbox,focusNode\" role=\"textbox\" aria-haspopup=\"true\"\n\t/></div\n></div>\n"}});
-define("dijit/form/_DateTimeTextBox",["dojo/date","dojo/date/locale","dojo/date/stamp","dojo/_base/declare","dojo/_base/lang","./RangeBoundTextBox","../_HasDropDown","dojo/text!./templates/DropDownBox.html"],function(_1,_2,_3,_4,_5,_6,_7,_8){
-new Date("X");
-var _9=_4("dijit.form._DateTimeTextBox",[_6,_7],{templateString:_8,hasDownArrow:true,cssStateNodes:{"_buttonNode":"dijitDownArrowButton"},pattern:_2.regexp,datePackage:"",postMixInProperties:function(){
-this.inherited(arguments);
-this._set("type","text");
-},compare:function(_a,_b){
-var _c=this._isInvalidDate(_a);
-var _d=this._isInvalidDate(_b);
-return _c?(_d?0:-1):(_d?1:_1.compare(_a,_b,this._selector));
-},forceWidth:true,format:function(_e,_f){
-if(!_e){
-return "";
-}
-return this.dateLocaleModule.format(_e,_f);
-},"parse":function(_10,_11){
-return this.dateLocaleModule.parse(_10,_11)||(this._isEmpty(_10)?null:undefined);
-},serialize:function(val,_12){
-if(val.toGregorian){
-val=val.toGregorian();
-}
-return _3.toISOString(val,_12);
-},dropDownDefaultValue:new Date(),value:new Date(""),_blankValue:null,popupClass:"",_selector:"",constructor:function(_13){
-this.dateModule=_13.datePackage?_5.getObject(_13.datePackage,false):_1;
-this.dateClassObj=this.dateModule.Date||Date;
-this.dateLocaleModule=_13.datePackage?_5.getObject(_13.datePackage+".locale",false):_2;
-this._set("pattern",this.dateLocaleModule.regexp);
-this._invalidDate=this.constructor.prototype.value.toString();
-},buildRendering:function(){
-this.inherited(arguments);
-if(!this.hasDownArrow){
-this._buttonNode.style.display="none";
-}
-if(!this.hasDownArrow){
-this._buttonNode=this.domNode;
-this.baseClass+=" dijitComboBoxOpenOnClick";
-}
-},_setConstraintsAttr:function(_14){
-_14.selector=this._selector;
-_14.fullYear=true;
-var _15=_3.fromISOString;
-if(typeof _14.min=="string"){
-_14.min=_15(_14.min);
-}
-if(typeof _14.max=="string"){
-_14.max=_15(_14.max);
-}
-this.inherited(arguments);
-},_isInvalidDate:function(_16){
-return !_16||isNaN(_16)||typeof _16!="object"||_16.toString()==this._invalidDate;
-},_setValueAttr:function(_17,_18,_19){
-if(_17!==undefined){
-if(typeof _17=="string"){
-_17=_3.fromISOString(_17);
-}
-if(this._isInvalidDate(_17)){
-_17=null;
-}
-if(_17 instanceof Date&&!(this.dateClassObj instanceof Date)){
-_17=new this.dateClassObj(_17);
-}
-}
-this.inherited(arguments);
-if(this.value instanceof Date){
-this.filterString="";
-}
-if(this.dropDown){
-this.dropDown.set("value",_17,false);
-}
-},_set:function(_1a,_1b){
-if(_1a=="value"&&this.value instanceof Date&&this.compare(_1b,this.value)==0){
-return;
-}
-this.inherited(arguments);
-},_setDropDownDefaultValueAttr:function(val){
-if(this._isInvalidDate(val)){
-val=new this.dateClassObj();
-}
-this.dropDownDefaultValue=val;
-},openDropDown:function(_1c){
-if(this.dropDown){
-this.dropDown.destroy();
-}
-var _1d=_5.isString(this.popupClass)?_5.getObject(this.popupClass,false):this.popupClass,_1e=this,_1f=this.get("value");
-this.dropDown=new _1d({onChange:function(_20){
-_1e.set("value",_20,true);
-},id:this.id+"_popup",dir:_1e.dir,lang:_1e.lang,value:_1f,currentFocus:!this._isInvalidDate(_1f)?_1f:this.dropDownDefaultValue,constraints:_1e.constraints,filterString:_1e.filterString,datePackage:_1e.params.datePackage,isDisabledDate:function(_21){
-return !_1e.rangeCheck(_21,_1e.constraints);
-}});
-this.inherited(arguments);
-},_getDisplayedValueAttr:function(){
-return this.textbox.value;
-},_setDisplayedValueAttr:function(_22,_23){
-this._setValueAttr(this.parse(_22,this.constraints),_23,_22);
-}});
-return _9;
-});
+require({cache:{"url:dijit/form/templates/DropDownBox.html":'\x3cdiv class\x3d"dijit dijitReset dijitInline dijitLeft"\n\tid\x3d"widget_${id}"\n\trole\x3d"combobox"\n\taria-haspopup\x3d"true"\n\tdata-dojo-attach-point\x3d"_popupStateNode"\n\t\x3e\x3cdiv class\x3d\'dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitArrowButtonContainer\'\n\t\tdata-dojo-attach-point\x3d"_buttonNode" role\x3d"presentation"\n\t\t\x3e\x3cinput class\x3d"dijitReset dijitInputField dijitArrowButtonInner" value\x3d"\x26#9660; " type\x3d"text" tabIndex\x3d"-1" readonly\x3d"readonly" role\x3d"button presentation" aria-hidden\x3d"true"\n\t\t\t${_buttonInputDisabled}\n\t/\x3e\x3c/div\n\t\x3e\x3cdiv class\x3d\'dijitReset dijitValidationContainer\'\n\t\t\x3e\x3cinput class\x3d"dijitReset dijitInputField dijitValidationIcon dijitValidationInner" value\x3d"\x26#935; " type\x3d"text" tabIndex\x3d"-1" readonly\x3d"readonly" role\x3d"presentation"\n\t/\x3e\x3c/div\n\t\x3e\x3cdiv class\x3d"dijitReset dijitInputField dijitInputContainer"\n\t\t\x3e\x3cinput class\x3d\'dijitReset dijitInputInner\' ${!nameAttrSetting} type\x3d"${type}" autocomplete\x3d"off"\n\t\t\tdata-dojo-attach-point\x3d"textbox,focusNode" role\x3d"textbox"\n\t/\x3e\x3c/div\n\x3e\x3c/div\x3e\n'}});
+define("dijit/form/_DateTimeTextBox","dojo/date dojo/date/locale dojo/date/stamp dojo/_base/declare dojo/_base/lang ./RangeBoundTextBox ../_HasDropDown dojo/text!./templates/DropDownBox.html".split(" "),function(g,h,f,k,e,l,m,n){new Date("X");return k("dijit.form._DateTimeTextBox",[l,m],{templateString:n,hasDownArrow:!0,cssStateNodes:{_buttonNode:"dijitDownArrowButton"},_unboundedConstraints:{},pattern:h.regexp,datePackage:"",postMixInProperties:function(){this.inherited(arguments);this._set("type",
+"text")},compare:function(a,b){var c=this._isInvalidDate(a),d=this._isInvalidDate(b);if(c||d)return c&&d?0:c?-1:1;var c=this.format(a,this._unboundedConstraints),d=this.format(b,this._unboundedConstraints),e=this.parse(c,this._unboundedConstraints),f=this.parse(d,this._unboundedConstraints);return c==d?0:g.compare(e,f,this._selector)},autoWidth:!0,format:function(a,b){return a?this.dateLocaleModule.format(a,b):""},parse:function(a,b){return this.dateLocaleModule.parse(a,b)||(this._isEmpty(a)?null:
+void 0)},serialize:function(a,b){a.toGregorian&&(a=a.toGregorian());return f.toISOString(a,b)},dropDownDefaultValue:new Date,value:new Date(""),_blankValue:null,popupClass:"",_selector:"",constructor:function(a){a=a||{};this.dateModule=a.datePackage?e.getObject(a.datePackage,!1):g;this.dateClassObj=this.dateModule.Date||Date;this.dateClassObj instanceof Date||(this.value=new this.dateClassObj(this.value));this.dateLocaleModule=a.datePackage?e.getObject(a.datePackage+".locale",!1):h;this._set("pattern",
+this.dateLocaleModule.regexp);this._invalidDate=this.constructor.prototype.value.toString()},buildRendering:function(){this.inherited(arguments);this.hasDownArrow||(this._buttonNode.style.display="none");this.hasDownArrow||(this._buttonNode=this.domNode,this.baseClass+=" dijitComboBoxOpenOnClick")},_setConstraintsAttr:function(a){a.selector=this._selector;a.fullYear=!0;var b=f.fromISOString;"string"==typeof a.min&&(a.min=b(a.min),this.dateClassObj instanceof Date||(a.min=new this.dateClassObj(a.min)));
+"string"==typeof a.max&&(a.max=b(a.max),this.dateClassObj instanceof Date||(a.max=new this.dateClassObj(a.max)));this.inherited(arguments);this._unboundedConstraints=e.mixin({},this.constraints,{min:null,max:null})},_isInvalidDate:function(a){return!a||isNaN(a)||"object"!=typeof a||a.toString()==this._invalidDate},_setValueAttr:function(a,b,c){void 0!==a&&("string"==typeof a&&(a=f.fromISOString(a)),this._isInvalidDate(a)&&(a=null),a instanceof Date&&!(this.dateClassObj instanceof Date)&&(a=new this.dateClassObj(a)));
+this.inherited(arguments,[a,b,c]);this.value instanceof Date&&(this.filterString="");!1!==b&&this.dropDown&&this.dropDown.set("value",a,!1)},_set:function(a,b){if("value"==a){b instanceof Date&&!(this.dateClassObj instanceof Date)&&(b=new this.dateClassObj(b));var c=this._get("value");if(c instanceof this.dateClassObj&&0==this.compare(b,c))return}this.inherited(arguments)},_setDropDownDefaultValueAttr:function(a){this._isInvalidDate(a)&&(a=new this.dateClassObj);this._set("dropDownDefaultValue",a)},
+openDropDown:function(a){this.dropDown&&this.dropDown.destroy();var b=e.isString(this.popupClass)?e.getObject(this.popupClass,!1):this.popupClass,c=this,d=this.get("value");this.dropDown=new b({onChange:function(a){c.set("value",a,!0)},id:this.id+"_popup",dir:c.dir,lang:c.lang,value:d,textDir:c.textDir,currentFocus:this._isInvalidDate(d)?this.dropDownDefaultValue:d,constraints:c.constraints,filterString:c.filterString,datePackage:c.datePackage,isDisabledDate:function(a){return!c.rangeCheck(a,c.constraints)}});
+this.inherited(arguments)},_getDisplayedValueAttr:function(){return this.textbox.value},_setDisplayedValueAttr:function(a,b){this._setValueAttr(this.parse(a,this.constraints),b,a)}})});
+//# sourceMappingURL=_DateTimeTextBox.js.map

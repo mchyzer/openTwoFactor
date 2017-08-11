@@ -1,118 +1,15 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2016, The JS Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/window",["./_base/lang","./sniff","./_base/window","./dom","./dom-geometry","./dom-style"],function(_1,_2,_3,_4,_5,_6){
-var _7={getBox:function(_8){
-_8=_8||_3.doc;
-var _9=(_8.compatMode=="BackCompat")?_3.body(_8):_8.documentElement,_a=_5.docScroll(_8),w,h;
-if(_2("touch")){
-var _b=_7.get(_8);
-w=_b.innerWidth||_9.clientWidth;
-h=_b.innerHeight||_9.clientHeight;
-}else{
-w=_9.clientWidth;
-h=_9.clientHeight;
-}
-return {l:_a.x,t:_a.y,w:w,h:h};
-},get:function(_c){
-if(_2("ie")&&_7!==document.parentWindow){
-_c.parentWindow.execScript("document._parentWindow = window;","Javascript");
-var _d=_c._parentWindow;
-_c._parentWindow=null;
-return _d;
-}
-return _c.parentWindow||_c.defaultView;
-},scrollIntoView:function(_e,_f){
-try{
-_e=_4.byId(_e);
-var doc=_e.ownerDocument||_3.doc,_10=_3.body(doc),_11=doc.documentElement||_10.parentNode,_12=_2("ie"),_13=_2("webkit");
-if((!(_2("mozilla")||_12||_13||_2("opera"))||_e==_10||_e==_11)&&(typeof _e.scrollIntoView!="undefined")){
-_e.scrollIntoView(false);
-return;
-}
-var _14=doc.compatMode=="BackCompat",_15=(_12>=9&&"frameElement" in _e.ownerDocument.parentWindow)?((_11.clientHeight>0&&_11.clientWidth>0&&(_10.clientHeight==0||_10.clientWidth==0||_10.clientHeight>_11.clientHeight||_10.clientWidth>_11.clientWidth))?_11:_10):(_14?_10:_11),_16=_13?_10:_15,_17=_15.clientWidth,_18=_15.clientHeight,rtl=!_5.isBodyLtr(doc),_19=_f||_5.position(_e),el=_e.parentNode,_1a=function(el){
-return ((_12<=6||(_12&&_14))?false:(_6.get(el,"position").toLowerCase()=="fixed"));
-};
-if(_1a(_e)){
-return;
-}
-while(el){
-if(el==_10){
-el=_16;
-}
-var _1b=_5.position(el),_1c=_1a(el);
-if(el==_16){
-_1b.w=_17;
-_1b.h=_18;
-if(_16==_11&&_12&&rtl){
-_1b.x+=_16.offsetWidth-_1b.w;
-}
-if(_1b.x<0||!_12){
-_1b.x=0;
-}
-if(_1b.y<0||!_12){
-_1b.y=0;
-}
-}else{
-var pb=_5.getPadBorderExtents(el);
-_1b.w-=pb.w;
-_1b.h-=pb.h;
-_1b.x+=pb.l;
-_1b.y+=pb.t;
-var _1d=el.clientWidth,_1e=_1b.w-_1d;
-if(_1d>0&&_1e>0){
-_1b.w=_1d;
-_1b.x+=(rtl&&(_12||el.clientLeft>pb.l))?_1e:0;
-}
-_1d=el.clientHeight;
-_1e=_1b.h-_1d;
-if(_1d>0&&_1e>0){
-_1b.h=_1d;
-}
-}
-if(_1c){
-if(_1b.y<0){
-_1b.h+=_1b.y;
-_1b.y=0;
-}
-if(_1b.x<0){
-_1b.w+=_1b.x;
-_1b.x=0;
-}
-if(_1b.y+_1b.h>_18){
-_1b.h=_18-_1b.y;
-}
-if(_1b.x+_1b.w>_17){
-_1b.w=_17-_1b.x;
-}
-}
-var l=_19.x-_1b.x,t=_19.y-Math.max(_1b.y,0),r=l+_19.w-_1b.w,bot=t+_19.h-_1b.h;
-if(r*l>0){
-var s=Math[l<0?"max":"min"](l,r);
-if(rtl&&((_12==8&&!_14)||_12>=9)){
-s=-s;
-}
-_19.x+=el.scrollLeft;
-el.scrollLeft+=s;
-_19.x-=el.scrollLeft;
-}
-if(bot*t>0){
-_19.y+=el.scrollTop;
-el.scrollTop+=Math[t<0?"max":"min"](t,bot);
-_19.y-=el.scrollTop;
-}
-el=(el!=_16)&&!_1c&&el.parentNode;
-}
-}
-catch(error){
-console.error("scrollIntoView: "+error);
-_e.scrollIntoView(false);
-}
-}};
-1&&_1.setObject("dojo.window",_7);
-return _7;
-});
+define("dojo/window","./_base/lang ./sniff ./_base/window ./dom ./dom-geometry ./dom-style ./dom-construct".split(" "),function(A,f,t,I,p,D,l){f.add("rtl-adjust-position-for-verticalScrollBar",function(b,f){var d=t.body(f),e=l.create("div",{style:{overflow:"scroll",overflowX:"visible",direction:"rtl",visibility:"hidden",position:"absolute",left:"0",top:"0",width:"64px",height:"64px"}},d,"last"),g=l.create("div",{style:{overflow:"hidden",direction:"ltr"}},e,"last"),k=0!=p.position(g).x;e.removeChild(g);
+d.removeChild(e);return k});f.add("position-fixed-support",function(b,f){var d=t.body(f),e=l.create("span",{style:{visibility:"hidden",position:"fixed",left:"1px",top:"1px"}},d,"last"),g=l.create("span",{style:{position:"fixed",left:"0",top:"0"}},e,"last"),k=p.position(g).x!=p.position(e).x;e.removeChild(g);d.removeChild(e);return k});var m={getBox:function(b){b=b||t.doc;var g="BackCompat"==b.compatMode?t.body(b):b.documentElement,d=p.docScroll(b);if(f("touch")){var e=m.get(b);b=e.innerWidth||g.clientWidth;
+g=e.innerHeight||g.clientHeight}else b=g.clientWidth,g=g.clientHeight;return{l:d.x,t:d.y,w:b,h:g}},get:function(b){if(f("ie")&&m!==document.parentWindow){b.parentWindow.execScript("document._parentWindow \x3d window;","Javascript");var g=b._parentWindow;b._parentWindow=null;return g}return b.parentWindow||b.defaultView},scrollIntoView:function(b,g){try{b=I.byId(b);var d=b.ownerDocument||t.doc,e=t.body(d),q=d.documentElement||e.parentNode,k=f("ie")||f("trident"),u=f("webkit");if(b!=e&&b!=q)if(!(f("mozilla")||
+k||u||f("opera")||f("trident")||f("edge"))&&"scrollIntoView"in b)b.scrollIntoView(!1);else{var l="BackCompat"==d.compatMode,m=Math.min(e.clientWidth||q.clientWidth,q.clientWidth||e.clientWidth),B=Math.min(e.clientHeight||q.clientHeight,q.clientHeight||e.clientHeight),d=u||l?e:q,n=g||p.position(b),c=b.parentNode,u=function(a){return 6>=k||7==k&&l?!1:f("position-fixed-support")&&"fixed"==D.get(a,"position").toLowerCase()},A=this,E=function(a,b,c){"BODY"==a.tagName||"HTML"==a.tagName?A.get(a.ownerDocument).scrollBy(b,
+c):(b&&(a.scrollLeft+=b),c&&(a.scrollTop+=c))};if(!u(b))for(;c;){c==e&&(c=d);var a=p.position(c),F=u(c),C="rtl"==D.getComputedStyle(c).direction.toLowerCase();if(c==d)a.w=m,a.h=B,d==q&&(k||f("trident"))&&C&&(a.x+=d.offsetWidth-a.w),a.x=0,a.y=0;else{var v=p.getPadBorderExtents(c);a.w-=v.w;a.h-=v.h;a.x+=v.l;a.y+=v.t;var r=c.clientWidth,w=a.w-r;0<r&&0<w&&(C&&f("rtl-adjust-position-for-verticalScrollBar")&&(a.x+=w),a.w=r);r=c.clientHeight;w=a.h-r;0<r&&0<w&&(a.h=r)}F&&(0>a.y&&(a.h+=a.y,a.y=0),0>a.x&&(a.w+=
+a.x,a.x=0),a.y+a.h>B&&(a.h=B-a.y),a.x+a.w>m&&(a.w=m-a.x));var x=n.x-a.x,y=n.y-a.y,G=x+n.w-a.w,H=y+n.h-a.h,h,z;0<G*x&&(c.scrollLeft||c==d||c.scrollWidth>c.offsetHeight)&&(h=Math[0>x?"max":"min"](x,G),C&&(8==k&&!l||5<=f("trident"))&&(h=-h),z=c.scrollLeft,E(c,h,0),h=c.scrollLeft-z,n.x-=h);0<H*y&&(c.scrollTop||c==d||c.scrollHeight>c.offsetHeight)&&(h=Math.ceil(Math[0>y?"max":"min"](y,H)),z=c.scrollTop,E(c,0,h),h=c.scrollTop-z,n.y-=h);c=c!=d&&!F&&c.parentNode}}}catch(J){console.error("scrollIntoView: "+
+J),b.scrollIntoView(!1)}}};A.setObject("dojo.window",m);return m});
+//# sourceMappingURL=window.js.map

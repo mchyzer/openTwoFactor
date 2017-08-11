@@ -54,12 +54,14 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 			'x-small': 0, 'small': 0, 'medium': 0, 'large': 0, 'x-large': 0,
 			'xx-large': 0
 		};
-		var p;
-
+		var p, oldStyle;	
 		if(has("ie")){
-			//		we do a font-size fix if and only if one isn't applied already.
+			//	We do a font-size fix if and only if one isn't applied already.
 			// NOTE: If someone set the fontSize on the HTML Element, this will kill it.
-			win.doc.documentElement.style.fontSize="100%";
+			oldStyle = win.doc.documentElement.style.fontSize || "";
+			if(!oldStyle){
+				win.doc.documentElement.style.fontSize="100%";
+			}
 		}
 
 		//		set up the measuring node.
@@ -83,6 +85,10 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 			heights[p] = Math.round(div.offsetHeight * 12/16) * 16/12 / 1000;
 		}
 
+		if(has("ie")){
+			// Restore the font to its old style.
+			win.doc.documentElement.style.fontSize = oldStyle;
+		}
 		win.body().removeChild(div);
 		return heights; //object
 	};
@@ -103,12 +109,13 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 								/*Object*/ style,
 								/*String?*/ className){
 		var m, s, al = arguments.length;
-		var i;
+		var i, box;
 		if(!measuringNode){
 			measuringNode = domConstruct.create("div", {style: {
 				position: "absolute",
 				top: "-10000px",
-				left: "0"
+				left: "0",
+				visibility: "hidden"
 			}}, win.body());
 		}
 		m = measuringNode;
@@ -133,12 +140,58 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 		// take a measure
 		m.innerHTML = text;
 
-		if(m["getBoundingClientRect"]){
+		if(m.getBoundingClientRect){
 			var bcr = m.getBoundingClientRect();
-			return {l: bcr.left, t: bcr.top, w: bcr.width || (bcr.right - bcr.left), h: bcr.height || (bcr.bottom - bcr.top)};
+			box = {l: bcr.left, t: bcr.top, w: bcr.width || (bcr.right - bcr.left), h: bcr.height || (bcr.bottom - bcr.top)};
 		}else{
-			return domGeom.getMarginBox(m);
+			box = domGeom.getMarginBox(m);
 		}
+		m.innerHTML = "";
+		return box;
+	};
+
+	b._computeTextLocation = function(/*g.defaultTextShape*/textShape, /*Number*/width, /*Number*/height, /*Boolean*/fixHeight) {
+		var loc = {}, align = textShape.align;
+		switch (align) {
+			case 'end':
+				loc.x = textShape.x - width;
+				break;
+			case 'middle':
+				loc.x = textShape.x - width / 2;
+				break;
+			default:
+				loc.x = textShape.x;
+				break;
+		}
+		var c = fixHeight ? 0.75 : 1;
+		loc.y = textShape.y - height*c; // **rough** approximation of the ascent...
+		return loc;
+	};
+	b._computeTextBoundingBox = function(/*shape.Text*/s){
+		// summary:
+		//		Compute the bbox of the given shape.Text instance. Note that this method returns an
+		//		approximation of the bbox, and should be used when the underlying renderer cannot provide precise metrics.
+		if(!g._base._isRendered(s)){
+			return {x:0, y:0, width:0, height:0};
+		}
+		var loc, textShape = s.getShape(),
+			font = s.getFont() || g.defaultFont,
+			w = s.getTextWidth(),
+			h = g.normalizedLength(font.size);
+		loc = b._computeTextLocation(textShape, w, h, true);
+		return {
+			x: loc.x,
+			y: loc.y,
+			width: w,
+			height: h
+		};
+	};
+	b._isRendered = function(/*Shape*/s){
+		var p = s.parent;
+		while(p && p.getParent){
+			p = p.parent;
+		}
+		return p !== null;
 	};
 
 	// candidate for dojo.dom
@@ -153,6 +206,13 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 		}while(dom.byId(id));
 		return id;
 	};
+
+	// IE10
+
+	var touchActionProp = has("pointer-events") ? "touchAction" : has("MSPointer") ? "msTouchAction" : null;
+	b._fixMsTouchAction = touchActionProp ? function(/*dojox/gfx/shape.Surface*/surface){
+		surface.rawNode.style[touchActionProp] = "none";
+	} : function() {};
 
 	/*=====
 	g.Stroke = {
@@ -904,7 +964,7 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 		//		a constant regular expression used to split a SVG/VML path into primitive components
 		// tags:
 		//		private
-		pathSvgRegExp: /([A-Za-z])|(\d+(\.\d+)?)|(\.\d+)|(-\d+(\.\d+)?)|(-\.\d+)/g,
+		pathSvgRegExp: /([A-DF-Za-df-z])|([-+]?\d*[.]?\d+(?:[eE][-+]?\d+)?)/g,
 
 		equalSources: function(a, b){
 			// summary:
@@ -932,6 +992,13 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 						"Surface", "createSurface", "fixTarget"], function(name){
 					g[name] = ns[name];
 				});
+				if(typeof renderer == "string"){
+					g.renderer = renderer;
+				}else{
+					arr.some(["svg","vml","canvas","canvasWithEvents","silverlight"], function(r){
+						return (g.renderer = g[r] && g[r].Surface === g.Surface ? r : null);
+					});
+				}
 			}
 		}
 	});
@@ -960,10 +1027,18 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 
 },
 'dojox/gfx/renderer':function(){
-define("dojox/gfx/renderer", ["./_base","dojo/_base/lang", "dojo/_base/sniff", "dojo/_base/window", "dojo/_base/config"],
+define(["./_base","dojo/_base/lang", "dojo/_base/sniff", "dojo/_base/window", "dojo/_base/config"],
   function(g, lang, has, win, config){
   //>> noBuildResolver
 	var currentRenderer = null;
+
+	has.add("vml", function(global, document, element){
+		element.innerHTML = "<v:shape adj=\"1\"/>";
+		var supported = ("adj" in element.firstChild);
+		element.innerHTML = "";
+		return supported;
+	});
+
 	return {
 		// summary:
 		//		This module is an AMD loader plugin that loads the appropriate graphics renderer
@@ -990,7 +1065,7 @@ define("dojox/gfx/renderer", ["./_base","dojo/_base/lang", "dojo/_base/sniff", "
 						}
 						break;
 					case "vml":
-						if(has("ie")){
+						if(has("vml")){
 							renderer = "vml";
 						}
 						break;

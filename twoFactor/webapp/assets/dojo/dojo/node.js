@@ -1,18 +1,9 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2016, The JS Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/node",["dojo/has"],function(_1){
-if(!0){
-throw new Error("node plugin failed to load because environment is not Node.js");
-}
-return {load:function(id,_2,_3){
-if(!_2.nodeRequire){
-throw new Error("Cannot find native require function");
-}
-_3(_2.nodeRequire(id));
-}};
-});
+define("dojo/node",["./_base/kernel","./has","require"],function(c,h,g){var e=c.global.require&&c.global.require.nodeRequire;if(!e)throw Error("Cannot find the Node.js require");var d=e("module");return{load:function(a,b,c){d._findPath&&d._nodeModulePaths&&(b=d._findPath(a,d._nodeModulePaths(b.toUrl("."))),!1!==b&&(a=b));b=define;var f;define=void 0;try{f=e(a)}finally{define=b}c(f)},normalize:function(a,b){"."===a.charAt(0)&&(a=g.toUrl(b("./"+a)));return a}}});
+//# sourceMappingURL=node.js.map

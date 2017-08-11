@@ -1,29 +1,6 @@
 //>>built
-define("dijit/DialogUnderlay",["dojo/_base/declare","dojo/dom-attr","dojo/window","./_Widget","./_TemplatedMixin","./BackgroundIframe"],function(_1,_2,_3,_4,_5,_6){
-return _1("dijit.DialogUnderlay",[_4,_5],{templateString:"<div class='dijitDialogUnderlayWrapper'><div class='dijitDialogUnderlay' data-dojo-attach-point='node'></div></div>",dialogId:"","class":"",_setDialogIdAttr:function(id){
-_2.set(this.node,"id",id+"_underlay");
-this._set("dialogId",id);
-},_setClassAttr:function(_7){
-this.node.className="dijitDialogUnderlay "+_7;
-this._set("class",_7);
-},postCreate:function(){
-this.ownerDocumentBody.appendChild(this.domNode);
-},layout:function(){
-var is=this.node.style,os=this.domNode.style;
-os.display="none";
-var _8=_3.getBox(this.ownerDocument);
-os.top=_8.t+"px";
-os.left=_8.l+"px";
-is.width=_8.w+"px";
-is.height=_8.h+"px";
-os.display="block";
-},show:function(){
-this.domNode.style.display="block";
-this.layout();
-this.bgIframe=new _6(this.domNode);
-},hide:function(){
-this.bgIframe.destroy();
-delete this.bgIframe;
-this.domNode.style.display="none";
-}});
-});
+define("dijit/DialogUnderlay","dojo/_base/declare dojo/_base/lang dojo/aspect dojo/dom-attr dojo/dom-style dojo/on dojo/window ./_Widget ./_TemplatedMixin ./BackgroundIframe ./Viewport ./main".split(" "),function(g,d,r,h,k,e,f,l,m,n,p,q){var c=g("dijit.DialogUnderlay",[l,m],{templateString:"\x3cdiv class\x3d'dijitDialogUnderlayWrapper'\x3e\x3cdiv class\x3d'dijitDialogUnderlay' tabIndex\x3d'-1' data-dojo-attach-point\x3d'node'\x3e\x3c/div\x3e\x3c/div\x3e",dialogId:"","class":"",_modalConnects:[],_setDialogIdAttr:function(a){h.set(this.node,
+"id",a+"_underlay");this._set("dialogId",a)},_setClassAttr:function(a){this.node.className="dijitDialogUnderlay "+a;this._set("class",a)},postCreate:function(){this.ownerDocumentBody.appendChild(this.domNode);this.own(e(this.domNode,"keydown",d.hitch(this,"_onKeyDown")));this.inherited(arguments)},layout:function(){var a=this.node.style,c=this.domNode.style;c.display="none";var b=f.getBox(this.ownerDocument);c.top=b.t+"px";c.left=b.l+"px";a.width=b.w+"px";a.height=b.h+"px";c.display="block"},show:function(){this.domNode.style.display=
+"block";this.open=!0;this.layout();this.bgIframe=new n(this.domNode);var a=f.get(this.ownerDocument);this._modalConnects=[p.on("resize",d.hitch(this,"layout")),e(a,"scroll",d.hitch(this,"layout"))]},hide:function(){this.bgIframe.destroy();delete this.bgIframe;for(this.domNode.style.display="none";this._modalConnects.length;)this._modalConnects.pop().remove();this.open=!1},destroy:function(){for(;this._modalConnects.length;)this._modalConnects.pop().remove();this.inherited(arguments)},_onKeyDown:function(){}});
+c.show=function(a,d){var b=c._singleton;!b||b._destroyed?b=q._underlay=c._singleton=new c(a):a&&b.set(a);k.set(b.domNode,"zIndex",d);b.open||b.show()};c.hide=function(){var a=c._singleton;a&&!a._destroyed&&a.hide()};return c});
+//# sourceMappingURL=DialogUnderlay.js.map

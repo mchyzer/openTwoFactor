@@ -1,133 +1,27 @@
 //>>built
-define("dojox/app/controllers/Transition",["dojo/_base/lang","dojo/_base/declare","dojo/has","dojo/on","dojo/Deferred","dojo/when","dojox/css3/transit","../Controller"],function(_1,_2,_3,on,_4,_5,_6,_7){
-return _2("dojox.app.controllers.Transition",_7,{proceeding:false,waitingQueue:[],constructor:function(_8,_9){
-this.events={"transition":this.transition,"startTransition":this.onStartTransition};
-this.inherited(arguments);
-},transition:function(_a){
-this.proceedTransition(_a);
-},onStartTransition:function(_b){
-if(_b.preventDefault){
-_b.preventDefault();
-}
-_b.cancelBubble=true;
-if(_b.stopPropagation){
-_b.stopPropagation();
-}
-var _c=_b.detail.target;
-var _d=/#(.+)/;
-if(!_c&&_d.test(_b.detail.href)){
-_c=_b.detail.href.match(_d)[1];
-}
-this.transition({"viewId":_c,opts:_1.mixin({},_b.detail)});
-},proceedTransition:function(_e){
-if(this.proceeding){
-this.app.log("in app/controllers/Transition proceedTransition push event",_e);
-this.waitingQueue.push(_e);
-return;
-}
-this.proceeding=true;
-this.app.log("in app/controllers/Transition proceedTransition calling trigger load",_e);
-var _f=_e.params||{};
-if(_e.opts&&_e.opts.params){
-_f=_e.params||_e.opts.params;
-}
-this.app.trigger("load",{"viewId":_e.viewId,"params":_f,"callback":_1.hitch(this,function(){
-var _10=this._doTransition(_e.viewId,_e.opts,_f,this.app);
-_5(_10,_1.hitch(this,function(){
-this.proceeding=false;
-var _11=this.waitingQueue.shift();
-if(_11){
-this.proceedTransition(_11);
-}
-}));
-})});
-},_getDefaultTransition:function(_12){
-var _13=_12;
-var _14=_13.defaultTransition;
-while(!_14&&_13.parent){
-_13=_13.parent;
-_14=_13.defaultTransition;
-}
-return _14;
-},_doTransition:function(_15,_16,_17,_18){
-this.app.log("in app/controllers/Transition._doTransition transitionTo=[",_15,"], parent.name=[",_18.name,"], opts=",_16);
-if(!_18){
-throw Error("view parent not found in transition.");
-}
-var _19,_1a,_1b,_1c,_17,_1d=_18.selectedChild;
-if(_15){
-_19=_15.split(",");
-}else{
-_19=_18.defaultView.split(",");
-}
-_1a=_19.shift();
-_1b=_19.join(",");
-_1c=_18.children[_18.id+"_"+_1a];
-if(!_1c){
-throw Error("child view must be loaded before transition.");
-}
-_1c.params=_17||_1c.params;
-if(!_1b&&_1c.defaultView){
-_1b=_1c.defaultView;
-}
-if(!_1d){
-this.app.log("> in Transition._doTransition calling next.beforeActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"],  !current path,");
-_1c.beforeActivate();
-this.app.log("> in Transition._doTransition calling next.afterActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"],  !current path");
-_1c.afterActivate();
-this.app.log("  > in Transition._doTransition calling app.triggger select view next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], !current path");
-this.app.trigger("select",{"parent":_18,"view":_1c});
-return;
-}
-if(_1c!==_1d){
-var _1e=_1d.selectedChild;
-while(_1e){
-this.app.log("< in Transition._doTransition calling subChild.beforeDeactivate subChild name=[",_1e.name,"], parent.name=[",_1e.parent.name,"], next!==current path");
-_1e.beforeDeactivate();
-_1e=_1e.selectedChild;
-}
-this.app.log("< in Transition._doTransition calling current.beforeDeactivate current name=[",_1d.name,"], parent.name=[",_1d.parent.name,"], next!==current path");
-_1d.beforeDeactivate();
-this.app.log("> in Transition._doTransition calling next.beforeActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next!==current path");
-_1c.beforeActivate();
-this.app.log("> in Transition._doTransition calling app.triggger select view next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next!==current path");
-this.app.trigger("select",{"parent":_18,"view":_1c});
-var _1f=true;
-if(!_3("ie")){
-var _20=_1.mixin({},_16);
-_20=_1.mixin({},_20,{reverse:(_20.reverse||_20.transitionDir===-1)?true:false,transition:_20.transition||this._getDefaultTransition(_18)||"none"});
-_1f=_6(_1d.domNode,_1c.domNode,_20);
-}
-_5(_1f,_1.hitch(this,function(){
-var _21=_1d.selectedChild;
-while(_21){
-this.app.log("  < in Transition._doTransition calling subChild.afterDeactivate subChild name=[",_21.name,"], parent.name=[",_21.parent.name,"], next!==current path");
-_21.afterDeactivate();
-_21=_21.selectedChild;
-}
-this.app.log("  < in Transition._doTransition calling current.afterDeactivate current name=[",_1d.name,"], parent.name=[",_1d.parent.name,"], next!==current path");
-_1d.afterDeactivate();
-this.app.log("  > in Transition._doTransition calling next.afterActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next!==current path");
-_1c.afterActivate();
-if(_1b){
-this._doTransition(_1b,_16,_17,_1c);
-}
-}));
-return _1f;
-}else{
-this.app.log("< in Transition._doTransition calling next.beforeDeactivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next==current path");
-_1c.beforeDeactivate();
-this.app.log("  < in Transition._doTransition calling next.afterDeactivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next==current path");
-_1c.afterDeactivate();
-this.app.log("> in Transition._doTransition calling next.beforeActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next==current path");
-_1c.beforeActivate();
-this.app.log("  > in Transition._doTransition calling next.afterActivate next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next==current path");
-_1c.afterActivate();
-this.app.log("> in Transition._doTransition calling app.triggger select view next name=[",_1c.name,"], parent.name=[",_1c.parent.name,"], next==current path");
-this.app.trigger("select",{"parent":_18,"view":_1c});
-}
-if(_1b){
-return this._doTransition(_1b,_16,_17,_1c);
-}
-}});
-});
+define("dojox/app/controllers/Transition","require dojo/_base/lang dojo/_base/declare dojo/has dojo/on dojo/Deferred dojo/when dojo/dom-style ../Controller ../utils/constraints".split(" "),function(z,m,A,C,D,E,y,u,B,v){var w;return A("dojox.app.controllers.Transition",B,{proceeding:!1,waitingQueue:[],constructor:function(a,b){this.events={"app-transition":this.transition,"app-domNode":this.onDomNodeChange};z([this.app.transit||"dojox/css3/transit"],function(a){w=a});if(this.app.domNode)this.onDomNodeChange({oldNode:null,
+newNode:this.app.domNode})},transition:function(a){this.app.log("logTransitions:","app/controllers/Transition:transition"," ");this.app.log("logTransitions:","app/controllers/Transition:transition","New Transition event.viewId\x3d["+a.viewId+"]");this.app.log("app/controllers/Transition:transition","event.viewId\x3d["+a.viewId+"]","event.opts\x3d",a.opts);var b=a.viewId||"";this.proceedingSaved=this.proceeding;var d=b.split("+"),b=b.split("-"),e;if(0<d.length||0<b.length){for(;1<d.length;)if(e=d.shift(),
+b=m.clone(a),0<=e.indexOf("-")){var c=e.split("-");if(0<c.length){if(e=c.shift())b._removeView=!1,b.viewId=e,this.proceeding=!0,this.proceedTransition(b),b=m.clone(a);if(e=c.shift())b._removeView=!0,b.viewId=e,this.proceeding=!0,this.proceedTransition(b)}}else b._removeView=!1,b.viewId=e,this.proceeding=!0,this.proceedTransition(b);e=d.shift();c=e.split("-");0<c.length&&(e=c.shift());0<e.length&&(this.proceeding=this.proceedingSaved,a.viewId=e,a._doResize=!0,a._removeView=!1,this.proceedTransition(a));
+if(0<c.length)for(;0<c.length;)d=c.shift(),b=m.clone(a),b.viewId=d,b._removeView=!0,b._doResize=!0,this.proceedTransition(b)}else a._doResize=!0,a._removeView=!1,this.proceedTransition(a)},onDomNodeChange:function(a){null!=a.oldNode&&this.unbind(a.oldNode,"startTransition");this.bind(a.newNode,"startTransition",m.hitch(this,this.onStartTransition))},onStartTransition:function(a){a.preventDefault&&a.preventDefault();a.cancelBubble=!0;a.stopPropagation&&a.stopPropagation();var b=a.detail.target,d=/#(.+)/;
+!b&&d.test(a.detail.href)&&(b=a.detail.href.match(d)[1]);this.transition({viewId:b,opts:m.mixin({},a.detail),data:a.detail.data})},_addTransitionEventToWaitingQueue:function(a){if(a.defaultView&&0<this.waitingQueue.length){for(var b=!1,d=0;d<this.waitingQueue.length;d++)if(!this.waitingQueue[d].defaultView){this.waitingQueue.splice(d,0,a);b=!0;break}b||this.waitingQueue.push(a)}else this.waitingQueue.push(a)},proceedTransition:function(a){if(this.proceeding)this._addTransitionEventToWaitingQueue(a),
+this.app.log("app/controllers/Transition:proceedTransition added this event to waitingQueue",a),this.processingQueue=!1;else{this.app.log("app/controllers/Transition:proceedTransition this.waitingQueue.length \x3d"+this.waitingQueue.length+" this.processingQueue\x3d"+this.processingQueue);0<this.waitingQueue.length&&!this.processingQueue&&(this.processingQueue=!0,this._addTransitionEventToWaitingQueue(a),this.app.log("app/controllers/Transition:proceedTransition added this event to waitingQueue passed proceeding",
+a),a=this.waitingQueue.shift(),this.app.log("app/controllers/Transition:proceedTransition shifted waitingQueue to process",a));this.proceeding=!0;this.app.log("app/controllers/Transition:proceedTransition calling trigger load",a);a.opts||(a.opts={});var b=a.params||a.opts.params;this.app.emit("app-load",{viewId:a.viewId,params:b,forceTransitionNone:a.forceTransitionNone,callback:m.hitch(this,function(d,e){if(d){this.proceeding=!1;this.processingQueue=!0;var c=e?this.waitingQueue.shift():this.waitingQueue.pop();
+c&&this.proceedTransition(c)}else c=this._doTransition(a.viewId,a.opts,b,a.opts.data,this.app,a._removeView,a._doResize,a.forceTransitionNone),y(c,m.hitch(this,function(){this.proceeding=!1;this.processingQueue=!0;var a=this.waitingQueue.shift();a&&this.proceedTransition(a)}))})})}},_getTransition:function(a,b,d,e,c){if(c)return"none";c=null;a&&(c=a.transition);!c&&b.views[d]&&(c=b.views[d].transition);c||(c=b.transition);for(a=a&&a.defaultTransition?a.defaultTransition:b.defaultTransition;!c&&b.parent;)b=
+b.parent,c=b.transition,a||(a=b.defaultTransition);return c||e.transition||a||"none"},_getParamsForView:function(a,b){var d={},e;for(e in b){var c=b[e];m.isObject(c)?e==a&&(d=m.mixin(d,c)):e&&null!=c&&(d[e]=b[e])}return d},_doTransition:function(a,b,d,e,c,g,h,k,u){if(!c)throw Error("view parent not found in transition.");this.app.log("app/controllers/Transition:_doTransition transitionTo\x3d[",a,"], removeView\x3d[",g,"] parent.name\x3d[",c.name,"], opts\x3d",b);var t,l,f;a=a?a.split(","):c.defaultView.split(",");
+t=a.shift();l=a.join(",");f=c.children[c.id+"_"+t];if(!f){if(g){this.app.log("app/controllers/Transition:_doTransition called with removeView true, but that view is not available to remove");return}throw Error("child view must be loaded before transition.");}!l&&f.defaultView&&(l=f.defaultView);var p=[f||c];l&&(p=this._getNextSubViewArray(l,f,c));var r=v.getSelectedChild(c,f.constraint),x=this._getCurrentSubViewArray(c,p,g);a=this._getNamesFromArray(x,!1);var q=this._getNamesFromArray(p,!0);f.params=
+this._getParamsForView(f.name,d);if(g){if(f!==r){this.app.log("app/controllers/Transition:_doTransition called with removeView true, but that view is not available to remove");return}this.app.log("logTransitions:","app/controllers/Transition:_doTransition","Transition Remove current From\x3d["+a+"]");f=null}if(q==a&&f==r)this.app.log("logTransitions:","app/controllers/Transition:_doTransition","Transition current and next DO MATCH From\x3d["+a+"] TO\x3d["+q+"]"),this._handleMatchingViews(p,f,r,c,
+e,g,h,l,a,t,k,b);else{this.app.log("logTransitions:","app/controllers/Transition:_doTransition","Transition current and next DO NOT MATCH From\x3d["+a+"] TO\x3d["+q+"]");if(!g&&f)for(d=this.nextLastSubChildMatch||f,a=!1,q=p.length-1;0<=q;q--){var n=p[q];if(a||n.id==d.id)a=!0,!n._needsResize&&n.domNode&&(this.app.log("logTransitions:","app/controllers/Transition:_doTransition"," setting domStyle visibility hidden for v.id\x3d["+n.id+"], display\x3d["+n.domNode.style.display+"], visibility\x3d["+n.domNode.style.visibility+
+"]"),this._setViewVisible(n,!1))}r&&r._active&&this._handleBeforeDeactivateCalls(x,this.nextLastSubChildMatch||f,r,e,l);f&&(this.app.log("app/controllers/Transition:_doTransition calling _handleBeforeActivateCalls next name\x3d[",f.name,"], parent.name\x3d[",f.parent.name,"]"),this._handleBeforeActivateCalls(p,this.currentLastSubChildMatch||r,e,l));if(g)for(q=0;q<p.length;q++)n=p[q],this.app.log("logTransitions:","app/controllers/Transition:_doTransition","setting visibility visible for v.id\x3d["+
+n.id+"]"),n.domNode&&(this.app.log("logTransitions:","app/controllers/Transition:_doTransition","  setting domStyle for removeView visibility visible for v.id\x3d["+n.id+"], display\x3d["+n.domNode.style.display+"]"),this._setViewVisible(n,!0));else d=this.nextLastSubChildMatch||f,d=this._getTransition(d,c,t,b,k),this.app.log("app/controllers/Transition:_doTransition calling _handleLayoutAndResizeCalls trans\x3d"+d),this._handleLayoutAndResizeCalls(p,g,h,l,k,d);d=!0;!w||u&&null==this.currentLastSubChildMatch||
+this.currentLastSubChildMatch===f||(d=this._handleTransit(f,c,this.currentLastSubChildMatch,b,t,g,k,h));y(d,m.hitch(this,function(){f&&this.app.log("app/controllers/Transition:_doTransition back from transit for next \x3d"+f.name);if(g){var a=this._getTransition(this.nextLastSubChildMatch||f,c,t,b,k);this._handleLayoutAndResizeCalls(p,g,h,l,k,a)}this._handleAfterDeactivateCalls(x,this.nextLastSubChildMatch||f,r,e,l);this._handleAfterActivateCalls(p,g,this.currentLastSubChildMatch||r,e,l)}));return d}},
+_handleMatchingViews:function(a,b,d,e,c,g,h,k,m,t,l,f){this._handleBeforeDeactivateCalls(a,this.nextLastSubChildMatch||b,d,c,k);this._handleAfterDeactivateCalls(a,this.nextLastSubChildMatch||b,d,c,k);this._handleBeforeActivateCalls(a,this.currentLastSubChildMatch||d,c,k);b=this._getTransition(this.nextLastSubChildMatch||b,e,t,f,l);this._handleLayoutAndResizeCalls(a,g,h,k,b);this._handleAfterActivateCalls(a,g,this.currentLastSubChildMatch||d,c,k)},_handleBeforeDeactivateCalls:function(a,b,d,e,c){if(d._active)for(d=
+a.length-1;0<=d;d--)(c=a[d])&&c.beforeDeactivate&&c._active&&(this.app.log("logTransitions:","app/controllers/Transition:_handleBeforeDeactivateCalls","beforeDeactivate for v.id\x3d"+c.id),c.beforeDeactivate(b,e))},_handleAfterDeactivateCalls:function(a,b,d,e,c){if(d&&d._active)for(d=0;d<a.length;d++)(c=a[d])&&c.beforeDeactivate&&c._active&&(this.app.log("logTransitions:","app/controllers/Transition:_handleAfterDeactivateCalls","afterDeactivate for v.id\x3d"+c.id),c.afterDeactivate(b,e),c._active=
+!1)},_handleBeforeActivateCalls:function(a,b,d,e){for(e=a.length-1;0<=e;e--){var c=a[e];this.app.log("logTransitions:","app/controllers/Transition:_handleBeforeActivateCalls","beforeActivate for v.id\x3d"+c.id);c.beforeActivate(b,d)}},_handleLayoutAndResizeCalls:function(a,b,d,e,c,g){for(e=0;e<a.length;e++)c=a[e],this.app.log("logTransitions:","app/controllers/Transition:_handleLayoutAndResizeCalls","emit layoutView v.id\x3d["+c.id+"] removeView\x3d["+b+"]"),this.app.emit("app-layoutView",{parent:c.parent,
+view:c,removeView:b,doResize:!1,transition:g,currentLastSubChildMatch:this.currentLastSubChildMatch}),b=!1;d&&(this.app.log("logTransitions:","app/controllers/Transition:_handleLayoutAndResizeCalls","emit doResize called"),this.app.emit("app-resize"),"none"==g&&this._showSelectedChildren(this.app))},_showSelectedChildren:function(a){this.app.log("logTransitions:","app/controllers/Transition:_showSelectedChildren"," setting domStyle visibility visible for w.id\x3d["+a.id+"], display\x3d["+a.domNode.style.display+
+"], visibility\x3d["+a.domNode.style.visibility+"]");this._setViewVisible(a,!0);a._needsResize=!1;for(var b in a.selectedChildren)a.selectedChildren[b]&&a.selectedChildren[b].domNode&&(this.app.log("logTransitions:","app/controllers/Transition:_showSelectedChildren"," calling _showSelectedChildren for w.selectedChildren[hash].id\x3d"+a.selectedChildren[b].id),this._showSelectedChildren(a.selectedChildren[b]))},_setViewVisible:function(a,b){b?u.set(a.domNode,"visibility","visible"):u.set(a.domNode,
+"visibility","hidden")},_handleAfterActivateCalls:function(a,b,d,e,c){c=0;b&&1<a.length&&(c=1);for(b=c;b<a.length;b++)c=a[b],c.afterActivate&&(this.app.log("logTransitions:","app/controllers/Transition:_handleAfterActivateCalls","afterActivate for v.id\x3d"+c.id),c.afterActivate(d,e),c._active=!0)},_getNextSubViewArray:function(a,b,d){var e=[];b=b||d;a&&(e=a.split(","));a=[b];for(d=0;d<e.length;d++){toId=e[d];var c=b.children[b.id+"_"+toId];c&&(a.push(c),b=c)}a.reverse();return a},_getCurrentSubViewArray:function(a,
+b,d){var e=[],c,g;this.nextLastSubChildMatch=this.currentLastSubChildMatch=null;for(var h=b.length-1;0<=h;h--)if(c=b[h].constraint,g=typeof c,c="string"==g||"number"==g?c:c.__hash,a&&a.selectedChildren&&a.selectedChildren[c])if(a.selectedChildren[c]==b[h])this.currentLastSubChildMatch=a.selectedChildren[c],this.nextLastSubChildMatch=b[h],e.push(this.currentLastSubChildMatch),a=this.currentLastSubChildMatch;else{this.currentLastSubChildMatch=a.selectedChildren[c];e.push(this.currentLastSubChildMatch);
+this.nextLastSubChildMatch=b[h];d||(b=v.getAllSelectedChildren(this.currentLastSubChildMatch),e=e.concat(b));break}else{this.currentLastSubChildMatch=null;this.nextLastSubChildMatch=b[h];break}d&&(b=v.getAllSelectedChildren(a),e=e.concat(b));return e},_getNamesFromArray:function(a,b){var d="";if(b)for(var e=a.length-1;0<=e;e--)d=d?d+","+a[e].name:a[e].name;else for(e=0;e<a.length;e++)d=d?d+","+a[e].name:a[e].name;return d},_handleTransit:function(a,b,d,e,c,g,h,k){a=this.nextLastSubChildMatch||a;e=
+m.mixin({},e);e=m.mixin({},e,{reverse:e.reverse||-1===e.transitionDir?!0:!1,transition:this._getTransition(a,b,c,e,h)});g&&(a=null);d&&this.app.log("logTransitions:","app/controllers/Transition:_handleTransit","transit FROM currentLastSubChild.id\x3d["+d.id+"]");a?("none"!==e.transition&&(!k&&a._needsResize&&(this.app.log("logTransitions:","app/controllers/Transition:_handleTransit","emit doResize called from _handleTransit"),this.app.emit("app-resize")),this.app.log("logTransitions:","app/controllers/Transition:_handleTransit",
+"  calling _showSelectedChildren for w3.id\x3d["+a.id+"], display\x3d["+a.domNode.style.display+"], visibility\x3d["+a.domNode.style.visibility+"]"),this._showSelectedChildren(this.app)),this.app.log("logTransitions:","app/controllers/Transition:_handleTransit","transit TO nextLastSubChild.id\x3d["+a.id+"] transition\x3d["+e.transition+"]")):this._showSelectedChildren(this.app);return w(d&&d.domNode,a&&a.domNode,e)}})});
+//# sourceMappingURL=Transition.js.map

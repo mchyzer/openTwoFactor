@@ -1,5 +1,5 @@
 // wrapped by build app
-define("dojox/image/ThumbnailPicker", ["dijit","dojo","dojox","dojo/require!dojox/fx/scroll,dojo/fx/easing,dojo/fx,dijit/_Widget,dijit/_Templated"], function(dijit,dojo,dojox){
+define("dojox/image/ThumbnailPicker", ["dojo","dijit","dojox","dojo/require!dojox/fx/scroll,dojo/fx/easing,dojo/fx,dijit/_Widget,dijit/_Templated"], function(dojo,dijit,dojox){
 dojo.provide("dojox.image.ThumbnailPicker");
 dojo.experimental("dojox.image.ThumbnailPicker");
 //
@@ -159,14 +159,7 @@ dojo.declare("dojox.image.ThumbnailPicker",
 			dojo.addClass(this.thumbsNode, "thumbClickable");
 		}
 		this._totalSize = 0;
-		this.init();
-	},
 
-	init: function(){
-		// summary:
-		//		Creates DOM nodes for thumbnail images and initializes their listeners
-		if(this.isInitialized) {return false;}
-	
 		var classExt = this.isHorizontal ? "Horiz" : "Vert";
 	
 		// FIXME: can we setup a listener around the whole element and determine based on e.target?
@@ -174,26 +167,37 @@ dojo.declare("dojox.image.ThumbnailPicker",
 		dojo.addClass(this.navNext, "next" + classExt);
 		dojo.addClass(this.thumbsNode, "thumb"+classExt);
 		dojo.addClass(this.outerNode, "thumb"+classExt);
-	
+
 		dojo.attr(this.navNextImg, "src", this._blankGif);
 		dojo.attr(this.navPrevImg, "src", this._blankGif);
-		
+
 		this.connect(this.navPrev, "onclick", "_prev");
 		this.connect(this.navNext, "onclick", "_next");
-		this.isInitialized = true;
-		
+
 		if(this.isHorizontal){
-			this._offsetAttr = "offsetLeft";
 			this._sizeAttr = "offsetWidth";
 			this._scrollAttr = "scrollLeft";
 		}else{
-			this._offsetAttr = "offsetTop";
 			this._sizeAttr = "offsetHeight";
 			this._scrollAttr = "scrollTop";
 		}
 	
 		this._updateNavControls();
-		if(this.imageStore && this.request){this._loadNextPage();}
+		
+		this.init();
+	},
+	
+	init: function(){
+		// summary
+		//		Loads first image
+		if(this.isInitialized){
+			return false;
+		}
+		this.isInitialized = true;
+
+		if(this.imageStore && this.request){
+			this._loadNextPage();
+		}
 		return true;
 	},
 

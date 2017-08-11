@@ -1,95 +1,11 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2016, The JS Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/domReady",["./has"],function(_1){
-var _2=this,_3=document,_4={"loaded":1,"complete":1},_5=typeof _3.readyState!="string",_6=!!_4[_3.readyState];
-if(_5){
-_3.readyState="loading";
-}
-if(!_6){
-var _7=[],_8=[],_9=function(_a){
-_a=_a||_2.event;
-if(_6||(_a.type=="readystatechange"&&!_4[_3.readyState])){
-return;
-}
-_6=1;
-if(_5){
-_3.readyState="complete";
-}
-while(_7.length){
-(_7.shift())(_3);
-}
-},on=function(_b,_c){
-_b.addEventListener(_c,_9,false);
-_7.push(function(){
-_b.removeEventListener(_c,_9,false);
-});
-};
-if(!_1("dom-addeventlistener")){
-on=function(_d,_e){
-_e="on"+_e;
-_d.attachEvent(_e,_9);
-_7.push(function(){
-_d.detachEvent(_e,_9);
-});
-};
-var _f=_3.createElement("div");
-try{
-if(_f.doScroll&&_2.frameElement===null){
-_8.push(function(){
-try{
-_f.doScroll("left");
-return 1;
-}
-catch(e){
-}
-});
-}
-}
-catch(e){
-}
-}
-on(_3,"DOMContentLoaded");
-on(_2,"load");
-if("onreadystatechange" in _3){
-on(_3,"readystatechange");
-}else{
-if(!_5){
-_8.push(function(){
-return _4[_3.readyState];
-});
-}
-}
-if(_8.length){
-var _10=function(){
-if(_6){
-return;
-}
-var i=_8.length;
-while(i--){
-if(_8[i]()){
-_9("poller");
-return;
-}
-}
-setTimeout(_10,30);
-};
-_10();
-}
-}
-function _11(_12){
-if(_6){
-_12(_3);
-}else{
-_7.push(_12);
-}
-};
-_11.load=function(id,req,_13){
-_11(_13);
-};
-return _11;
-});
+define("dojo/domReady",["./has"],function(t){function d(b){c.push(b);e&&p()}function p(){if(!k){for(k=!0;c.length;)try{c.shift()(a)}catch(b){console.error(b,"in domReady callback",b.stack)}k=!1;d._onQEmpty()}}var l=function(){return this}(),a=document,m={loaded:1,complete:1},n="string"!=typeof a.readyState,e=!!m[a.readyState],c=[],k;d.load=function(b,a,c){d(c)};d._Q=c;d._onQEmpty=function(){};n&&(a.readyState="loading");if(!e){var f=[],g=function(b){b=b||l.event;e||"readystatechange"==b.type&&!m[a.readyState]||
+(n&&(a.readyState="complete"),e=1,p())},h=function(b,a){b.addEventListener(a,g,!1);c.push(function(){b.removeEventListener(a,g,!1)})};if(!t("dom-addeventlistener")){var h=function(b,a){a="on"+a;b.attachEvent(a,g);c.push(function(){b.detachEvent(a,g)})},q=a.createElement("div");try{q.doScroll&&null===l.frameElement&&f.push(function(){try{return q.doScroll("left"),1}catch(b){}})}catch(b){}}h(a,"DOMContentLoaded");h(l,"load");"onreadystatechange"in a?h(a,"readystatechange"):n||f.push(function(){return m[a.readyState]});
+if(f.length){var r=function(){if(!e){for(var a=f.length;a--;)if(f[a]()){g("poller");return}setTimeout(r,30)}};r()}}return d});
+//# sourceMappingURL=domReady.js.map

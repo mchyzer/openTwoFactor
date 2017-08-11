@@ -1,43 +1,5 @@
 //>>built
-define("dojox/gfx/Moveable",["dojo/_base/lang","dojo/_base/declare","dojo/_base/array","dojo/_base/event","dojo/topic","dojo/has","dojo/dom-class","dojo/_base/window","./Mover"],function(_1,_2,_3,_4,_5,_6,_7,_8,_9){
-return _2("dojox.gfx.Moveable",null,{constructor:function(_a,_b){
-this.shape=_a;
-this.delay=(_b&&_b.delay>0)?_b.delay:0;
-this.mover=(_b&&_b.mover)?_b.mover:_9;
-this.events=[this.shape.connect(_6("touch")?"touchstart":"mousedown",this,"onMouseDown")];
-},destroy:function(){
-_3.forEach(this.events,this.shape.disconnect,this.shape);
-this.events=this.shape=null;
-},onMouseDown:function(e){
-if(this.delay){
-this.events.push(this.shape.connect(_6("touch")?"touchmove":"mousemove",this,"onMouseMove"),this.shape.connect(_6("touch")?"touchend":"mouseup",this,"onMouseUp"));
-this._lastX=_6("touch")?(e.changedTouches?e.changedTouches[0]:e).clientX:e.clientX;
-this._lastY=_6("touch")?(e.changedTouches?e.changedTouches[0]:e).clientY:e.clientY;
-}else{
-new this.mover(this.shape,e,this);
-}
-_4.stop(e);
-},onMouseMove:function(e){
-var _c=_6("touch")?(e.changedTouches?e.changedTouches[0]:e).clientX:e.clientX,_d=_6("touch")?(e.changedTouches?e.changedTouches[0]:e).clientY:e.clientY;
-if(Math.abs(_c-this._lastX)>this.delay||Math.abs(_d-this._lastY)>this.delay){
-this.onMouseUp(e);
-new this.mover(this.shape,e,this);
-}
-_4.stop(e);
-},onMouseUp:function(e){
-this.shape.disconnect(this.events.pop());
-},onMoveStart:function(_e){
-_5.publish("/gfx/move/start",_e);
-_7.add(_8.body(),"dojoMove");
-},onMoveStop:function(_f){
-_5.publish("/gfx/move/stop",_f);
-_7.remove(_8.body(),"dojoMove");
-},onFirstMove:function(_10){
-},onMove:function(_11,_12){
-this.onMoving(_11,_12);
-this.shape.applyLeftTransform(_12);
-this.onMoved(_11,_12);
-},onMoving:function(_13,_14){
-},onMoved:function(_15,_16){
-}});
-});
+define("dojox/gfx/Moveable","dojo/_base/lang dojo/_base/declare dojo/_base/array dojo/_base/event dojo/topic dojo/touch dojo/dom-class dojo/_base/window ./Mover".split(" "),function(c,k,l,e,f,d,g,h,m){return k("dojox.gfx.Moveable",null,{constructor:function(a,b){this.shape=a;this.delay=b&&0<b.delay?b.delay:0;this.mover=b&&b.mover?b.mover:m;this.events=[this.shape.on(d.press,c.hitch(this,"onMouseDown"))]},destroy:function(){l.forEach(this.events,function(a){a.remove()});this.events=this.shape=null},
+onMouseDown:function(a){this.delay?(this.events.push(this.shape.on(d.move,c.hitch(this,"onMouseMove")),this.shape.on(d.release,c.hitch(this,"onMouseUp"))),this._lastX=a.clientX,this._lastY=a.clientY):new this.mover(this.shape,a,this);e.stop(a)},onMouseMove:function(a){var b=a.clientY;if(Math.abs(a.clientX-this._lastX)>this.delay||Math.abs(b-this._lastY)>this.delay)this.onMouseUp(a),new this.mover(this.shape,a,this);e.stop(a)},onMouseUp:function(a){this.events.pop().remove()},onMoveStart:function(a){f.publish("/gfx/move/start",
+a);g.add(h.body(),"dojoMove")},onMoveStop:function(a){f.publish("/gfx/move/stop",a);g.remove(h.body(),"dojoMove")},onFirstMove:function(a){},onMove:function(a,b){this.onMoving(a,b);this.shape.applyLeftTransform(b);this.onMoved(a,b)},onMoving:function(a,b){},onMoved:function(a,b){}})});
+//# sourceMappingURL=Moveable.js.map

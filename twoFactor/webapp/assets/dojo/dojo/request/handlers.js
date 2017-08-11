@@ -1,47 +1,11 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2016, The JS Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/request/handlers",["../json","../_base/kernel","../_base/array","../has"],function(_1,_2,_3,_4){
-_4.add("activex",typeof ActiveXObject!=="undefined");
-var _5;
-if(_4("activex")){
-var dp=["Msxml2.DOMDocument.6.0","Msxml2.DOMDocument.4.0","MSXML2.DOMDocument.3.0","MSXML.DOMDocument"];
-_5=function(_6){
-var _7=_6.data;
-if(!_7||!_7.documentElement){
-var _8=_6.text;
-_3.some(dp,function(p){
-try{
-var _9=new ActiveXObject(p);
-_9.async=false;
-_9.loadXML(_8);
-_7=_9;
-}
-catch(e){
-return false;
-}
-return true;
-});
-}
-return _7;
-};
-}
-var _a={"javascript":function(_b){
-return _2.eval(_b.text||"");
-},"json":function(_c){
-return _1.parse(_c.text||null);
-},"xml":_5};
-function _d(_e){
-var _f=_a[_e.options.handleAs];
-_e.data=_f?_f(_e):(_e.data||_e.text);
-return _e;
-};
-_d.register=function(_10,_11){
-_a[_10]=_11;
-};
-return _d;
-});
+define("dojo/request/handlers",["../json","../_base/kernel","../_base/array","../has","../selector/_loader"],function(l,m,n,d){function g(a){var b=h[a.options.handleAs];a.data=b?b(a):a.data||a.text;return a}d.add("activex","undefined"!==typeof ActiveXObject);d.add("dom-parser",function(a){return"DOMParser"in a});var k;if(d("activex")){var p=["Msxml2.DOMDocument.6.0","Msxml2.DOMDocument.4.0","MSXML2.DOMDocument.3.0","MSXML.DOMDocument"],f;k=function(a){function b(a){try{var b=new ActiveXObject(a);
+b.async=!1;b.loadXML(e);c=b;f=a}catch(q){return!1}return!0}var c=a.data,e=a.text;c&&d("dom-qsa2.1")&&!c.querySelectorAll&&d("dom-parser")&&(c=(new DOMParser).parseFromString(e,"application/xml"));c&&c.documentElement||f&&b(f)||n.some(p,b);return c}}var e=function(a){return d("native-xhr2-blob")||"blob"!==a.options.handleAs||"undefined"===typeof Blob?a.xhr.response:new Blob([a.xhr.response],{type:a.xhr.getResponseHeader("Content-Type")})},h={javascript:function(a){return m.eval(a.text||"")},json:function(a){return l.parse(a.text||
+null)},xml:k,blob:e,arraybuffer:e,document:e};g.register=function(a,b){h[a]=b};return g});
+//# sourceMappingURL=handlers.js.map

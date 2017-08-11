@@ -1,56 +1,6 @@
 //>>built
-define("dojox/mobile/IconMenu",["dojo/_base/declare","dojo/_base/sniff","dojo/dom-class","dojo/dom-construct","dojo/dom-style","dijit/_Contained","dijit/_Container","dijit/_WidgetBase","./IconMenuItem"],function(_1,_2,_3,_4,_5,_6,_7,_8){
-return _1("dojox.mobile.IconMenu",[_8,_7,_6],{transition:"slide",iconBase:"",iconPos:"",cols:3,tag:"ul",selectOne:false,baseClass:"mblIconMenu",childItemClass:"mblIconMenuItem",_createTerminator:false,buildRendering:function(){
-this.domNode=this.containerNode=this.srcNodeRef||_4.create(this.tag);
-this.inherited(arguments);
-if(this._createTerminator){
-var t=this._terminator=_4.create("br");
-t.className=this.childItemClass+"Terminator";
-this.domNode.appendChild(t);
-}
-},startup:function(){
-if(this._started){
-return;
-}
-this.refresh();
-this.inherited(arguments);
-},refresh:function(){
-var p=this.getParent();
-if(p){
-_3.remove(p.domNode,"mblSimpleDialogDecoration");
-}
-var _9=this.getChildren();
-if(this.cols){
-var _a=Math.ceil(_9.length/this.cols);
-var w=Math.floor(100/this.cols);
-var _b=100-w*this.cols;
-var h=Math.floor(100/_a);
-var _c=100-h*_a;
-if(_2("ie")){
-_b--;
-_c--;
-}
-}
-for(var i=0;i<_9.length;i++){
-var _d=_9[i];
-if(this.cols){
-var _e=((i%this.cols)===0);
-var _f=(((i+1)%this.cols)===0);
-var _10=Math.floor(i/this.cols);
-_5.set(_d.domNode,{width:w+(_f?_b:0)+"%",height:h+((_10+1===_a)?_c:0)+"%"});
-_3.toggle(_d.domNode,this.childItemClass+"FirstColumn",_e);
-_3.toggle(_d.domNode,this.childItemClass+"LastColumn",_f);
-_3.toggle(_d.domNode,this.childItemClass+"FirstRow",_10===0);
-_3.toggle(_d.domNode,this.childItemClass+"LastRow",_10+1===_a);
-}
-}
-},addChild:function(_11,_12){
-this.inherited(arguments);
-this.refresh();
-},hide:function(){
-var p=this.getParent();
-if(p&&p.hide){
-p.hide();
-}
-}});
-});
+define("dojox/mobile/IconMenu","dojo/_base/declare dojo/sniff dojo/dom-class dojo/dom-construct dojo/dom-style dojo/dom-attr dijit/_Contained dijit/_Container dijit/_WidgetBase dojo/has!dojo-bidi?dojox/mobile/bidi/IconMenu ./IconMenuItem".split(" "),function(d,k,e,f,q,l,b,r,t,u){b=d(k("dojo-bidi")?"dojox.mobile.NonBidiIconMenu":"dojox.mobile.IconMenu",[t,r,b],{transition:"slide",iconBase:"",iconPos:"",cols:3,tag:"ul",selectOne:!1,baseClass:"mblIconMenu",childItemClass:"mblIconMenuItem",_createTerminator:!1,
+buildRendering:function(){this.domNode=this.containerNode=this.srcNodeRef||f.create(this.tag);l.set(this.domNode,"role","menu");this.inherited(arguments);if(this._createTerminator){var a=this._terminator=f.create("br");a.className=this.childItemClass+"Terminator";this.domNode.appendChild(a)}},startup:function(){this._started||(this.refresh(),this.inherited(arguments))},refresh:function(){var a=this.getParent();a&&e.remove(a.domNode,"mblSimpleDialogDecoration");a=this.getChildren();if(this.cols){var h=
+Math.ceil(a.length/this.cols),b=Math.floor(100/this.cols),d=100-b*this.cols,f=Math.floor(100/h),n=100-f*h;k("ie")&&(d--,n--)}for(var c=0;c<a.length;c++){var g=a[c];if(this.cols){var l=0===c%this.cols,p=0===(c+1)%this.cols,m=Math.floor(c/this.cols);q.set(g.domNode,{width:b+(p?d:0)+"%",height:f+(m+1===h?n:0)+"%"});e.toggle(g.domNode,this.childItemClass+"FirstColumn",l);e.toggle(g.domNode,this.childItemClass+"LastColumn",p);e.toggle(g.domNode,this.childItemClass+"FirstRow",0===m);e.toggle(g.domNode,
+this.childItemClass+"LastRow",m+1===h)}}},addChild:function(a,b){this.inherited(arguments);this.refresh()},hide:function(){var a=this.getParent();a&&a.hide&&a.hide()}});return k("dojo-bidi")?d("dojox.mobile.IconMenu",[b,u]):b});
+//# sourceMappingURL=IconMenu.js.map

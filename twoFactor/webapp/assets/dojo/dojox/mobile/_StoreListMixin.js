@@ -1,46 +1,5 @@
 //>>built
-define("dojox/mobile/_StoreListMixin",["dojo/_base/array","dojo/_base/declare","./_StoreMixin","./ListItem"],function(_1,_2,_3,_4){
-return _2("dojox.mobile._StoreListMixin",_3,{append:false,itemMap:null,buildRendering:function(){
-this.inherited(arguments);
-if(!this.store){
-return;
-}
-var _5=this.store;
-this.store=null;
-this.setStore(_5,this.query,this.queryOptions);
-},createListItem:function(_6){
-var _7={};
-if(!_6["label"]){
-_7["label"]=_6[this.labelProperty];
-}
-for(var _8 in _6){
-_7[(this.itemMap&&this.itemMap[_8])||_8]=_6[_8];
-}
-return new _4(_7);
-},generateList:function(_9){
-if(!this.append){
-_1.forEach(this.getChildren(),function(_a){
-_a.destroyRecursive();
-});
-}
-_1.forEach(_9,function(_b,_c){
-this.addChild(this.createListItem(_b));
-if(_b[this.childrenProperty]){
-_1.forEach(_b[this.childrenProperty],function(_d,_e){
-this.addChild(this.createListItem(_d));
-},this);
-}
-},this);
-},onComplete:function(_f){
-this.generateList(_f);
-},onError:function(){
-},onUpdate:function(_10,_11){
-if(_11===this.getChildren().length){
-this.addChild(this.createListItem(_10));
-}else{
-this.getChildren()[_11].set(_10);
-}
-},onDelete:function(_12,_13){
-this.getChildren()[_13].destroyRecursive();
-}});
-});
+define("dojox/mobile/_StoreListMixin","dojo/_base/array dojo/_base/declare ./_StoreMixin ./ListItem dojo/has dojo/has!dojo-bidi?dojox/mobile/bidi/_StoreListMixin".split(" "),function(d,f,c,g,e,h){c=f(e("dojo-bidi")?"dojox.mobile._NonBidiStoreListMixin":"dojox.mobile._StoreListMixin",c,{append:!1,itemMap:null,itemRenderer:g,buildRendering:function(){this.inherited(arguments);if(this.store){var a=this.store;this.store=null;this.setStore(a,this.query,this.queryOptions)}},createListItem:function(a){return new this.itemRenderer(this._createItemProperties(a))},
+_createItemProperties:function(a){var b={};a.label||(b.label=a[this.labelProperty]);e("dojo-bidi")&&"undefined"==typeof b.dir&&(b.dir=this.isLeftToRight()?"ltr":"rtl");for(var c in a)b[this.itemMap&&this.itemMap[c]||c]=a[c];return b},_setDirAttr:function(a){return a},generateList:function(a){this.append||d.forEach(this.getChildren(),function(a){a.destroyRecursive()});d.forEach(a,function(a,c){this.addChild(this.createListItem(a));a[this.childrenProperty]&&d.forEach(a[this.childrenProperty],function(a,
+b){this.addChild(this.createListItem(a))},this)},this)},onComplete:function(a){this.generateList(a)},onError:function(){},onAdd:function(a,b){this.addChild(this.createListItem(a),b)},onUpdate:function(a,b){this.getChildren()[b].set(this._createItemProperties(a))},onDelete:function(a,b){this.getChildren()[b].destroyRecursive()}});return e("dojo-bidi")?f("dojox.mobile._StoreListMixin",[c,h]):c});
+//# sourceMappingURL=_StoreListMixin.js.map

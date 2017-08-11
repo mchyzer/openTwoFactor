@@ -1,111 +1,13 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2016, The JS Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/_base/kernel",["../has","./config","require","module"],function(_1,_2,_3,_4){
-var i,p,_5={},_6={},_7={config:_2,global:this,dijit:_5,dojox:_6};
-var _8={dojo:["dojo",_7],dijit:["dijit",_5],dojox:["dojox",_6]},_9=(_3.map&&_3.map[_4.id.match(/[^\/]+/)[0]]),_a;
-for(p in _9){
-if(_8[p]){
-_8[p][0]=_9[p];
-}else{
-_8[p]=[_9[p],{}];
-}
-}
-for(p in _8){
-_a=_8[p];
-_a[1]._scopeName=_a[0];
-if(!_2.noGlobals){
-this[_a[0]]=_a[1];
-}
-}
-_7.scopeMap=_8;
-_7.baseUrl=_7.config.baseUrl=_3.baseUrl;
-_7.isAsync=!1||_3.async;
-_7.locale=_2.locale;
-var _b="$Rev: 30226 $".match(/\d+/);
-_7.version={major:1,minor:8,patch:3,flag:"",revision:_b?+_b[0]:NaN,toString:function(){
-var v=_7.version;
-return v.major+"."+v.minor+"."+v.patch+v.flag+" ("+v.revision+")";
-}};
-1||_1.add("extend-dojo",1);
-(Function("d","d.eval = function(){return d.global.eval ? d.global.eval(arguments[0]) : eval(arguments[0]);}"))(_7);
-if(0){
-_7.exit=function(_c){
-quit(_c);
-};
-}else{
-_7.exit=function(){
-};
-}
-1||_1.add("dojo-guarantee-console",1);
-if(1){
-typeof console!="undefined"||(console={});
-var cn=["assert","count","debug","dir","dirxml","error","group","groupEnd","info","profile","profileEnd","time","timeEnd","trace","warn","log"];
-var tn;
-i=0;
-while((tn=cn[i++])){
-if(!console[tn]){
-(function(){
-var _d=tn+"";
-console[_d]=("log" in console)?function(){
-var a=Array.apply({},arguments);
-a.unshift(_d+":");
-console["log"](a.join(" "));
-}:function(){
-};
-console[_d]._fake=true;
-})();
-}
-}
-}
-_1.add("dojo-debug-messages",!!_2.isDebug);
-_7.deprecated=_7.experimental=function(){
-};
-if(_1("dojo-debug-messages")){
-_7.deprecated=function(_e,_f,_10){
-var _11="DEPRECATED: "+_e;
-if(_f){
-_11+=" "+_f;
-}
-if(_10){
-_11+=" -- will be removed in version: "+_10;
-}
-console.warn(_11);
-};
-_7.experimental=function(_12,_13){
-var _14="EXPERIMENTAL: "+_12+" -- APIs subject to change without notice.";
-if(_13){
-_14+=" "+_13;
-}
-console.warn(_14);
-};
-}
-1||_1.add("dojo-modulePaths",1);
-if(1){
-if(_2.modulePaths){
-_7.deprecated("dojo.modulePaths","use paths configuration");
-var _15={};
-for(p in _2.modulePaths){
-_15[p.replace(/\./g,"/")]=_2.modulePaths[p];
-}
-_3({paths:_15});
-}
-}
-1||_1.add("dojo-moduleUrl",1);
-if(1){
-_7.moduleUrl=function(_16,url){
-_7.deprecated("dojo.moduleUrl()","use require.toUrl","2.0");
-var _17=null;
-if(_16){
-_17=_3.toUrl(_16.replace(/\./g,"/")+(url?("/"+url):"")+"/*.*").replace(/\/\*\.\*/,"")+(url?"":"/");
-}
-return _17;
-};
-}
-_7._hasResource={};
-return _7;
-});
+define("dojo/_base/kernel",["../has","./config","require","module"],function(d,h,k,b){var g,c;g=function(){return this}();var e={},m={},a={config:h,global:g,dijit:e,dojox:m},e={dojo:["dojo",a],dijit:["dijit",e],dojox:["dojox",m]};b=k.map&&k.map[b.id.match(/[^\/]+/)[0]];for(c in b)e[c]?e[c][0]=b[c]:e[c]=[b[c],{}];for(c in e)b=e[c],b[1]._scopeName=b[0],h.noGlobals||(g[b[0]]=b[1]);a.scopeMap=e;a.baseUrl=a.config.baseUrl=k.baseUrl;a.isAsync=k.async;a.locale=h.locale;g="$Rev: 594ed6f $".match(/[0-9a-f]{7,}/);
+a.version={major:1,minor:12,patch:2,flag:"",revision:g?g[0]:NaN,toString:function(){var f=a.version;return f.major+"."+f.minor+"."+f.patch+f.flag+" ("+f.revision+")"}};d("csp-restrictions")||Function("d","d.eval \x3d function(){return d.global.eval ? d.global.eval(arguments[0]) : eval(arguments[0]);}")(a);a.exit=function(){};d("host-webworker");d.add("console-as-object",function(){return Function.prototype.bind&&console&&"object"===typeof console.log});"undefined"!=typeof console||(console={});b=
+"assert count debug dir dirxml error group groupEnd info profile profileEnd time timeEnd trace warn log".split(" ");var l;for(g=0;l=b[g++];)console[l]?d("console-as-object")&&(console[l]=Function.prototype.bind.call(console[l],console)):function(){var f=l+"";console[f]="log"in console?function(){var a=Array.prototype.slice.call(arguments);a.unshift(f+":");console.log(a.join(" "))}:function(){};console[f]._fake=!0}();d.add("dojo-debug-messages",!!h.isDebug);a.deprecated=a.experimental=function(){};
+d("dojo-debug-messages")&&(a.deprecated=function(a,b,c){a="DEPRECATED: "+a;b&&(a+=" "+b);c&&(a+=" -- will be removed in version: "+c);console.warn(a)},a.experimental=function(a,b){var c="EXPERIMENTAL: "+a+" -- APIs subject to change without notice.";b&&(c+=" "+b);console.warn(c)});if(h.modulePaths){a.deprecated("dojo.modulePaths","use paths configuration");d={};for(c in h.modulePaths)d[c.replace(/\./g,"/")]=h.modulePaths[c];k({paths:d})}a.moduleUrl=function(b,c){a.deprecated("dojo.moduleUrl()","use require.toUrl",
+"2.0");var d=null;b&&(d=k.toUrl(b.replace(/\./g,"/")+(c?"/"+c:"")+"/*.*").replace(/\/\*\.\*/,"")+(c?"":"/"));return d};a._hasResource={};return a});
+//# sourceMappingURL=kernel.js.map

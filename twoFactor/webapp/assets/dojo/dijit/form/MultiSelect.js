@@ -1,56 +1,7 @@
 //>>built
-define("dijit/form/MultiSelect",["dojo/_base/array","dojo/_base/declare","dojo/dom-geometry","dojo/query","./_FormValueWidget"],function(_1,_2,_3,_4,_5){
-return _2("dijit.form.MultiSelect",_5,{size:7,templateString:"<select multiple='true' ${!nameAttrSetting} data-dojo-attach-point='containerNode,focusNode' data-dojo-attach-event='onchange: _onChange'></select>",addSelected:function(_6){
-_6.getSelected().forEach(function(n){
-if(this.restoreOriginalText){
-n.text=this.enforceTextDirWithUcc(this.restoreOriginalText(n),n.text);
-}
-this.containerNode.appendChild(n);
-this.domNode.scrollTop=this.domNode.offsetHeight;
-var _7=_6.domNode.scrollTop;
-_6.domNode.scrollTop=0;
-_6.domNode.scrollTop=_7;
-},this);
-this._set("value",this.get("value"));
-},getSelected:function(){
-return _4("option",this.containerNode).filter(function(n){
-return n.selected;
-});
-},_getValueAttr:function(){
-return _1.map(this.getSelected(),function(n){
-return n.value;
-});
-},multiple:true,_setValueAttr:function(_8,_9){
-_4("option",this.containerNode).forEach(function(n){
-n.selected=(_1.indexOf(_8,n.value)!=-1);
-});
-this.inherited(arguments);
-},invertSelection:function(_a){
-var _b=[];
-_4("option",this.containerNode).forEach(function(n){
-if(!n.selected){
-_b.push(n.value);
-}
-});
-this._setValueAttr(_b,!(_a===false||_a==null));
-},_onChange:function(){
-this._handleOnChange(this.get("value"),true);
-},resize:function(_c){
-if(_c){
-_3.setMarginBox(this.domNode,_c);
-}
-},postCreate:function(){
-this._set("value",this.get("value"));
-this.inherited(arguments);
-},_setTextDirAttr:function(_d){
-if((this.textDir!=_d||!this._created)&&this.enforceTextDirWithUcc){
-this._set("textDir",_d);
-_4("option",this.containerNode).forEach(function(_e){
-if(!this._created&&_e.value===_e.text){
-_e.value=_e.text;
-}
-_e.text=this.enforceTextDirWithUcc(_e,_e.originalText||_e.text);
-},this);
-}
-}});
-});
+define("dijit/form/MultiSelect","dojo/_base/array dojo/_base/declare dojo/dom-geometry dojo/sniff dojo/query ./_FormValueWidget dojo/NodeList-dom".split(" "),function(f,h,k,g,c,d){d=h("dijit.form.MultiSelect"+(g("dojo-bidi")?"_NoBidi":""),d,{size:7,baseClass:"dijitMultiSelect",templateString:"\x3cselect multiple\x3d'multiple' ${!nameAttrSetting} data-dojo-attach-point\x3d'containerNode,focusNode' data-dojo-attach-event\x3d'onchange: _onChange'\x3e\x3c/select\x3e",addSelected:function(b){b.getSelected().forEach(function(a){this.containerNode.appendChild(a);
+this.domNode.scrollTop=this.domNode.offsetHeight;a=b.domNode.scrollTop;b.domNode.scrollTop=0;b.domNode.scrollTop=a},this);this._set("value",this.get("value"))},getSelected:function(){return c("option",this.containerNode).filter(function(b){return b.selected})},_getValueAttr:function(){return f.map(this.getSelected(),function(b){return b.value})},multiple:!0,_setMultipleAttr:function(b){},_setValueAttr:function(b){g("android")?c("option",this.containerNode).orphan().forEach(function(a){var e=a.ownerDocument.createElement("option");
+e.value=a.value;e.selected=-1!=f.indexOf(b,a.value);e.text=a.text;e.originalText=a.originalText;this.containerNode.appendChild(e)},this):c("option",this.containerNode).forEach(function(a){a.selected=-1!=f.indexOf(b,a.value)});this.inherited(arguments)},invertSelection:function(b){var a=[];c("option",this.containerNode).forEach(function(b){b.selected||a.push(b.value)});this._setValueAttr(a,!(!1===b||null==b))},_onChange:function(){this._handleOnChange(this.get("value"),!0)},resize:function(b){b&&k.setMarginBox(this.domNode,
+b)},postCreate:function(){this._set("value",this.get("value"));this.inherited(arguments)}});g("dojo-bidi")&&(d=h("dijit.form.MultiSelect",d,{addSelected:function(b){b.getSelected().forEach(function(a){a.text=this.enforceTextDirWithUcc(this.restoreOriginalText(a),a.text)},this);this.inherited(arguments)},_setTextDirAttr:function(b){this.textDir==b&&this._created||!this.enforceTextDirWithUcc||(this._set("textDir",b),c("option",this.containerNode).forEach(function(a){this._created||a.value!==a.text||
+(a.value=a.text);a.text=this.enforceTextDirWithUcc(a,a.originalText||a.text)},this))}}));return d});
+//# sourceMappingURL=MultiSelect.js.map

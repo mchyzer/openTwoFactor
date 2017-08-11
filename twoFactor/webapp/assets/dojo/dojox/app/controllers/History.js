@@ -1,53 +1,6 @@
 //>>built
-define("dojox/app/controllers/History",["dojo/_base/lang","dojo/_base/declare","dojo/on","../Controller"],function(_1,_2,on,_3){
-return _2("dojox.app.controllers.History",_3,{constructor:function(_4){
-this.events={"startTransition":this.onStartTransition};
-this.inherited(arguments);
-this.bind(window,"popstate",_1.hitch(this,this.onPopState));
-},_buildHashWithParams:function(_5,_6){
-if(_5.charAt(0)!=="#"){
-_5="#"+_5;
-}
-for(var _7 in _6){
-var _8=_6[_7];
-if(_7&&_8!=null){
-_5=_5+"&"+_7+"="+_6[_7];
-}
-}
-return _5;
-},onStartTransition:function(_9){
-var _a=_9.detail.target;
-var _b=/#(.+)/;
-if(!_a&&_b.test(_9.detail.href)){
-_a=_9.detail.href.match(_b)[1];
-}
-var _c=_9.detail.url||"#"+_9.detail.target;
-if(_9.detail.params){
-_c=this._buildHashWithParams(_c,_9.detail.params);
-}
-history.pushState(_9.detail,_9.detail.href,_c);
-},onPopState:function(_d){
-if(this.app.getStatus()!==this.app.lifecycle.STARTED){
-return;
-}
-var _e=_d.state;
-if(!_e){
-if(!this.app._startView&&window.location.hash){
-_e={target:((location.hash&&location.hash.charAt(0)=="#")?location.hash.substr(1):location.hash).split("&")[0],url:location.hash,params:this.app.getParamsFromHash(location.hash)||this.defaultParams||{}};
-}else{
-_e={};
-}
-}
-var _f=_e.target||this.app._startView||this.app.defaultView;
-var _10=_e.params||this.app._startParams||this.app.defaultParams||{};
-if(this.app._startView){
-this.app._startView=null;
-}
-var _11=_e.title||null;
-var _12=_e.url||null;
-if(_d._sim){
-history.replaceState(_e,_11,_12);
-}
-this.app.trigger("transition",{"viewId":_f,"opts":_1.mixin({reverse:true},_d.detail,{"params":_10})});
-}});
-});
+define("dojox/app/controllers/History","dojo/_base/lang dojo/_base/declare dojo/on ../Controller ../utils/hash dojo/topic".split(" "),function(d,f,l,k,g,h){return f("dojox.app.controllers.History",k,{_currentPosition:0,currentState:{},constructor:function(){this.events={"app-domNode":this.onDomNodeChange};if(this.app.domNode)this.onDomNodeChange({oldNode:null,newNode:this.app.domNode});this.bind(window,"popstate",d.hitch(this,this.onPopState))},onDomNodeChange:function(a){null!=a.oldNode&&this.unbind(a.oldNode,
+"startTransition");this.bind(a.newNode,"startTransition",d.hitch(this,this.onStartTransition))},onStartTransition:function(a){var b=window.location.hash,e=g.getTarget(b,this.app.defaultView),f=g.getParams(b),c=d.clone(a.detail);c.target=c.title=e;c.url=b;c.params=f;c.id=this._currentPosition;1==history.length&&history.pushState(c,c.href,b);c.bwdTransition=c.transition;d.mixin(this.currentState,c);history.replaceState(this.currentState,this.currentState.href,b);this._currentPosition+=1;a.detail.id=
+this._currentPosition;b=a.detail.url||"#"+a.detail.target;a.detail.params&&(b=g.buildWithParams(b,a.detail.params));a.detail.fwdTransition=a.detail.transition;history.pushState(a.detail,a.detail.href,b);this.currentState=d.clone(a.detail);h.publish("/app/history/pushState",a.detail.target)},onPopState:function(a){if(this.app.getStatus()===this.app.lifecycle.STARTED&&a.state){var b=a.state.id<this._currentPosition;b?--this._currentPosition:this._currentPosition+=1;var e=d.mixin({reverse:b?!0:!1},a.state);
+e.transition=b?e.bwdTransition:e.fwdTransition;this.app.emit("app-transition",{viewId:a.state.target,opts:e});h.publish("/app/history/popState",a.state.target)}}})});
+//# sourceMappingURL=History.js.map

@@ -1,0 +1,3 @@
+//>>built
+define("dojox/editor/plugins/nls/bs/Preview",{preview:"Pregled"});
+//# sourceMappingURL=Preview.js.map
