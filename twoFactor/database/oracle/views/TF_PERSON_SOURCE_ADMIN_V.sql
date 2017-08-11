@@ -1,4 +1,4 @@
-/* Formatted on 7/3/2017 11:03:38 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 8/11/2017 2:27:30 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_V
 (
    PENN_ID,
@@ -9,7 +9,7 @@ CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_ADMIN_V
    EMAIL,
    ACTIVE,
    BIRTH_DATE,
-   last_four
+   LAST_FOUR
 )
    BEQUEATH DEFINER
 AS
@@ -18,8 +18,11 @@ AS
           DESCRIPTION,
           SEARCH_DESCRIPTION,
           NAME,
+          /* (case when pennname = 'mchyzer' then null  
+          when pennname = 'dhum' then 'mchyzer@isc.upenn.edu'
+          else email end) as email */
           EMAIL,
-          ACTIVE,
+          'T' AS active,
           BIRTH_DATE,
           last_four
      FROM tf_person_source_helper_v;
@@ -45,4 +48,6 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.BIRTH_DATE IS 'birth date of the user
 COMMENT ON COLUMN TF_PERSON_SOURCE_ADMIN_V.LAST_FOUR IS 'last four of SSN if we have it';
 
 
+
 GRANT SELECT ON TF_PERSON_SOURCE_ADMIN_V TO TWO_FACTOR_ADMIN;
+

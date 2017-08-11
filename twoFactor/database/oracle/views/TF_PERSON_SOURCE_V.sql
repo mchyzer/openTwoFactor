@@ -1,4 +1,4 @@
-/* Formatted on 7/3/2017 10:36:03 PM (QP5 v5.252.13127.32847) */
+/* Formatted on 8/11/2017 2:28:26 PM (QP5 v5.252.13127.32847) */
 CREATE OR REPLACE FORCE VIEW TF_PERSON_SOURCE_V
 (
    PENN_ID,
@@ -19,7 +19,7 @@ AS
           SEARCH_DESCRIPTION_PENN AS SEARCH_DESCRIPTION,
           NAME_PENN AS NAME,
           EMAIL,
-          ACTIVE,
+          'T' AS active,
           BIRTH_DATE,
           LAST_FOUR
      FROM TF_PERSON_SOURCE_HELPER_V;
@@ -43,6 +43,8 @@ COMMENT ON COLUMN TF_PERSON_SOURCE_V.ACTIVE IS 'T if active, F if not';
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.BIRTH_DATE IS 'birth date of the user used in optin if it exists for the user';
 
 COMMENT ON COLUMN TF_PERSON_SOURCE_V.LAST_FOUR IS 'last four of SSN if we have it';
+
+
 
 GRANT SELECT ON TF_PERSON_SOURCE_V TO AUTHZADM WITH GRANT OPTION;
 
