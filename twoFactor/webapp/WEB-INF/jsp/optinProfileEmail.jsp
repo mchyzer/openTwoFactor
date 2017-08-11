@@ -34,12 +34,12 @@
     <div class="formBox profileFormBoxNarrow profileFormBox">
       <div class="formRow">
           <c:choose>
-            <c:when test="twoFactorRequestContainer.editableEmail" >
+            <c:when test="${twoFactorRequestContainer.editableEmail}" >
               <div class="formLabelNarrow formLabel"><b><label for="email0">${textContainer.text['profileEmailLabel']}</label></b></div>
               <div class="formValue">
                 <input type="text" name="email0" size="18" style="width: 16em;"
                   class="textfield" value="${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) }" />
-              </div>
+              </div> 
             </c:when>
             <c:otherwise>
               <div class="formLabelNarrow formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
