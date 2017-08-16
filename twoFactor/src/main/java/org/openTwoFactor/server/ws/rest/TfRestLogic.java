@@ -251,7 +251,7 @@ public class TfRestLogic {
   
   /**
    * check a password
-   * @param twoFactorDaoFactory 
+   * @param twoFactorDaoFactory
    * @param params
    * @return the bean
    */
@@ -1298,8 +1298,8 @@ public class TfRestLogic {
                   if (timeoutSeconds == -1) {
                     timeoutSeconds = null;
                   }
-  
-                  if (autoDuoCall || phoneOrPush || TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneOptIn(), false)) {
+
+                  if (autoDuoCall && phoneOrPush && TwoFactorServerUtils.booleanValue(twoFactorUser.getPhoneOptIn(), false)) {
                     
                     twoFactorUser.setPhoneAutoCalltextsInMonth(autoVoiceTextHistogram);
                     twoFactorUser.store(twoFactorDaoFactory);
