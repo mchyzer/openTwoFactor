@@ -26,6 +26,10 @@ import com.duosecurity.client.Http;
 
 /**
  * migrate users from open two factor to duo.  note, this can be run twice will sync things up
+ * <pre>Run:
+ * [appadmin@server WEB-INF]$ /opt/appserv/tomcat/apps/twoFactor/java/bin/java -cp ./lib/*:classes:/opt/appserv/local/tomcat/letters/tomcat_l/webapps/ppol/WEB-INF/lib/j2ee.jar org.openTwoFactor.server.duo.DuoCommands duoInitiatePush user
+ * adb55bb3-e1e5-4b8b-bb4e-e5c7ccca4506
+ * </pre>
  */
 public class DuoCommands {
 

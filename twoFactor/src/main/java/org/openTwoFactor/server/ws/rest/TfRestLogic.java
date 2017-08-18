@@ -510,8 +510,11 @@ public class TfRestLogic {
       tfCheckPasswordResponse.setTwoFactorRequired(twoFactorRequired);
 
       StringBuilder responseMessage = new StringBuilder();
+      if (serviceProviderDoesntRequireOptIn) {
 
-      if (serviceProviderForbidsTwoFactor) {
+        TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "service doesnt require opt in", null);
+
+      } else if (serviceProviderForbidsTwoFactor) {
         TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "service forbids two factor", null);
       } else {
         if (twoFactorRequired) {
@@ -520,13 +523,12 @@ public class TfRestLogic {
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "service does not require two factor", null);
         }
       }
-      
+
       tfCheckPasswordResponse.setSuccess(true);
 
-      
+      boolean optinOnlyForRequiredApplications = TwoFactorServerUtils.booleanValue(twoFactorUser.getOptInOnlyIfRequired(), false);
+
       if (twoFactorUser.isOptedIn()) {
-        
-        boolean optinOnlyForRequiredApplications = TwoFactorServerUtils.booleanValue(twoFactorUser.getOptInOnlyIfRequired(), false);
 
         if (optinOnlyForRequiredApplications) {
           TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user enrolled in two factor for required applications", null);
@@ -593,15 +595,33 @@ public class TfRestLogic {
         if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn")
             || TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.emailUsersRequiredToBeOptedInWhoArentOptedIn")
             ) {
-          
+
           //lets see if the user is required
           TfRestRequiredUser tfRestRequiredUser = userRequiredInTwoStepNotEnrolled.get(twoFactorUser.getLoginid());
 
           if (tfRestRequiredUser != null) {
-            userNotOptedInButRequiredToBeOptedIn = true;
             if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.ws.restrictUsersRequiredToBeOptedInWhoArentOptedIn")) {
+              userNotOptedInButRequiredToBeOptedIn = true;
               TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user required to be enrolled and is not", null);
               trafficLogMap.put("userRequiredToBeEnrolledAndIsNot", true);
+              
+              if (twoFactorUser.isOptedIn()) {
+
+                if (optinOnlyForRequiredApplications) {
+                  TwoFactorServerUtils.appendIfNotBlank(responseMessage, null, ", ", "user enrolled in two factor", null);
+                         
+                  tfCheckPasswordResponse.setUserEnrolledInTwoFactor(true);
+                  optedInConsideringRequired = true;
+
+                  if (!serviceProviderForbidsTwoFactor) {
+                    userNotOptedInButRequiredToBeOptedIn = false;
+                    twoFactorRequired = true;
+                  }
+
+                }
+                
+              }
+              
             }
             if (!TwoFactorServerUtils.booleanValue(tfCheckPasswordRequest.getAsyncAuth(), false)) {
               emailUserPeriodicallyIfNotOptedInButRequired(twoFactorDaoFactory, twoFactorUser, trafficLogMap, responseMessage);
