@@ -5,10 +5,12 @@
 package org.openTwoFactor.server.duo;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
@@ -304,6 +306,13 @@ public class DuoCommands {
     
     if (args.length == 1 && StringUtils.equals("migrateAllToDuo", args[0])) {
       migrateAllToDuo();
+      
+    } else if (args.length == 3 && StringUtils.equals("addDuoUserAlias", args[0])) {
+      String duoUserId = retrieveDuoUserIdBySomeId(args[1]);
+      addDuoUserAlias(duoUserId, args[2]);
+    } else if (args.length == 3 && StringUtils.equals("deleteDuoUserAlias", args[0])) {
+      String duoUserId = retrieveDuoUserIdBySomeId(args[1]);
+      deleteDuoUserAlias(duoUserId, args[2]);
     } else if (args.length == 1 && StringUtils.equals("migrateAllTokensToDuo", args[0])) {
       migrateAllTokensToDuo();
     } else if (args.length == 1 && StringUtils.equals("migrateAllPhonesToDuo", args[0])) {
@@ -2069,7 +2078,160 @@ public class DuoCommands {
       }
     }
   }
+
+  /**
+   * delete duo user alias
+   * @param userId 
+   * @param alias 
+   * @return if added or already there
+   */
+  public static boolean deleteDuoUserAlias(String userId, String alias) {
+
+    // see if its not even there
+    JSONObject user = retrieveDuoUserByIdOrUsername(userId, true);
+    String deleteAttributeName = null;
+    for (int i=1;i<=4;i++) {
+      String aliasAttributeName = "alias" + i;
+      if (deleteAttributeName == null && StringUtils.equals(alias, user.getString(aliasAttributeName))) {
+        deleteAttributeName = aliasAttributeName;
+      }
+    }
+
+    if (StringUtils.isBlank(deleteAttributeName)) {
+      //wasnt there so ignore
+      return false;
+    }
     
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "deleteDuoUserAlias");
+    debugMap.put("userId", userId);
+    long startTime = System.nanoTime();
+    try {
+
+      if (StringUtils.isBlank(userId)) {
+        throw new RuntimeException("userId is blank: " + userId);
+      }
+
+      String path = "/admin/v1/users/" + userId;
+      debugMap.put("POST", path);
+      Http request = httpAdmin("POST", path);
+      request.addParam(deleteAttributeName, "");
+      debugMap.put("aliasName", deleteAttributeName);
+
+      signHttpAdmin(request);
+      
+      String result = executeRequestRaw(request);
+      
+      //  {"response": "", "stat": "OK"}
+      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+  
+      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+      
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+    
+    return true;
+  }
+
+
+  /**
+   * add duo user alias
+   * @param userId 
+   * @param alias 
+   * @return if added or already there
+   */
+  public static boolean addDuoUserAlias(String userId, String alias) {
+
+    // does this work?
+    JSONObject user = retrieveDuoUserByIdOrUsername(userId, true);
+    String availableAttributeName = null;
+    
+    Map<String, String> params = new LinkedHashMap<String, String>();
+    
+    for (int i=1;i<=4;i++) {
+      String aliasAttributeName = "alias" + i;
+      String aliasAttributeStringValue = user.getString(aliasAttributeName);
+      Object aliasAttributeObjectValue = user.get(aliasAttributeName);
+      boolean aliasAttributeValueIsNull = aliasAttributeObjectValue == null || aliasAttributeObjectValue == JSONNull.getInstance();
+      
+      //if its already set then all good
+      if (StringUtils.equals(aliasAttributeStringValue, alias)) {
+        return false;
+      }
+      
+      if (!aliasAttributeValueIsNull) {
+        //we need to send all aliases if we send any
+        params.put(aliasAttributeName,aliasAttributeStringValue);
+      } else {
+        //keep track of where we put it
+        if (availableAttributeName == null) {
+          availableAttributeName = aliasAttributeName;
+          params.put(aliasAttributeName,alias);
+        }
+      }
+    }
+
+    if (StringUtils.isBlank(availableAttributeName) || params.size() == 0) {
+      //cant add an alias if not one available
+      throw new RuntimeException("Cant add alias '" + alias + "' to user: " + userId + ", since all aliases are being used");
+    }
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "addDuoUserAlias");
+    debugMap.put("userId", userId);
+    long startTime = System.nanoTime();
+    try {
+    
+      if (StringUtils.isBlank(userId)) {
+        throw new RuntimeException("userId is blank: " + userId);
+      }
+      
+      String path = "/admin/v1/users/" + userId;
+      debugMap.put("POST", path);
+      Http request = httpAdmin("POST", path);
+      
+      for (String aliasName : params.keySet()) {
+        
+        String aliasValue = params.get(aliasName);
+        request.addParam(aliasName, aliasValue);
+        debugMap.put(aliasName, aliasValue);
+
+      }
+      
+      signHttpAdmin(request);
+      
+      String result = executeRequestRaw(request);
+      
+      //  {"response": "", "stat": "OK"}
+      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+  
+      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+      
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+    
+    return true;
+  }
+
+  
   /**
    * delete duo user
    * @param userId 
@@ -3002,6 +3164,37 @@ public class DuoCommands {
     }
     
     deleteAllTokensFromDuo();
+  }
+
+  /**
+   * retrieve the alias to the username
+   * @return the map
+   */
+  public static Map<String, JSONObject> retrieveAllAliasesFromDuo() {
+
+    //get all users in duo
+    JSONArray allUsers = retrieveAllFromDuo();
+    
+    Map<String, JSONObject> aliasToUsernameMap = new HashMap<String, JSONObject>();
+    
+    if (allUsers == null || allUsers.size() == 0) {
+      return aliasToUsernameMap;
+    }
+
+    for (int i=0; i<allUsers.size(); i++) {
+      JSONObject user = (JSONObject)allUsers.get(i);
+      for (int j=1;j<=4;j++) {
+        // alias1...4
+        String aliasName = "alias" + j;
+        if (user.containsKey(aliasName) && !JSONNull.getInstance().equals(user.get(aliasName))) {
+          String theAlias = user.getString(aliasName);
+          if (!StringUtils.isBlank(theAlias)) {
+            aliasToUsernameMap.put(theAlias, user);
+          }
+        }
+      }
+    }
+    return aliasToUsernameMap;
   }
 
   /**

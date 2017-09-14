@@ -137,6 +137,9 @@ public class DaemonController {
           scheduleReports();
           scheduleDaemon(TfAuditClearingJob.class);
           scheduleDaemon(TfDeletedClearingJob.class);
+          if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("aliasDaemonEnabled", false)) {
+            scheduleDaemon(TfAliasJob.class);
+          }
         }
         
         scheduledJobs = true;

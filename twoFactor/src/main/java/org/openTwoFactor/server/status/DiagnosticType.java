@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.openTwoFactor.server.beans.TwoFactorDaemonName;
+import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 import edu.internet2.middleware.subject.Source;
@@ -82,9 +84,13 @@ public enum DiagnosticType {
     public void appendDiagnostics(Set<DiagnosticTask> diagnosticsTasks) {
       SOURCES.appendDiagnostics(diagnosticsTasks);
       
-      diagnosticsTasks.add(new DiagnosticDaemonJobTest("deleteOldAudits"));
-      diagnosticsTasks.add(new DiagnosticDaemonJobTest("permanentlyDeleteOldRecords"));
+      diagnosticsTasks.add(new DiagnosticDaemonJobTest(TwoFactorDaemonName.deleteOldAudits.name()));
+      diagnosticsTasks.add(new DiagnosticDaemonJobTest(TwoFactorDaemonName.permanentlyDeleteOldRecords.name()));
+      diagnosticsTasks.add(new DiagnosticDaemonJobTest(TwoFactorDaemonName.deleteOldDaemonLogs.name()));
       
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("aliasDaemonEnabled", false)) {
+        diagnosticsTasks.add(new DiagnosticDaemonJobTest(TwoFactorDaemonName.aliases.name()));
+      }
       
     }
   };

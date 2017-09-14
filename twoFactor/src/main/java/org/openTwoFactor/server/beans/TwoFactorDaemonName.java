@@ -16,6 +16,9 @@ public enum TwoFactorDaemonName {
   /** permanently delete old records */
   permanentlyDeleteOldRecords,
   
+  /** load in aliases */
+  aliases,
+  
   /** delete old daemon logs */
   deleteOldDaemonLogs;
   
