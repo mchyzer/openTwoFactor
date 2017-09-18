@@ -10,6 +10,14 @@ import org.openTwoFactor.server.config.TwoFactorServerConfig;
 public class TwoFactorConfigContainer {
 
   /**
+   * is opt some enabled
+   * @return true if opt some enabled
+   */
+  public boolean isOptSomeEnabledUi() {
+    return TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.optSomeEnabledUi", false);
+  }
+  
+  /**
    * 
    * @return the app url base
    */

@@ -33,22 +33,24 @@
     <input type="hidden" name="profileForOptin" value="${twoFactorRequestContainer.twoFactorProfileContainer.profileForOptin}" />
 
     <div class="formBox profileFormBox">
-      <div class="formRow">
-        <div class="formLabel"><b>${textContainer.text['profileOptinType']}</b></div>
-        <div class="formValue">
-          <input type="radio" name="optinTypeName" value="optinForAll" 
-            id="optinForAllRadioId"
-            ${twoFactorRequestContainer.twoFactorProfileContainer.optinForAll == 'true' ? 'checked="checked"' : ''}
-            /> ${textContainer.text['profileOptinRadioForAll'] } <br />
-            
-          <input type="radio" name="optinTypeName" value="optinForApplicationsWhichRequire" 
-            id="optinForApplicationsWhichRequireRadioId"
-            ${twoFactorRequestContainer.twoFactorProfileContainer.optinForApplicationsWhichRequire == 'true' ? 'checked="checked"' : ''}
-            /> ${textContainer.text['profileOptinRadioIfRequired'] }
-  
-        </div>
-        <div class="formFooter">&nbsp;</div>
-      </div>
+      <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.isOptSomeEnabledUi}">
+        <div class="formRow">
+          <div class="formLabel"><b>${textContainer.text['profileOptinType']}</b></div>
+          <div class="formValue">
+            <input type="radio" name="optinTypeName" value="optinForAll" 
+              id="optinForAllRadioId"
+              ${twoFactorRequestContainer.twoFactorProfileContainer.optinForAll == 'true' ? 'checked="checked"' : ''}
+              /> ${textContainer.text['profileOptinRadioForAll'] } <br />
+              
+            <input type="radio" name="optinTypeName" value="optinForApplicationsWhichRequire" 
+              id="optinForApplicationsWhichRequireRadioId"
+              ${twoFactorRequestContainer.twoFactorProfileContainer.optinForApplicationsWhichRequire == 'true' ? 'checked="checked"' : ''}
+              /> ${textContainer.text['profileOptinRadioIfRequired'] }
+    
+          </div>
+          <div class="formFooter">&nbsp;</div>
+        </div> 
+      </c:if>
       <div class="formRow">
           <c:choose>
             <c:when test="twoFactorRequestContainer.editableEmail" >
