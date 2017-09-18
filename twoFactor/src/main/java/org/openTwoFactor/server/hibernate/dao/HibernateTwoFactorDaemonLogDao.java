@@ -80,7 +80,7 @@ public class HibernateTwoFactorDaemonLogDao implements TwoFactorDaemonLogDao {
     ByHqlStatic byHqlStatic = HibernateSession.byHqlStatic();
     
     List<TwoFactorDaemonLog> theList = byHqlStatic.createQuery(
-      "select tfdl from TwoFactorDaemonLog as tfdl where tfdl.deletedOn is null and tfa.theTimestamp < :selectBeforeThisMilli")
+      "select tfdl from TwoFactorDaemonLog as tfdl where tfdl.deletedOn is null and tfdl.theTimestamp < :selectBeforeThisMilli")
       .setLong("selectBeforeThisMilli", selectBeforeThisMilli)
       .options(new TfQueryOptions().paging(1000, 1,false))
       .list(TwoFactorDaemonLog.class);

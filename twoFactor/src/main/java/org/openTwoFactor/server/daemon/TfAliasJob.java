@@ -33,7 +33,6 @@ import org.ldaptive.SearchResult;
 import org.openTwoFactor.server.beans.TwoFactorDaemonLog;
 import org.openTwoFactor.server.beans.TwoFactorDaemonLogStatus;
 import org.openTwoFactor.server.beans.TwoFactorDaemonName;
-import org.openTwoFactor.server.beans.daoTest.TfMemoryDaoFactory;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;

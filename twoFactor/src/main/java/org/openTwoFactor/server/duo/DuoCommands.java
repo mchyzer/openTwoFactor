@@ -333,7 +333,7 @@ public class DuoCommands {
     } else if (args.length == 1 && StringUtils.equals("deleteAllFromDuo", args[0])) {
       deleteAllFromDuo();
     } else if (args.length == 2 && StringUtils.equals("migrateUserAndTokensToDuo", args[0])) {
-      migrateUserAndPhonesAndTokensBySomeId(args[0], true, true);
+      migrateUserAndPhonesAndTokensBySomeId(args[1], true, true);
     } else if (args.length == 2 && StringUtils.equals("viewUser", args[0])) {
       String userLookupId = args[1];
       JSONObject duoUser = retrieveDuoUserBySomeId(userLookupId);
@@ -1192,30 +1192,54 @@ public class DuoCommands {
    */
   private static void migrateUserBySomeId(String someId, boolean requireOptin) {
     
-    String userUuid = retrieveTfUserUuidBySomeId(someId, true);
-    
-    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
-    if (requireOptin && !twoFactorUser.isOptedIn()) {
-      return;
-    }
-    
-    String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid());
+    debugMap.put("method", "migrateUserBySomeId");
 
-    if (StringUtils.isBlank(netId)) {
-      System.out.println("Cant find netId for user: " + someId);
-      return;
-    }
+    long startTime = System.nanoTime();
 
-    JSONObject duoUser = retrieveDuoUserByIdOrUsername(netId, false);
-
-    if (duoUser == null) {
-      duoUser = createDuoUserByUsername(TwoFactorDaoFactory.getFactory(), twoFactorUser, netId);
+    try {
       
-    } else {
-      System.out.println("User: " + netId + ", already exists");
-    }
+      debugMap.put("someId", someId);
 
+      String userUuid = retrieveTfUserUuidBySomeId(someId, true);
+
+      debugMap.put("userUuid", userUuid);
+
+      debugMap.put("requireOptin", requireOptin);
+
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), userUuid);
+  
+      if (requireOptin && !twoFactorUser.isOptedIn()) {
+        debugMap.put("optedIn", twoFactorUser.isOptedIn());
+        return;
+      }
+      
+      String netId = TfSourceUtils.convertSubjectIdToNetId(TfSourceUtils.mainSource(), twoFactorUser.getLoginid());
+  
+      debugMap.put("netId", netId);
+
+      if (StringUtils.isBlank(netId)) {
+        System.out.println("Cant find netId for user: " + someId);
+        return;
+      }
+  
+      JSONObject duoUser = retrieveDuoUserByIdOrUsername(netId, false);
+  
+      debugMap.put("duoUserNull", duoUser == null);
+
+      if (duoUser == null) {
+        duoUser = createDuoUserByUsername(TwoFactorDaoFactory.getFactory(), twoFactorUser, netId);
+        
+      } else {
+        debugMap.put("duoUserExists", true);
+      }
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
   }
 
   /**

@@ -36,6 +36,17 @@ import org.quartz.JobExecutionException;
  */
 public class TfDeletedClearingJob implements Job {
 
+  /**
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    
+    TwoFactorDaoFactory twoFactorDaoFactory = TwoFactorDaoFactory.getFactory();
+    new TfDeletedClearingJob().deletedClearingLogic(twoFactorDaoFactory);
+
+  }
+
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(TfDeletedClearingJob.class);
 

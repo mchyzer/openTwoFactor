@@ -249,10 +249,21 @@
       <input value="${textContainer.textEscapeDouble['buttonAdminImportSerials']}" class="tfLinkButton"
       type="submit" />
     </form>
-    
+
   </c:if>  
 
   <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canAdminReports}">
+
+    &nbsp; &nbsp;
+
+    <form action="../../twoFactorAdminUi/app/UiMainAdmin.reportEnrolled" method="post" style="display: inline; font-size: smaller">
+      <input value="${textContainer.textEscapeDouble['buttonAdminReportEnrolled']}" class="tfLinkButton"
+      type="submit" />
+    </form>
+
+  </c:if>  
+
+  <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.canSeeAdminReports}">
     
     &nbsp; &nbsp;
     

@@ -41,4 +41,10 @@ public interface TwoFactorAuthorizationInterface {
    * @return the set of user ids
    */
   public Set<String> adminUserIdsWhoCanAdminReports();
+
+  /**
+   * admin user ids who can see admin reports
+   * @return the set of user ids
+   */
+  public Set<String> adminUserIdsWhoCanSeeAdminReports();
 }

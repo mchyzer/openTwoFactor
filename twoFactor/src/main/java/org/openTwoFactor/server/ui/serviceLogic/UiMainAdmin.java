@@ -33,6 +33,8 @@ import org.openTwoFactor.server.beans.TwoFactorReportType;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.daemon.TfReportConfig;
+import org.openTwoFactor.server.daemon.TfReportJob;
 import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.exceptions.TfDaoException;
@@ -42,15 +44,14 @@ import org.openTwoFactor.server.hibernate.HibernateSession;
 import org.openTwoFactor.server.hibernate.TfAuditControl;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
+import org.openTwoFactor.server.hibernate.dao.HibernateDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.ui.UiServiceLogicBase;
 import org.openTwoFactor.server.ui.beans.TextContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorAdminContainer;
-import org.openTwoFactor.server.ui.beans.TwoFactorHelpLoggingInContainer;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
-import org.openTwoFactor.server.ws.rest.TfRestLogic;
 
 import au.com.bytecode.opencsv.CSVReader;
 import edu.internet2.middleware.grouperClient.config.TwoFactorTextConfig;
@@ -66,7 +67,52 @@ public class UiMainAdmin extends UiServiceLogicBase {
   /** logger */
   private static final Log LOG = TwoFactorServerUtils.getLog(UiMainAdmin.class);
 
-  
+  /**
+   * 
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void reportEnrolled(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String reportName = TwoFactorServerConfig.retrieveConfig().propertyValueStringRequired("twoFactorServer.adminReportName");
+    
+    final TfReportConfig tfReportConfig = TwoFactorServerConfig.retrieveConfig().tfReportConfigs().get(reportName);
+    if (tfReportConfig == null) {
+      throw new RuntimeException("Cant find report config: " + reportName);
+    }
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    tfReportConfig.setBccs(null);
+    tfReportConfig.setCcs(null);
+    
+    String twoFactorUserEmail = twoFactorUser.getEmail0();
+    if (StringUtils.isBlank(twoFactorUserEmail)) {
+      throw new RuntimeException("No email for user");
+    }
+    tfReportConfig.setTos(twoFactorUserEmail);
+    
+    new Thread(new Runnable() {
+
+      public void run() {
+        
+        TfReportJob.runReport(HibernateDaoFactory.getFactory(), tfReportConfig);
+        
+      }
+      
+    }).start();
+
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminReportScheduled"));
+
+    showJsp("admin.jsp");
+    
+  }
 
   /**
    * admin page combobox

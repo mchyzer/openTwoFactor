@@ -417,6 +417,26 @@ public class TwoFactorAdminContainer {
   }
   
 
+  /**
+   * if the logged in user can see admin reports
+   * @return if the logged in user can see admin reports
+   */
+  public boolean isCanSeeAdminReports() {
+
+    String originalLoginid = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs();
+
+    TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+
+    Set<String> adminUserIdsWhoCanSeeAdminReportsSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanAdminReports();
+
+    Source theSource = TfSourceUtils.mainSource();
+
+    boolean isAdminCanSeeReportAdmin = TfSourceUtils.subjectIdOrNetIdInSet(theSource, originalLoginid, adminUserIdsWhoCanSeeAdminReportsSet);
+  
+    return isAdminCanSeeReportAdmin;
+
+  }
+  
   
   /**
    * if the logged in user can import serial numbers

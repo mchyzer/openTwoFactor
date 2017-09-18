@@ -197,10 +197,8 @@ public class TfAuditClearingJob implements Job {
       throw new RuntimeException(t);
     }
     if (hasError) {
-      throw new RuntimeException("Error in dameon!", throwable);
+      throw new RuntimeException("Error in daemon!", throwable);
     }
   }
-
-  
 }
 
