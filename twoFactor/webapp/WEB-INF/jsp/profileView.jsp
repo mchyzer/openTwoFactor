@@ -29,7 +29,7 @@
   <br />
 
   <div class="formBox profileFormBox">
-    <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.isOptSomeEnabledUi}">
+    <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.optSomeEnabledUi}">
       <div class="formRow">
         <div class="formLabel"><b>${textContainer.text['profileOptinType']}</b></div>
         <div class="formValue">
