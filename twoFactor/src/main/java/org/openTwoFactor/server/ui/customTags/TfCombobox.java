@@ -189,8 +189,12 @@ public class TfCombobox extends SimpleTagSupport {
     result.append(" data-dojo-props=\"url:'" + this.filterOperation 
         + "'\" data-dojo-id=\"" + this.idBase + "StoreDojoId\" style=\"display: none\"></div>\n" );
 
+    result.append("    <input id=\"" + this.idBase + "DisplayId\" name=\"" + this.idBase + "DisplayName\" type=\"hidden\" /> \n");
+    
     result.append("    <input id=\"" + this.idBase + "Id\" name=\"" + this.idBase + "Name\"  searchDelay=\"" 
         + this.searchDelayProcessed() + "\" ");
+    
+    result.append(" oninput=\"$('#" + this.idBase + "DisplayId').val(dijit.byId('" + this.idBase + "Id').get('displayedValue'))\" ");
     
     if (!StringUtils.isBlank(this.value)) {
       result.append(" value=\"" + this.value + "\" ");

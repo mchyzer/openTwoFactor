@@ -6397,10 +6397,25 @@ public class UiMain extends UiServiceLogicBase {
         httpServletRequest.getHeader("User-Agent"), subjectSource);
     
     String colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0Name");
+    if (StringUtils.isBlank(colleagueLogin0)) {
+      colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0DisplayName");
+    }
     String colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1Name");
+    if (StringUtils.isBlank(colleagueLogin1)) {
+      colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1DisplayName");
+    }
     String colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2Name");
+    if (StringUtils.isBlank(colleagueLogin2)) {
+      colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2DisplayName");
+    }
     String colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3Name");
+    if (StringUtils.isBlank(colleagueLogin3)) {
+      colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3DisplayName");
+    }
     String colleagueLogin4 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin4Name");
+    if (StringUtils.isBlank(colleagueLogin4)) {
+      colleagueLogin4 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin4DisplayName");
+    }
     
     OptinWizardSubmitFriendsView optinWizardSubmitFriendsView = optinWizardSubmitFriendsLogic(
         TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
