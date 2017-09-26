@@ -50,7 +50,6 @@ import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.email.TwoFactorEmail;
 import org.openTwoFactor.server.encryption.TwoFactorOath;
 import org.openTwoFactor.server.exceptions.TfDaoException;
-import org.openTwoFactor.server.exceptions.TfInvalidSecret;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
 import org.openTwoFactor.server.hibernate.HibernateHandlerBean;
 import org.openTwoFactor.server.hibernate.HibernateSession;
@@ -1287,8 +1286,7 @@ public class UiMain extends UiServiceLogicBase {
         
         Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         
-        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
-        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        userEmail = retrieveUserEmail(sourceSubject, twoFactorUser);
         
         //set the default text container...
         String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailAddPhoneSubject");
@@ -1301,16 +1299,10 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorEmail twoFactorMail = new TwoFactorEmail();
         
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
-          emailAddressFromDatabase = null;
-        }
-        
-        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
-
         boolean sendEmail = true;
         
         //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+        if (StringUtils.isBlank(userEmail)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
           if (StringUtils.isBlank(bccsString)) {
             sendEmail = false;
@@ -1318,7 +1310,7 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorMail.addTo(bccsString);
           }
         } else {
-          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addTo(userEmail);
           twoFactorMail.addBcc(bccsString);
         }
 
@@ -1351,6 +1343,33 @@ public class UiMain extends UiServiceLogicBase {
     }
     
     return AddPhoneView.addPhone;
+  }
+
+  /**
+   * @param sourceSubject
+   * @param twoFactorUser
+   * @return the emails
+   */
+  public static String retrieveUserEmail(Subject sourceSubject, TwoFactorUser twoFactorUser) {
+    
+    StringBuilder userEmail = new StringBuilder();
+    
+    String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
+    String emailAddressFromDatabase = twoFactorUser.getEmail0();
+
+    if (!StringUtils.isBlank(emailAddressFromSubject)) {
+      userEmail.append(emailAddressFromSubject);
+    }
+    
+    if (!StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
+      if (!StringUtils.isBlank(emailAddressFromDatabase)) {
+        if (userEmail.length() > 0) {
+          userEmail.append(", ");
+        }
+        userEmail.append(emailAddressFromDatabase);
+      }
+    }
+    return userEmail.toString();
   }
 
   /**
@@ -1686,12 +1705,10 @@ public class UiMain extends UiServiceLogicBase {
         Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
             twoFactorUserGettingOptedOut[0].getLoginid(), true, false, true);
         
-        String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
-        String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
-
-        String emailAddressFromSubjectColleaguePicked = TfSourceUtils.retrieveEmail(sourceSubjectColleaguePicked);
-        String emailAddressFromDatabaseColleaguePicked = twoFactorUserGettingOptedOut[0].getEmail0();
-
+        userEmailLoggedIn = UiMain.retrieveUserEmail(sourceSubjectLoggedIn, twoFactorUserUsingApp[0]);
+        
+        userEmailColleague = UiMain.retrieveUserEmail(sourceSubjectColleaguePicked, twoFactorUserGettingOptedOut[0]);
+        
         //set the default text container...
         String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutFriendSubject");
         subject = TextContainer.massageText("emailOptOutFriendSubject", subject);
@@ -1703,22 +1720,10 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorEmail twoFactorMail = new TwoFactorEmail();
         
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
-          emailAddressFromDatabaseLoggedIn = null;
-        }
-        
-        userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
-        
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectColleaguePicked, emailAddressFromDatabaseColleaguePicked)) {
-          emailAddressFromDatabaseColleaguePicked = null;
-        }
-        
-        userEmailColleague = emailAddressFromSubjectColleaguePicked + ", " + emailAddressFromDatabaseColleaguePicked;
-        
         boolean sendEmail = true;
         boolean sendToFriend = true;
         //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubjectColleaguePicked) && StringUtils.isBlank(emailAddressFromDatabaseColleaguePicked)) {
+        if (StringUtils.isBlank(userEmailColleague)) {
           sendToFriend = false;
           LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
           if (StringUtils.isBlank(bccsString)) {
@@ -1727,14 +1732,14 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorMail.addTo(bccsString);
           }
         } else {
-          twoFactorMail.addTo(emailAddressFromSubjectColleaguePicked).addTo(emailAddressFromDatabaseColleaguePicked);
+          twoFactorMail.addTo(userEmailColleague);
           twoFactorMail.addBcc(bccsString);
         }
         
-        if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+        if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
         } else {
-          twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+          twoFactorMail.addCc(userEmailLoggedIn);
         }
         
         if (sendEmail) {
@@ -2237,8 +2242,7 @@ public class UiMain extends UiServiceLogicBase {
         
         Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         
-        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
-        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        userEmail = retrieveUserEmail(sourceSubject, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
         
         //set the default text container...
         String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptInSubject");
@@ -2251,16 +2255,10 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorEmail twoFactorMail = new TwoFactorEmail();
         
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
-          emailAddressFromDatabase = null;
-        }
-        
-        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
- 
         boolean sendEmail = true;
         
         //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+        if (StringUtils.isBlank(userEmail)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
           if (StringUtils.isBlank(bccsString)) {
             sendEmail = false;
@@ -2268,7 +2266,7 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorMail.addTo(bccsString);
           }
         } else {
-          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addTo(userEmail);
           twoFactorMail.addBcc(bccsString);
         }
         
@@ -2403,7 +2401,7 @@ public class UiMain extends UiServiceLogicBase {
             
             Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
             
-            String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
+            String userEmail = retrieveUserEmail(sourceSubjectLoggedIn, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
 
             //set the default text container...
             String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailWrongBdaySubject");
@@ -2418,7 +2416,7 @@ public class UiMain extends UiServiceLogicBase {
             
             boolean sendEmail = true;
             //there is no email address????
-            if (StringUtils.isBlank(emailAddressFromSubjectLoggedIn)) {
+            if (StringUtils.isBlank(userEmail)) {
               LOG.warn("Did not send email to logged in user: " + sourceSubjectLoggedIn + ", no email address...");
               if (StringUtils.isBlank(bccsString)) {
                 sendEmail = false;
@@ -2426,7 +2424,7 @@ public class UiMain extends UiServiceLogicBase {
                 twoFactorMail.addTo(bccsString);
               }
             } else {
-              twoFactorMail.addTo(emailAddressFromSubjectLoggedIn);
+              twoFactorMail.addTo(userEmail);
               twoFactorMail.addBcc(bccsString);
             }
             
@@ -2547,8 +2545,7 @@ public class UiMain extends UiServiceLogicBase {
         
         Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
         
-        String emailAddressFromSubject = TfSourceUtils.retrieveEmail(sourceSubject);
-        String emailAddressFromDatabase = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
+        userEmail = retrieveUserEmail(sourceSubject, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
         
         //set the default text container...
         String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailOptOutSubject");
@@ -2561,16 +2558,10 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorEmail twoFactorMail = new TwoFactorEmail();
         
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubject, emailAddressFromDatabase)) {
-          emailAddressFromDatabase = null;
-        }
-        
-        userEmail = emailAddressFromSubject + ", " + emailAddressFromDatabase;
-        
         boolean sendEmail = true;
         
         //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubject) && StringUtils.isBlank(emailAddressFromDatabase)) {
+        if (StringUtils.isBlank(userEmail)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
           if (StringUtils.isBlank(bccsString)) {
             sendEmail = false;
@@ -2578,7 +2569,7 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorMail.addTo(bccsString);
           }
         } else {
-          twoFactorMail.addTo(emailAddressFromSubject).addTo(emailAddressFromDatabase);
+          twoFactorMail.addTo(userEmail);
           twoFactorMail.addBcc(bccsString);
         }
         
@@ -3549,12 +3540,9 @@ public class UiMain extends UiServiceLogicBase {
           Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
           Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, newColleague.getLoginid(), true, false, false);
           
-          String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
-          String emailAddressFromDatabaseLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn().getEmail0();
-
-          String emailAddressFromSubjectColleaguePicked = TfSourceUtils.retrieveEmail(sourceSubjectColleaguePicked);
-          String emailAddressFromDatabaseColleaguePicked = newColleague.getEmail0();
-
+          userEmailLoggedIn = retrieveUserEmail(sourceSubjectLoggedIn, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+          userEmailNewColleague = retrieveUserEmail(sourceSubjectColleaguePicked, newColleague);
+          
           //set the default text container...
           String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailFriendSubject");
           subject = TextContainer.massageText("emailFriendSubject", subject);
@@ -3566,22 +3554,10 @@ public class UiMain extends UiServiceLogicBase {
           
           TwoFactorEmail twoFactorMail = new TwoFactorEmail();
           
-          if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
-            emailAddressFromDatabaseLoggedIn = null;
-          }
-          
-          userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
-          
-          if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectColleaguePicked, emailAddressFromDatabaseColleaguePicked)) {
-            emailAddressFromDatabaseColleaguePicked = null;
-          }
-          
-          userEmailNewColleague = emailAddressFromSubjectColleaguePicked + ", " + emailAddressFromDatabaseColleaguePicked;
-          
           boolean sendEmail = true;
           boolean sendToFriend = true;
           //there is no email address????
-          if (StringUtils.isBlank(emailAddressFromSubjectColleaguePicked) && StringUtils.isBlank(emailAddressFromDatabaseColleaguePicked)) {
+          if (StringUtils.isBlank(userEmailNewColleague)) {
             sendToFriend = false;
             LOG.warn("Did not send email to logged in user: " + newColleague + ", no email address...");
             if (StringUtils.isBlank(bccsString)) {
@@ -3590,14 +3566,14 @@ public class UiMain extends UiServiceLogicBase {
               twoFactorMail.addTo(bccsString);
             }
           } else {
-            twoFactorMail.addTo(emailAddressFromSubjectColleaguePicked).addTo(emailAddressFromDatabaseColleaguePicked);
+            twoFactorMail.addTo(userEmailNewColleague);
             twoFactorMail.addBcc(bccsString);
           }
           
-          if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+          if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
             LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
           } else {
-            twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+            twoFactorMail.addCc(userEmailLoggedIn);
           }
           
           if (sendEmail) {
@@ -6644,6 +6620,7 @@ public class UiMain extends UiServiceLogicBase {
 
 
   /**
+   * @param twoFactorRequestContainer 
    * @param twoFactorDaoFactory
    * @param twoFactorCode
    * @param twoFactorUser
@@ -7505,12 +7482,10 @@ public class UiMain extends UiServiceLogicBase {
         Subject sourceSubjectColleaguePicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
             twoFactorUserGettingCode[0].getLoginid(), true, false, true);
         
-        String emailAddressFromSubjectLoggedIn = TfSourceUtils.retrieveEmail(sourceSubjectLoggedIn);
-        String emailAddressFromDatabaseLoggedIn = twoFactorUserUsingApp[0].getEmail0();
-  
-        String emailAddressFromSubjectColleaguePicked = TfSourceUtils.retrieveEmail(sourceSubjectColleaguePicked);
-        String emailAddressFromDatabaseColleaguePicked = twoFactorUserGettingCode[0].getEmail0();
-  
+        userEmailLoggedIn = retrieveUserEmail(sourceSubjectLoggedIn, twoFactorUserUsingApp[0]);
+        
+        userEmailColleague = retrieveUserEmail(sourceSubjectColleaguePicked, twoFactorUserGettingCode[0]);
+        
         //set the default text container...
         String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeFriendSubject");
         subject = TextContainer.massageText("emailGenerateCodeFriendSubject", subject);
@@ -7522,22 +7497,10 @@ public class UiMain extends UiServiceLogicBase {
         
         TwoFactorEmail twoFactorMail = new TwoFactorEmail();
         
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectLoggedIn, emailAddressFromDatabaseLoggedIn)) {
-          emailAddressFromDatabaseLoggedIn = null;
-        }
-        
-        userEmailLoggedIn = emailAddressFromSubjectLoggedIn + ", " + emailAddressFromDatabaseLoggedIn;
-        
-        if (StringUtils.equalsIgnoreCase(emailAddressFromSubjectColleaguePicked, emailAddressFromDatabaseColleaguePicked)) {
-          emailAddressFromDatabaseColleaguePicked = null;
-        }
-        
-        userEmailColleague = emailAddressFromSubjectColleaguePicked + ", " + emailAddressFromDatabaseColleaguePicked;
-        
         boolean sendEmail = true;
         boolean sendToFriend = true;
         //there is no email address????
-        if (StringUtils.isBlank(emailAddressFromSubjectColleaguePicked) && StringUtils.isBlank(emailAddressFromDatabaseColleaguePicked)) {
+        if (StringUtils.isBlank(userEmailColleague)) {
           sendToFriend = false;
           LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
           if (StringUtils.isBlank(bccsString)) {
@@ -7546,14 +7509,14 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorMail.addTo(bccsString);
           }
         } else {
-          twoFactorMail.addTo(emailAddressFromSubjectColleaguePicked).addTo(emailAddressFromDatabaseColleaguePicked);
+          twoFactorMail.addTo(userEmailColleague);
           twoFactorMail.addBcc(bccsString);
         }
         
-        if (sendToFriend && StringUtils.isBlank(emailAddressFromSubjectLoggedIn) && StringUtils.isBlank(emailAddressFromDatabaseLoggedIn)) {
+        if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
         } else {
-          twoFactorMail.addCc(emailAddressFromSubjectLoggedIn).addTo(emailAddressFromDatabaseLoggedIn);
+          twoFactorMail.addCc(userEmailLoggedIn);
         }
         
         if (sendEmail) {
