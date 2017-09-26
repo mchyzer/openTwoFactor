@@ -38,6 +38,13 @@
     
     &nbsp; &nbsp;
     
+    <form action="../../twoFactorUi/app/UiMain.optinWizard" method="get" style="display: inline">
+      <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
+       type="submit" />
+    </form>
+
+    &nbsp; &nbsp;
+
     <form action="../../twoFactorPublicUi/app/UiMainPublic.index" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonHavingTrouble']}" class="tfBlueButton"
        type="submit" />
