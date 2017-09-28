@@ -114,7 +114,7 @@ public class HibernateTwoFactorReportDao implements TwoFactorReportDao {
     
     headersString = headersString.substring(0, headersString.toLowerCase().indexOf(" from "));
     
-    List<String> headers = TwoFactorServerUtils.splitTrimToList(headersString, ", ");
+    List<String> headers = TwoFactorServerUtils.splitTrimToList(headersString, ",");
     
     List<String[]> data = HibernateSession.bySqlStatic().listSelect(String[].class, tfReportConfig.getQuery(), null);
 

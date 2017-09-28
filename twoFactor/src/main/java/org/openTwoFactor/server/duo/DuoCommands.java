@@ -6,8 +6,10 @@ package org.openTwoFactor.server.duo;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
@@ -540,8 +542,11 @@ public class DuoCommands {
 
     associateUserWithPhone(userId, phoneId);
 
-    return enrollUserInPushByPhoneId(phoneId);
+    String url = enrollUserInPushByPhoneId(phoneId);
 
+    duoReorderPhonesBySomeId(someId, false);
+    
+    return url;
     
   }
 
@@ -1139,6 +1144,140 @@ public class DuoCommands {
         System.out.println("Error with user: " + twoFactorUser.getLoginid());
         e.printStackTrace();
       }
+    }
+    
+    // reorder to get push up front
+    duoReorderPhonesBySomeId(someId, printResults);
+    
+  }
+  
+  /**
+   * reorder phones to get push up front
+   * @param someId
+   * @param printResults
+   */
+  public static void duoReorderPhonesBySomeId(String someId, boolean printResults) {
+
+    //get two factor object
+    String tfUserUuid = retrieveTfUserUuidBySomeId(someId, true);
+    
+    TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), tfUserUuid);
+
+    if (!twoFactorUser.isOptedIn()) {
+      return;
+    }
+
+    //get the duo user
+    JSONObject duoUser = retrieveDuoUserBySomeId(someId);
+    
+    if (duoUser == null) {
+      throw new RuntimeException("Cant find duo user for someId: " + someId);
+    }
+    
+    Boolean needsReordering = null;
+    
+    int numberOfPhones = 0;
+    
+    JSONArray phones = (JSONArray)duoUser.get("phones");
+    
+    if (phones != null && phones.size() > 0) {
+      numberOfPhones = phones.size();
+    }
+    
+    int pushPhoneIndex = -1;
+    for (int i=0;i<numberOfPhones;i++) {
+      
+      
+      //get the phone from duo
+      JSONObject duoPhone = phones.getJSONObject(i);
+      
+      //if they both arent there, thats good
+      if (duoPhone == null) {
+        if (printResults) {
+          System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was in sync");
+        }
+        continue;
+      }
+
+      Object capablities = duoPhone.get("capabilities");
+      
+      if (capablities == null || capablities == JSONNull.getInstance() || (!(capablities instanceof JSONArray))) {
+        continue;
+      }
+
+      JSONArray capabilitiesArray = (JSONArray)capablities;
+      
+      Set<String> capabilitiesSet = new HashSet<String>();
+      
+      for (int j=0;j<capabilitiesArray.size();j++) {
+        capabilitiesSet.add(capabilitiesArray.getString(j));
+      }
+      
+      if (i==0 && capabilitiesSet.contains("push")) {
+        if (printResults) {
+          System.out.println("Push phone is in index 0, doesnt need reordering");
+        }
+        pushPhoneIndex = i;
+        needsReordering = false;
+        break;
+      }
+      
+      if (i!=0 && capabilitiesSet.contains("push")) {
+        if (printResults) {
+          System.out.println("Push phone is not in index 0, its in index " + i + ", does need reordering");
+        }
+        pushPhoneIndex = i;
+        needsReordering = true;
+        break;
+      }
+      
+    }
+
+    String userId = duoUser.getString("user_id");
+    
+    if (needsReordering != null && needsReordering) {
+
+      //remove all phones
+      for (int i=0;i<numberOfPhones;i++) {
+        
+        //get the phone from duo
+        JSONObject duoPhone = phones.getJSONObject(i);
+        
+        if (duoPhone == null) {
+          continue;
+        }
+
+        String phoneId = duoPhone.getString("phone_id");
+        
+        disassociateUserWithPhone(userId, phoneId);
+        
+      }
+      
+      //add back the push device
+      JSONObject duoPhone = phones.getJSONObject(pushPhoneIndex);
+      String phoneId = duoPhone.getString("phone_id");
+      associateUserWithPhone(userId, phoneId);
+      
+      //add back the other phones
+      for (int i=0;i<numberOfPhones;i++) {
+        
+        if (i==pushPhoneIndex) {
+          continue;
+        }
+        
+        //get the phone from duo
+        duoPhone = phones.getJSONObject(i);
+        
+        if (duoPhone == null) {
+          continue;
+        }
+
+        phoneId = duoPhone.getString("phone_id");
+        
+        associateUserWithPhone(userId, phoneId);
+        
+      }
+      
     }
     
   }
@@ -1766,6 +1905,57 @@ public class DuoCommands {
       debugMap.put("path", path);
       
       Http request = httpAdmin("POST", path);
+      request.addParam("phone_id", phoneId);
+      signHttpAdmin(request);
+      
+      String result = executeRequestRaw(request);
+      
+      // {"response": "", "stat": "OK"}
+  
+      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+   
+      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+  
+  /**
+   * @param userId
+   * @param phoneId
+   */
+  private static void disassociateUserWithPhone(String userId, String phoneId) {
+    
+    if (StringUtils.isBlank(userId)) {
+      throw new RuntimeException("userId is null");
+    }
+    
+    if (StringUtils.isBlank(phoneId)) {
+      throw new RuntimeException("phoneId is null");
+    }
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+    debugMap.put("method", "disassociateUserWithPhone");
+    debugMap.put("userId", userId);
+    debugMap.put("phoneId", phoneId);
+    long startTime = System.nanoTime();
+    try {
+    
+      //associate token with user
+      //  DELETE /admin/v1/users/[user_id]/phones/[phone_id]
+      //  phone_id
+      String path = "/admin/v1/users/" + userId + "/phones/" + phoneId;
+      
+      debugMap.put("path", path);
+      
+      Http request = httpAdmin("DELETE", path);
       request.addParam("phone_id", phoneId);
       signHttpAdmin(request);
       
