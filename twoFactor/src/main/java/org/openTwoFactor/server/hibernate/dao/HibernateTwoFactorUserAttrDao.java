@@ -97,44 +97,82 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
     if (twoFactorUserAttr == null) {
       throw new NullPointerException("twoFactorUser is null");
     }
-    
-    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
-      
-      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
 
-        HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
+    if (HibernateSession.isReadonlyMode()) {
+      return;
+    }
+    try {
+
+      HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
         
-        if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfUserAttrUseUpdateStatement", true) 
-            && twoFactorUserAttr.getVersionNumber() != null && twoFactorUserAttr.getVersionNumber() != -1) {
-          if (!HibernateSession.isReadonlyMode()) {
-
-            hibernateSession.misc().flush();
-
-            BySql bySql = hibernateSession.bySql();
-            String sql = "update two_factor_user_attr tfua "
-                + "set attribute_value_string = ?, "
-                + "attribute_value_integer = ?, "
-                + "last_updated = ?, "
-                + "version_number = ? "
-                + "where uuid = ?" ;
-            int rows = bySql.executeSql(sql, 
-                TwoFactorServerUtils.toListObject(twoFactorUserAttr.getAttributeValueString(), 
-                    twoFactorUserAttr.getAttributeValueInteger(),
-                    System.currentTimeMillis(), twoFactorUserAttr.getVersionNumber()+1,
-                    twoFactorUserAttr.getUuid()));
-            if (rows != 1) {
-              throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
-            }
+        public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+          HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
+  
+          boolean isUpdateDirect = false;
+          
+          if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfUserAttrUseUpdateStatement", true)) {
+  
+            //if we know its an update
+            isUpdateDirect = twoFactorUserAttr.getVersionNumber() != null && twoFactorUserAttr.getVersionNumber() != -1;
             
-          }
-        } else {
-        
-          HibernateSession.byObjectStatic().saveOrUpdate(twoFactorUserAttr);
-        }
+            if (!isUpdateDirect) {
+              
+              hibernateSession.misc().flush();
 
-        return null;
-      }
-    });
+              //see if its there
+              List<TwoFactorUserAttr> theList = HibernateSession.byHqlStatic().createQuery(
+                  "select tfu from TwoFactorUserAttr as tfua where tfua.userUuid = :theUserUuid and tfua.attributeName = :theAttributeName")
+                  .setString("theUserUuid", twoFactorUserAttr.getUserUuid())
+                  .setString("theAttributeName", twoFactorUserAttr.getAttributeName())
+                  .list(TwoFactorUserAttr.class);
+              TwoFactorUserAttr twoFactorUserAttrCurrent =  TwoFactorServerUtils.listPopOne(theList);
+                
+              
+              if (twoFactorUserAttrCurrent != null) {
+                
+                isUpdateDirect = true;
+                
+              }
+            }
+            if (isUpdateDirect) {
+
+              BySql bySql = hibernateSession.bySql();
+              String sql = "update two_factor_user_attr tfua "
+                  + "set attribute_value_string = ?, "
+                  + "attribute_value_integer = ?, "
+                  + "last_updated = ?, "
+                  + "version_number = ? "
+                  + "where uuid = ?" ;
+              int rows = bySql.executeSql(sql, 
+                  TwoFactorServerUtils.toListObject(twoFactorUserAttr.getAttributeValueString(), 
+                      twoFactorUserAttr.getAttributeValueInteger(),
+                      System.currentTimeMillis(), twoFactorUserAttr.getVersionNumber()+1,
+                      twoFactorUserAttr.getUuid()));
+              if (rows != 1) {
+                throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
+              }
+
+            }
+                      
+          }
+          
+          if (!isUpdateDirect) {
+            //this will insert or update with hibernate using optimistic locking
+            HibernateSession.byObjectStatic().saveOrUpdate(twoFactorUserAttr);
+          }
+          
+          if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfUserAttrFlushAfter", true)) {
+            hibernateSession.misc().flush();
+          }
+          return null;
+        }
+      });
+    } catch (RuntimeException e) {
+      TwoFactorServerUtils.injectInException(e, "Exception in attr: user_uuid" + twoFactorUserAttr.getUserUuid() + ", attrName: " + twoFactorUserAttr.getAttributeName()
+          + ", valueString: '" + twoFactorUserAttr.getAttributeValueString() + "', valueNumber: " + twoFactorUserAttr.getAttributeValueInteger());
+      throw e;
+    }
         
   }
 
