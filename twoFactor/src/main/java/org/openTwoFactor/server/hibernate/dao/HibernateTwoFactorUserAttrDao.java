@@ -122,7 +122,7 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
 
               //see if its there
               List<TwoFactorUserAttr> theList = HibernateSession.byHqlStatic().createQuery(
-                  "select tfu from TwoFactorUserAttr as tfua where tfua.userUuid = :theUserUuid and tfua.attributeName = :theAttributeName")
+                  "select tfua from TwoFactorUserAttr as tfua where tfua.userUuid = :theUserUuid and tfua.attributeName = :theAttributeName")
                   .setString("theUserUuid", twoFactorUserAttr.getUserUuid())
                   .setString("theAttributeName", twoFactorUserAttr.getAttributeName())
                   .list(TwoFactorUserAttr.class);
