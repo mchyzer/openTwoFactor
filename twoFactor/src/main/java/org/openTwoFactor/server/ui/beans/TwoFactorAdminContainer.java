@@ -427,7 +427,7 @@ public class TwoFactorAdminContainer {
 
     TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
 
-    Set<String> adminUserIdsWhoCanSeeAdminReportsSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanAdminReports();
+    Set<String> adminUserIdsWhoCanSeeAdminReportsSet = twoFactorAuthorizationInterface.adminUserIdsWhoCanSeeAdminReports();
 
     Source theSource = TfSourceUtils.mainSource();
 
