@@ -1363,8 +1363,24 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
         }
       }
       
+      //make a copy for dbVersion, keep the deletes
+      Set<TwoFactorUserAttr> dbVersionAttributes = TwoFactorServerUtils.cloneValue(twoFactorUserAttrsSet);
+      ((TwoFactorUser)twoFactorUser.dbVersion()).setAttributes(dbVersionAttributes);
+      
+      //go through again and remove deleted
+      iterator = twoFactorUserAttrsSet.iterator();
+      
+      //if we have two versions of open two factor pointing to the same db, then 
+      //dont throw errors if attribute names dont match
+      while (iterator.hasNext()) {
+        TwoFactorUserAttr twoFactorUserAttr = iterator.next();
+        if (twoFactorUserAttr.getDeletedOn() != null && twoFactorUserAttr.getDeletedOn() < System.currentTimeMillis()) {
+          iterator.remove();
+        }
+      }
+      //this one doesnt include deleted items
       twoFactorUser.setAttributes(twoFactorUserAttrsSet);
-      ((TwoFactorUser)twoFactorUser.dbVersion()).setAttributes(TwoFactorServerUtils.cloneValue(twoFactorUserAttrsSet));
+
     }
     twoFactorUser.setTwoFactorDaoFactory(twoFactorDaoFactory);
   }
@@ -1434,9 +1450,12 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
           fieldsForDelete.removeAll(newAttributes.keySet());
           
           for (String fieldForDelete : fieldsForDelete) {
-            oldAttributes.get(fieldForDelete).delete(twoFactorDaoFactory1);
+            TwoFactorUserAttr twoFactorUserAttr = oldAttributes.get(fieldForDelete);
+            twoFactorUserAttr.setDeletedOn(System.currentTimeMillis());
+            //delete(twoFactorDaoFactory1);
             oldAttributes.remove(fieldForDelete);
-            hadChange = true;
+            boolean attrChanged = twoFactorUserAttr.store(twoFactorDaoFactory1);
+            hadChange = hadChange || attrChanged;
           }
         }
         
@@ -1450,6 +1469,18 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 //              hadChange = true;
 //            }
             //this will insert or update and keep track of state
+            newFactorUserAttr.setDeletedOn(null);
+            if (newFactorUserAttr.getVersionNumber() == null || newFactorUserAttr.getVersionNumber() == -1) {
+              TwoFactorUserAttr oldAttribute = oldAttributes.get(newFactorUserAttr.getAttributeName());
+              
+              //maybe an insert is deleted?
+              if (oldAttribute != null) {
+                if (oldAttribute.getVersionNumber() != null && oldAttribute.getVersionNumber() != -1) {
+                  newFactorUserAttr.setUuid(oldAttribute.getUuid());
+                  newFactorUserAttr.setVersionNumber(oldAttribute.getVersionNumber());
+                }
+              }
+            }
             boolean attrChanged = newFactorUserAttr.store(twoFactorDaoFactory1);
             hadChange = hadChange || attrChanged;
           }
@@ -1479,7 +1510,9 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
 
         if (!HibernateSession.isReadonlyMode()) {
-          for (TwoFactorUserAttr twoFactorUserAttr : TwoFactorServerUtils.nonNull(TwoFactorUser.this.getAttributes())) {
+          
+          for (TwoFactorUserAttr twoFactorUserAttr : TwoFactorServerUtils.nonNull(twoFactorDaoFactory1
+              .getTwoFactorUserAttr().retrieveByUser(TwoFactorUser.this.getUuid()))) {
             
             twoFactorUserAttr.delete(twoFactorDaoFactory1);
             

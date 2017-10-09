@@ -234,7 +234,7 @@ public class TfCombobox extends SimpleTagSupport {
     result.append("          this.focusNode.setSelectionRange(0,0);\n");
     result.append("        }\n");
     result.append("      });\n");
-    result.append("    </script></div>\n");
+    result.append("    </script></div>\n"); //TODO add delete button
     
     this.getJspContext().getOut().print(result.toString());
   }

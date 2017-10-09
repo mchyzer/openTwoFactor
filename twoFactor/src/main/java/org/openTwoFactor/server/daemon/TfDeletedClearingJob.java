@@ -159,14 +159,18 @@ public class TfDeletedClearingJob implements Job {
         }
       }
 
-      for (int i=0;i<10000;i++) {
-        List<TwoFactorUserAttr> twoFactorUserAttrs = twoFactorDaoFactory.getTwoFactorUserAttr()
-          .retrieveDeletedOlderThanAge(deleteBeforeMilli);
-        int records = deleteRecords(twoFactorDaoFactory, twoFactorUserAttrs, debugLog, "twoFactorUserAttrs", i, errorCount);
-        count += records;
-        if (records == 0) {
-          break;
+      if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorDeleteAttributesWithDeleteDates", false)) {
+
+        for (int i=0;i<10000;i++) {
+          List<TwoFactorUserAttr> twoFactorUserAttrs = twoFactorDaoFactory.getTwoFactorUserAttr()
+            .retrieveDeletedOlderThanAge(deleteBeforeMilli);
+          int records = deleteRecords(twoFactorDaoFactory, twoFactorUserAttrs, debugLog, "twoFactorUserAttrs", i, errorCount);
+          count += records;
+          if (records == 0) {
+            break;
+          }
         }
+        
       }
 
       for (int i=0;i<10000;i++) {

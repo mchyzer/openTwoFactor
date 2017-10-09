@@ -112,7 +112,13 @@ public class TwoFactorUserTest extends TestCase {
     if (twoFactorUser != null) {
       twoFactorUser.delete(TwoFactorDaoFactory.getFactory());
     }
+
+    twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), "123");
     
+    if (twoFactorUser != null) {
+      twoFactorUser.delete(TwoFactorDaoFactory.getFactory());
+    }
+
     twoFactorUser = new TwoFactorUser();
     twoFactorUser.setUuid(TwoFactorServerUtils.uuid());
     twoFactorUser.setLoginid("abc");
@@ -158,9 +164,27 @@ public class TwoFactorUserTest extends TestCase {
     twoFactorUser.store(TwoFactorDaoFactory.getFactory());
     
     assertEquals(userInsertsAndUpdates, TwoFactorUser.testInsertsAndUpdates);
-    assertEquals(userAttrInsertsAndUpdates, TwoFactorUserAttr.testInsertsAndUpdates);
-    assertEquals(userAttrDeletes + 1, TwoFactorUserAttr.testDeletes);
-  
+    assertEquals(userAttrInsertsAndUpdates+1, TwoFactorUserAttr.testInsertsAndUpdates);
+    assertEquals(userAttrDeletes, TwoFactorUserAttr.testDeletes);
+
+    userInsertsAndUpdates = TwoFactorUser.testInsertsAndUpdates;
+    userAttrInsertsAndUpdates = TwoFactorUserAttr.testInsertsAndUpdates;
+
+    //see if its still there
+    twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), "abc");
+    String secretTemp = twoFactorUser.getTwoFactorSecretTemp();
+    assertNull(secretTemp, secretTemp);
+    
+    twoFactorUser.setTwoFactorSecretTemp("klm");
+    twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+    
+    twoFactorUser = TwoFactorUser.retrieveByLoginid(TwoFactorDaoFactory.getFactory(), "abc");
+    secretTemp = twoFactorUser.getTwoFactorSecretTemp();
+    assertEquals("klm", secretTemp);
+
+    assertEquals(userInsertsAndUpdates, TwoFactorUser.testInsertsAndUpdates);
+    assertEquals(userAttrInsertsAndUpdates+1, TwoFactorUserAttr.testInsertsAndUpdates);
+
     userInsertsAndUpdates = TwoFactorUser.testInsertsAndUpdates;
     userAttrInsertsAndUpdates = TwoFactorUserAttr.testInsertsAndUpdates;
     

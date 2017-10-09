@@ -142,12 +142,15 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
                   + "set attribute_value_string = ?, "
                   + "attribute_value_integer = ?, "
                   + "last_updated = ?, "
+                  + "deleted_on = ?, "
                   + "version_number = ? "
                   + "where uuid = ?" ;
               int rows = bySql.executeSql(sql, 
                   TwoFactorServerUtils.toListObject(twoFactorUserAttr.getAttributeValueString(), 
                       twoFactorUserAttr.getAttributeValueInteger(),
-                      System.currentTimeMillis(), twoFactorUserAttr.getVersionNumber()+1,
+                      System.currentTimeMillis(), 
+                      twoFactorUserAttr.getDeletedOn(),
+                      twoFactorUserAttr.getVersionNumber()+1,
                       twoFactorUserAttr.getUuid()));
               if (rows != 1) {
                 throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
