@@ -1451,11 +1451,13 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
           
           for (String fieldForDelete : fieldsForDelete) {
             TwoFactorUserAttr twoFactorUserAttr = oldAttributes.get(fieldForDelete);
-            twoFactorUserAttr.setDeletedOn(System.currentTimeMillis());
-            //delete(twoFactorDaoFactory1);
-            oldAttributes.remove(fieldForDelete);
-            boolean attrChanged = twoFactorUserAttr.store(twoFactorDaoFactory1);
-            hadChange = hadChange || attrChanged;
+            if (twoFactorUserAttr.getDeletedOn() == null || twoFactorUserAttr.getDeletedOn() > System.currentTimeMillis()) {
+              twoFactorUserAttr.setDeletedOn(System.currentTimeMillis());
+              //delete(twoFactorDaoFactory1);
+              oldAttributes.remove(fieldForDelete);
+              boolean attrChanged = twoFactorUserAttr.store(twoFactorDaoFactory1);
+              hadChange = hadChange || attrChanged;
+            }
           }
         }
         

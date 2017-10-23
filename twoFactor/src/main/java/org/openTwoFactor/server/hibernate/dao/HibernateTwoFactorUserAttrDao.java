@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.dao.TwoFactorUserAttrDao;
@@ -27,6 +28,9 @@ import org.openTwoFactor.server.util.TwoFactorServerUtils;
  * hibernate implementation of dao
  */
 public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
+
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(HibernateTwoFactorUserAttrDao.class);
 
   /**
    * @see org.openTwoFactor.server.dao.TwoFactorUserDao#delete(org.openTwoFactor.server.beans.TwoFactorUser)
@@ -153,7 +157,15 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
                       twoFactorUserAttr.getVersionNumber()+1,
                       twoFactorUserAttr.getUuid()));
               if (rows != 1) {
-                throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
+                if (rows == 0) {
+                  //try not to get errors...
+                  LOG.warn("NON-FATAL warning: Update userAttr gave 0 rows???? " + twoFactorUserAttr.getAttributeName() 
+                      + ", valueString: '" + twoFactorUserAttr.getAttributeValueString() + "', valueInteger: '" 
+                      + twoFactorUserAttr.getAttributeValueInteger() + "', userUuid: " + twoFactorUserAttr.getUserUuid() + ", uuid: " + twoFactorUserAttr.getUuid());
+                } else {
+                  throw new RuntimeException("Why is rows not 1? " + rows + ", uuid: " + twoFactorUserAttr.getUuid() + ", userUuid: " 
+                      + twoFactorUserAttr.getUserUuid() + ", attributeName: " + twoFactorUserAttr.getAttributeName());
+                }
               }
 
             }
