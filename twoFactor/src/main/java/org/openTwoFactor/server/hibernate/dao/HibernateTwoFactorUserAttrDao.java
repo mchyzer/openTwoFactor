@@ -145,6 +145,7 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
               String sql = "update two_factor_user_attr tfua "
                   + "set attribute_value_string = ?, "
                   + "attribute_value_integer = ?, "
+                  + "encryption_timestamp = ?, "
                   + "last_updated = ?, "
                   + "deleted_on = ?, "
                   + "version_number = ? "
@@ -152,6 +153,7 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
               int rows = bySql.executeSql(sql, 
                   TwoFactorServerUtils.toListObject(twoFactorUserAttr.getAttributeValueString(), 
                       twoFactorUserAttr.getAttributeValueInteger(),
+                      twoFactorUserAttr.getEncryptionTimestamp(),
                       System.currentTimeMillis(), 
                       twoFactorUserAttr.getDeletedOn(),
                       twoFactorUserAttr.getVersionNumber()+1,

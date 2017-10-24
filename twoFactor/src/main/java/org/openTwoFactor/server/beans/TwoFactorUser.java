@@ -1411,92 +1411,123 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
       throw new RuntimeException("loginid is too long (90): '" + this.loginid + "'");
     }
 
-    return (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+    final TwoFactorUser dbVersion = (TwoFactorUser)TwoFactorUser.this.dbVersion();
+
+    //lets do this in a new tx
+    boolean hadChange = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
       @Override
       public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
-        HibernateSession hibernateSession = hibernateHandlerBean.getHibernateSession();
-        TwoFactorUser dbVersion = (TwoFactorUser)TwoFactorUser.this.dbVersion();
 
-        boolean hadChange = false;
+        boolean hadChangeLocal = false;
         
         if (TwoFactorServerUtils.dbVersionDifferent(dbVersion, TwoFactorUser.this)) {
           if (!HibernateSession.isReadonlyMode()) {
             twoFactorDaoFactory1.getTwoFactorUser().store(TwoFactorUser.this);
           }
           testInsertsAndUpdates++;
-          hadChange = true;
-        }
-
-        //sync up the attributes
-        Map<String, TwoFactorUserAttr> newAttributes = TwoFactorUser.this.attributeMap();
-        Map<String, TwoFactorUserAttr> oldAttributes = dbVersion == null ? new HashMap<String, TwoFactorUserAttr>() : dbVersion.attributeMap();
-        
-//        //###################### INSERTS
-//        {
-//          Set<String> fieldsForInsert = new HashSet<String>(newAttributes.keySet());
-//          fieldsForInsert.removeAll(oldAttributes.keySet());
-//          
-//          for (String fieldForInsert : fieldsForInsert) {
-//            twoFactorDaoFactory.getTwoFactorUserAttr().store(newAttributes.get(fieldForInsert));
-//            newAttributes.remove(fieldForInsert);
-//            hadChange = true;
-//          }
-//        }
-        
-        //###################### DELETES
-        {
-          Set<String> fieldsForDelete = new HashSet<String>(oldAttributes.keySet());
-          fieldsForDelete.removeAll(newAttributes.keySet());
-          
-          for (String fieldForDelete : fieldsForDelete) {
-            TwoFactorUserAttr twoFactorUserAttr = oldAttributes.get(fieldForDelete);
-            if (twoFactorUserAttr.getDeletedOn() == null || twoFactorUserAttr.getDeletedOn() > System.currentTimeMillis()) {
-              twoFactorUserAttr.setDeletedOn(System.currentTimeMillis());
-              //delete(twoFactorDaoFactory1);
-              oldAttributes.remove(fieldForDelete);
-              boolean attrChanged = twoFactorUserAttr.store(twoFactorDaoFactory1);
-              hadChange = hadChange || attrChanged;
-            }
-          }
+          hadChangeLocal = true;
         }
         
-        //###################### UPDATES
-        {          
-          for (String fieldForUpdate : newAttributes.keySet()) {
-            TwoFactorUserAttr newFactorUserAttr = newAttributes.get(fieldForUpdate);
-//            TwoFactorUserAttr oldFactorUserAttr = oldAttributes.get(fieldForUpdate);
-//            if (TwoFactorServerUtils.dbVersionDifferent(oldFactorUserAttr, newFactorUserAttr)) {
-//              twoFactorDaoFactory.getTwoFactorUserAttr().store(newFactorUserAttr);
-//              hadChange = true;
-//            }
-            //this will insert or update and keep track of state
-            newFactorUserAttr.setDeletedOn(null);
-            if (newFactorUserAttr.getVersionNumber() == null || newFactorUserAttr.getVersionNumber() == -1) {
-              TwoFactorUserAttr oldAttribute = oldAttributes.get(newFactorUserAttr.getAttributeName());
-              
-              //maybe an insert is deleted?
-              if (oldAttribute != null) {
-                if (oldAttribute.getVersionNumber() != null && oldAttribute.getVersionNumber() != -1) {
-                  newFactorUserAttr.setUuid(oldAttribute.getUuid());
-                  newFactorUserAttr.setVersionNumber(oldAttribute.getVersionNumber());
-                }
-              }
-            }
-            boolean attrChanged = newFactorUserAttr.store(twoFactorDaoFactory1);
-            hadChange = hadChange || attrChanged;
-          }
-        }
-        if (hadChange) {
-          if (!HibernateSession.isReadonlyMode()) {
-            hibernateSession.misc().flush();
-          }
-          TwoFactorUser.this.dbVersionReset();
-        }
-        return hadChange;
+        return hadChangeLocal;
       }
     });
 
+    //sync up the attributes
+    Map<String, TwoFactorUserAttr> newAttributes = TwoFactorUser.this.attributeMap();
+    Map<String, TwoFactorUserAttr> oldAttributes = dbVersion == null ? new HashMap<String, TwoFactorUserAttr>() : dbVersion.attributeMap();
+
+    //###################### DELETES
+    {
+      Set<String> fieldsForDelete = new HashSet<String>(oldAttributes.keySet());
+      fieldsForDelete.removeAll(newAttributes.keySet());
+      
+      for (String fieldForDelete : fieldsForDelete) {
+        final TwoFactorUserAttr twoFactorUserAttr = oldAttributes.get(fieldForDelete);
+        if (twoFactorUserAttr.getDeletedOn() == null || twoFactorUserAttr.getDeletedOn() > System.currentTimeMillis()) {
+          twoFactorUserAttr.setDeletedOn(System.currentTimeMillis());
+          //delete(twoFactorDaoFactory1);
+          oldAttributes.remove(fieldForDelete);
+          boolean attrChanged = storeAttribute(twoFactorDaoFactory1, twoFactorUserAttr);
+          hadChange = hadChange || attrChanged;
+        }
+      }
+    }
+
+
+    
+    //###################### UPDATES
+    {          
+      for (String fieldForUpdate : newAttributes.keySet()) {
+        TwoFactorUserAttr newFactorUserAttr = newAttributes.get(fieldForUpdate);
+
+        //this will insert or update and keep track of state
+        newFactorUserAttr.setDeletedOn(null);
+        if (newFactorUserAttr.getVersionNumber() == null || newFactorUserAttr.getVersionNumber() == -1) {
+          TwoFactorUserAttr oldAttribute = oldAttributes.get(newFactorUserAttr.getAttributeName());
+          
+          //maybe an insert is deleted?
+          if (oldAttribute != null) {
+            if (oldAttribute.getVersionNumber() != null && oldAttribute.getVersionNumber() != -1) {
+              newFactorUserAttr.setUuid(oldAttribute.getUuid());
+              newFactorUserAttr.setVersionNumber(oldAttribute.getVersionNumber());
+            }
+          }
+        }
+        boolean attrChanged = storeAttribute(twoFactorDaoFactory1, newFactorUserAttr);
+        hadChange = hadChange || attrChanged;
+      }
+    }
+    if (hadChange) {
+      TwoFactorUser.this.dbVersionReset();
+    }
+    return hadChange;
+  }
+
+  /**
+   * try to store, if it doesnt work, try again...
+   * @param twoFactorDaoFactory1
+   * @param twoFactorUserAttr
+   * @return if changed
+   */
+  private boolean storeAttribute(final TwoFactorDaoFactory twoFactorDaoFactory1,
+      final TwoFactorUserAttr twoFactorUserAttr) {
+
+    try {
+      return storeAttributeHelper(twoFactorDaoFactory1, twoFactorUserAttr);
+    } catch (Exception e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("error with attribute: userUuid: " + twoFactorUserAttr.getUserUuid() + ", attrName: " + twoFactorUserAttr.getAttributeName(), e);
+      }
+      
+      TwoFactorUserAttr dbTwoFactorUserAttr = twoFactorDaoFactory1.getTwoFactorUserAttr()
+          .retrieveByUserAndAttributeName(twoFactorUserAttr.getUserUuid(), twoFactorUserAttr.getAttributeName());
+      
+      dbTwoFactorUserAttr.setAttributeValueInteger(twoFactorUserAttr.getAttributeValueInteger());
+      dbTwoFactorUserAttr.setAttributeValueString(twoFactorUserAttr.getAttributeValueString());
+      dbTwoFactorUserAttr.setDeletedOn(twoFactorUserAttr.getDeletedOn());
+      dbTwoFactorUserAttr.setEncryptionTimestamp(twoFactorUserAttr.getEncryptionTimestamp());
+      return storeAttributeHelper(twoFactorDaoFactory1, dbTwoFactorUserAttr);
+    }
+  }
+
+  /**
+   * @param twoFactorDaoFactory1
+   * @param twoFactorUserAttr
+   * @return if changed
+   */
+  private boolean storeAttributeHelper(final TwoFactorDaoFactory twoFactorDaoFactory1,
+      final TwoFactorUserAttr twoFactorUserAttr) {
+    
+    boolean attrChanged = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_NEW, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        
+        return twoFactorUserAttr.store(twoFactorDaoFactory1);
+      }
+    });
+    return attrChanged;
   }
 
   /**
