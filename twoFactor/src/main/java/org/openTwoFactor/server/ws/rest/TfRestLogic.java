@@ -1102,6 +1102,10 @@ public class TfRestLogic {
               needsPush = false;
             }
 
+            if (phoneOrPush || StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+              needsPush = false;
+            }
+            
             if (!StringUtils.isBlank(timestampBrowserTxId)) {
 
               String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
