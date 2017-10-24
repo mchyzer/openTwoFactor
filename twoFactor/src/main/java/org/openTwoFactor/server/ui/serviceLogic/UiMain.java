@@ -6075,7 +6075,7 @@ public class UiMain extends UiServiceLogicBase {
           throw new RuntimeException("Invalid value for optinTotpTypeName");
         }
         
-           
+        twoFactorUser.store(twoFactorDaoFactory);
         return OptinWizardTotpAppInstallView.optinTotpAppInstall;
       }
     });
