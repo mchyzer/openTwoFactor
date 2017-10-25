@@ -593,6 +593,9 @@ public class TwoFactorServerConfig extends ConfigPropertiesCascadeBase {
                   LOG.error("Report query cant be blank for report " + reportName + "!!!");
                   continue;
                 }
+                
+                emailBody = TwoFactorServerUtils.replace(emailBody, "\\n", "\n");
+                
                 tfReportConfig.setEmailBody(emailBody);
               }
 
