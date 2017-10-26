@@ -4456,7 +4456,7 @@ public class UiMain extends UiServiceLogicBase {
 
         if (StringUtils.isBlank(txId)) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
-          return false;
+          return OptinWizardSubmitAppIntegrateView.optinWelcome;
         }
         
         String duoTxId = System.currentTimeMillis() + "__uiSoNoBrowserId__" + txId;
