@@ -70,7 +70,7 @@ public class HibernateTwoFactorUserAttrDao implements TwoFactorUserAttrDao {
     }
     
     List<TwoFactorUserAttr> theList = HibernateSession.byHqlStatic().createQuery(
-        "select tfu from TwoFactorUserAttr as tfua where tfua.userUuid = :theUserUuid and tfua.attributeName = :theAttributeName")
+        "select tfua from TwoFactorUserAttr as tfua where tfua.userUuid = :theUserUuid and tfua.attributeName = :theAttributeName")
         .setString("theUserUuid", userUuid)
         .setString("theAttributeName", attributeName)
         .list(TwoFactorUserAttr.class);
