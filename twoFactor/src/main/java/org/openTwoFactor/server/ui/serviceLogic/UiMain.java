@@ -4455,7 +4455,7 @@ public class UiMain extends UiServiceLogicBase {
             twoFactorUser.getDuoPushPhoneId(), null, null);
 
         if (StringUtils.isBlank(txId)) {
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorWithPush"));
           return OptinWizardSubmitAppIntegrateView.optinWelcome;
         }
         
@@ -5599,7 +5599,7 @@ public class UiMain extends UiServiceLogicBase {
         
         if (!checkBirthday(twoFactorRequestContainer, twoFactorUser, birthDayUuid)) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("auditsWrongBirthday"));
-          return OptinWizardSubmitAppIntegrateView.optinWelcome;
+          return OptinWizardSubmitAppTestView.optinWelcome;
         }
         String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
         String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");

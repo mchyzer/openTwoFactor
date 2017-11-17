@@ -722,13 +722,26 @@ public class UiMainPublic extends UiServiceLogicBase {
       String phoneType = httpServletRequest.getParameter("phoneType");
       String relay = httpServletRequest.getParameter("relay");
       String userBrowserUuid = httpServletRequest.getParameter("userBrowserUuid");
-
-      if (!StringUtils.isBlank(userBrowserUuid)) {
-        if (!StringUtils.equals(httpServletRequest.getMethod(), "GET")) {
-          throw new RuntimeException("Cannot send in userBrowserUuid if the HTTP method is GET... you should use POST");
-        }
-      }
       
+      //get the user id to be able to decrypt cookies
+      //String netId = httpServletRequest.getParameter("netId");
+
+//      if (!StringUtils.isBlank(userBrowserUuid)) {
+//        if (StringUtils.equals(httpServletRequest.getMethod(), "GET")) {
+//          throw new RuntimeException("Cannot send in userBrowserUuid if the HTTP method is GET... you should use POST");
+//        }
+//      }
+
+//      String userBrowserUuidSuffix = httpServletRequest.getParameter("userBrowserUuidSuffix");
+//      
+//      int userBrowserUuidSuffixLength = TwoFactorServerConfig.retrieveConfig().propertyValueInt(
+//          "twoFactorServer.ws.relay.userBrowserUuidSuffixLength", 8);
+//
+//      if (userBrowserUuidSuffix == null || userBrowserUuidSuffix.length() != userBrowserUuidSuffixLength) {
+//        throw new RuntimeException("userBrowserUuidSuffix should be length " + userBrowserUuidSuffixLength 
+//            + ", but it is length: " + (userBrowserUuidSuffix == null ? 0 : userBrowserUuidSuffix.length()));
+//      }
+//
       phoneCodeIndexSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser,
           httpServletRequest.getRemoteAddr(), 
           httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, userBrowserUuid);

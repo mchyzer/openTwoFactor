@@ -115,11 +115,13 @@
               <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
                type="submit" />
             </form>
+            <%--
             &nbsp;
             <form action="../../twoFactorPublicUi/app/UiMainPublic.stopOptInRequirement" method="post" style="display: inline"><input
                 value="${textContainer.textEscapeDouble['havingTroubleRequiredToOptInButIsntButton']}" class="tfBlueButton"
                 
                 type="submit" /></form>
+                 --%>
           </c:if>
         </c:otherwise>  
       </c:choose>
