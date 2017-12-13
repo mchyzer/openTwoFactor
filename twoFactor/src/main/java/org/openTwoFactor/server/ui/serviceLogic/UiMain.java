@@ -7,6 +7,7 @@ package org.openTwoFactor.server.ui.serviceLogic;
 import java.io.File;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -708,9 +709,11 @@ public class UiMain extends UiServiceLogicBase {
 
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
 
+    Source subjectSource = TfSourceUtils.mainSource();
+
     boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
-        httpServletRequest.getHeader("User-Agent"), true);
+        httpServletRequest.getHeader("User-Agent"), true, subjectSource);
 
     if (success) {
 
@@ -730,12 +733,13 @@ public class UiMain extends UiServiceLogicBase {
    * @param userAgent 
    * @param loggedInUser
    * @param requireOptIn 
+   * @param subjectSource
    * @return true if ok, false if not
    */
   public boolean duoPushEnrollLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, boolean requireOptIn) {
+      final String userAgent, boolean requireOptIn, final Source subjectSource) {
     
     twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
 
@@ -774,6 +778,25 @@ public class UiMain extends UiServiceLogicBase {
     //url decode
     duoUrlText = TwoFactorServerUtils.escapeUrlDecode(duoUrlText);
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().setDuoQrUrlText(duoUrlText);
+    
+    String twoStepLogQrCodesPath = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoStepLogQrCodesPath");
+    if (!TwoFactorServerUtils.isBlank(twoStepLogQrCodesPath)) {
+      
+      twoStepLogQrCodesPath = TwoFactorServerUtils.stripLastSlashIfExists(twoStepLogQrCodesPath);
+      
+      String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+
+      File twoStepLogQrCodesPathFile = new File(twoStepLogQrCodesPath);
+      TwoFactorServerUtils.mkdirs(twoStepLogQrCodesPathFile);
+      
+      Date currentDate = new Date();
+      File twoStepLogQrCodesLogFile = new File(twoStepLogQrCodesPath 
+          + File.separatorChar + "twoStepQrLog_" + loginId + "__" 
+          + TwoFactorServerUtils.timestampToFileString(currentDate) + ".txt");
+      
+      String contents = "Loginid: " + loginId +  "\nBarcode: " + barcode + "\nDuoUrlText: " + duoUrlText + "\nCurrent date: " + currentDate;
+      TwoFactorServerUtils.saveStringIntoFile(twoStepLogQrCodesLogFile, contents);
+    }
     
     TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
         TwoFactorAuditAction.DUO_ENABLE_PUSH, ipAddress, 
@@ -4356,7 +4379,7 @@ public class UiMain extends UiServiceLogicBase {
         
         boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
             loggedInUser, ipAddress, 
-            userAgent, false);
+            userAgent, false, subjectSource);
         if (success) {
 
           return OptinWizardSetupAppDoneView.optinAppIntegrate;
