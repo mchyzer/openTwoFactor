@@ -226,6 +226,46 @@ public class TwoFactorProfileContainer {
   }
 
   /**
+   * if has colleague 0
+   * @return if
+   */
+  public boolean isHasColleague0() {
+    return !StringUtils.isBlank(this.colleagueLogin0);
+  }
+
+  /**
+   * if has colleague 1
+   * @return if
+   */
+  public boolean isHasColleague1() {
+    return !StringUtils.isBlank(this.colleagueLogin1);
+  }
+
+  /**
+   * if has colleague 2
+   * @return if
+   */
+  public boolean isHasColleague2() {
+    return !StringUtils.isBlank(this.colleagueLogin2);
+  }
+
+  /**
+   * if has colleague 3
+   * @return if
+   */
+  public boolean isHasColleague3() {
+    return !StringUtils.isBlank(this.colleagueLogin3);
+  }
+
+  /**
+   * if has colleague 4
+   * @return if
+   */
+  public boolean isHasColleague4() {
+    return !StringUtils.isBlank(this.colleagueLogin4);
+  }
+
+  /**
    * if has phone 1
    * @return if
    */

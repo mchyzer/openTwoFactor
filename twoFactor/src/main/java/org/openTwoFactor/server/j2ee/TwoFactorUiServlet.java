@@ -66,6 +66,7 @@ public class TwoFactorUiServlet extends HttpServlet {
       UiMain.class.getSimpleName() + ".untrustBrowsers",
       UiMain.class.getSimpleName() + ".showOneTimeCodes",
       UiMain.class.getSimpleName() + ".index",
+      UiMain.class.getSimpleName() + ".index2",
       UiMain.class.getSimpleName() + ".personPicker",
       UiMain.class.getSimpleName() + ".profile",
       UiMain.class.getSimpleName() + ".profileView",

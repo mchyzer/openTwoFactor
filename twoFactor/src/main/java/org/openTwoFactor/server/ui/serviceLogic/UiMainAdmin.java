@@ -893,7 +893,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
         } else {
-          twoFactorMail.addCc(userEmailLoggedIn);
+          twoFactorMail.addBcc(userEmailLoggedIn);
         }
         
         if (sendEmail) {
@@ -2384,7 +2384,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
           LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
         } else {
-          twoFactorMail.addCc(userEmailLoggedIn);
+          twoFactorMail.addBcc(userEmailLoggedIn);
         }
         
         if (sendEmail) {

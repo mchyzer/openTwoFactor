@@ -97,6 +97,18 @@
       ${twoFactor:escapeSingleQuotes(something)}
     </example>
   </function>
+
+  <function>
+    <description>
+      Format phone
+    </description>
+    <name>formatPhone</name>
+    <function-class>org.openTwoFactor.server.ui.functions.Functions</function-class>
+    <function-signature>java.lang.String formatPhone(java.lang.String)</function-signature>
+    <example>
+      ${twoFactor:formatPhone(something)}
+    </example>
+  </function>
   
   <function>
     <description>

@@ -249,6 +249,36 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * main page
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void index2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+    
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(TfSourceUtils.mainSource(), TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+    
+    profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    showJsp("twoFactorIndex2.jsp");
+
+  }
+
+  /**
    * see if user is active, if not print a message
    * @param twoFactorDaoFactory
    * @param twoFactorRequestContainer
@@ -641,6 +671,7 @@ public class UiMain extends UiServiceLogicBase {
     
       showJsp("twoFactorIndex.jsp");
     }
+
   }
 
   /**
@@ -821,6 +852,66 @@ public class UiMain extends UiServiceLogicBase {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolling"));
     }
     
+    return true;
+  }
+
+  /**
+   * duo push enroll.
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushEnroll2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    boolean success = duoPushEnroll2Logic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    if (success) {
+      showJsp("optinAppInstall2.jsp");
+    } else {
+      index2(httpServletRequest, httpServletResponse);
+    }
+  }
+
+  /**
+   * enroll to duo push
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @return true if ok, false if not
+   */
+  public boolean duoPushEnroll2Logic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+    
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (userOk && !twoFactorUser.isOptedIn()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("index2ErrorNotOptedIn"));
+      userOk = false;
+    }
+    
+    if (!userOk) {
+      return false;
+    }
+
     return true;
   }
 
@@ -7701,6 +7792,399 @@ public class UiMain extends UiServiceLogicBase {
     }
     return OptinWizardDoneView.index;
     
+  }
+
+
+  /**
+   * duo push unenroll.
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushUnenroll2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    boolean success = duoPushUnenrollLogic2(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    index2(httpServletRequest, httpServletResponse);
+  
+  }
+
+
+  /**
+   * unenroll from duo push
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean duoPushUnenrollLogic2(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isDuoEnabled()) {
+      return false;
+    }
+    
+    if (!twoFactorUser.isOptedIn()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return false;
+    }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+  
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+      return false;
+    }
+  
+    JSONObject duoUser = twoFactorRequestContainer.getTwoFactorDuoPushContainer().getDuoUser();
+    
+    String phoneId = DuoCommands.duoPushPhoneId(duoUser);
+    
+    twoFactorUser.setDuoPushPhoneId(null);
+    twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+  
+    DuoCommands.deleteDuoPhone(phoneId);
+  
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.DUO_DISABLE_PUSH, ipAddress, 
+        userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+    //init again since not enrolled
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+  
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushUnenrollSuccess"));
+  
+    return true;
+  }
+
+
+  /**
+   * submit after install app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSetupAppDone2(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    boolean success = optinWizardSetupAppDoneLogic2(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    if (success) {
+      showJsp("optinAppIntegrate2.jsp");
+    } else {
+      showJsp("twoFactorIndex2.jsp");
+    }
+  }
+
+
+  /**
+     * optin to two factor
+     * @param twoFactorDaoFactory
+     * @param twoFactorRequestContainer 
+     * @param ipAddress 
+     * @param userAgent 
+     * @param loggedInUser
+     * @param subjectSource
+     * @return error message if there is one and jsp
+     */
+    public boolean optinWizardSetupAppDoneLogic2(final TwoFactorDaoFactory twoFactorDaoFactory, 
+        final TwoFactorRequestContainer twoFactorRequestContainer,
+        final String loggedInUser, final String ipAddress, 
+        final String userAgent, final Source subjectSource) {
+  
+      boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+      if (userOk) {
+        userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+      }
+  
+      if (!userOk) {
+        return false;
+      }
+  
+      boolean result =  (Boolean)HibernateSession.callbackHibernateSession(
+          TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+          TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+        @Override
+        public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+          twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+          TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+          
+          twoFactorUser.setSubjectSource(subjectSource);
+          
+          if (!twoFactorUser.isOptedIn()) {
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("index2ErrorNotOptedIn"));
+            return false;
+          }
+          
+          boolean success = duoPushEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, false, subjectSource);
+          if (success) {
+  
+            return true;
+  
+          }
+  
+          return false;
+          
+  //        boolean success = duoPushLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+  //            loggedInUser, ipAddress, 
+  //            userAgent, false);
+        }
+      });
+  
+      return result;
+    }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitAppIntegrate2(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    boolean success = optinWizardSubmitAppIntegrateLogic2(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    if (success) {
+      showJsp("optinAppTest2.jsp");
+    } else {
+      index2(httpServletRequest, httpServletResponse);
+    }
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @return true if success
+   */
+  public boolean optinWizardSubmitAppIntegrateLogic2(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return false;
+    }
+  
+    boolean result = (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+        
+        if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()
+            || StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+          return false;
+        }
+  
+        String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(), 
+            twoFactorUser.getDuoPushPhoneId(), null, null);
+  
+        if (StringUtils.isBlank(txId)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorWithPush"));
+          return false;
+        }
+        
+        String duoTxId = System.currentTimeMillis() + "__uiSoNoBrowserId__" + txId;
+        twoFactorUser.setDuoPushTransactionId(duoTxId);
+  
+        twoFactorUser.store(twoFactorDaoFactory);
+  
+        return true;
+      }
+    });
+  
+    return result;
+  }
+
+  /**
+   * submit after test app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void optinWizardSubmitAppTest2(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    optinWizardSubmitAppTestLogic2(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+    
+    index2(httpServletRequest, httpServletResponse);
+    
+  }
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  public void optinWizardSubmitAppTestLogic2(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      return;
+    }
+  
+    HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        String timestampBrowserTxId = twoFactorUser.getDuoPushTransactionId();
+        String[] pieces = TwoFactorServerUtils.splitTrim(timestampBrowserTxId, "__");
+  
+        if (TwoFactorServerUtils.length(pieces) != 3 || !StringUtils.equals("uiSoNoBrowserId", pieces[1])) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
+          return null;
+          
+        }
+        
+        //if not already used
+        String timestampString = pieces[0];
+  
+        long timestampLong = TwoFactorServerUtils.longValue(timestampString);
+        
+        //give them 10 minutes
+        if (((System.currentTimeMillis() - timestampLong) / 1000) > (60 * 10)) { 
+  
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorTimeoutText"));
+          return OptinWizardSubmitAppTestView.optinWelcome;
+  
+        }
+  
+        String txId = pieces[2];
+  
+        //see if valid
+        boolean validPush = false;
+        
+        try {
+          validPush = DuoCommands.duoPushOrPhoneSuccess(txId, 5);
+        } catch (RuntimeException re) {
+          //if its a timeout, then validPush is false, else rethrow
+          if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+            validPush = false;
+          } else {
+            throw re;
+          }
+        }
+  
+        if (validPush) {
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.DUO_ENABLE_PUSH, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.DUO_ENABLE_PUSH_FOR_WEB, ipAddress, 
+              userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+          twoFactorUser.setDuoPushByDefault(true);
+          twoFactorUser.setPhoneOptIn(false);
+          twoFactorUser.setDuoPushTransactionId(null);
+          twoFactorUser.store(twoFactorDaoFactory);
+  
+          //opt in to duo
+          if (duoRegisterUsers()) {
+  
+            DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+  
+          }
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolledInPushForWeb"));
+          
+          return null;
+        }
+  
+        //problem, try again?
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
+        return null;
+        
+      }
+    });
+  
   }
 
 

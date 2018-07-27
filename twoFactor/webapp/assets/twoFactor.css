@@ -64,7 +64,7 @@ a:hover {
 /*
 onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backgroundColor='#7794C9';"
 */
-.tfLinkButton {
+.tfLinkButton, .indexLinkButton {
   border: none;
   background-color: transparent;
   padding: 0;
@@ -74,6 +74,14 @@ onmouseover="this.style.backgroundColor='#011D5C';" onmouseout="this.style.backg
   font-family: Arial;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.indexLinkButton, input.indexLinkButton {
+  color: #01256e;
+  font-size: 100%;
+  font-weight: normal;
+  font-family: 'Open Sans', sans-serif;
+  font: inherit;
 }
 
 .title,h1 {
@@ -271,12 +279,16 @@ ol.bold {
   }
 }
 
-.formBox {
+.formBoxNarrow, .formBox {
   border: 0.0625em solid #d5d5cf;
   background-color: white;
   padding-top: 0.7em;
   padding-bottom: 0.5em;
   width: 27em;
+}
+
+.formBoxNarrow {
+  width: 22em;
 }
 
 .formRow {
@@ -290,6 +302,11 @@ ol.bold {
   float: left;
   padding-top: 0.2em;
   width: 13em;
+}
+
+.formBoxNarrow .formLabel {
+  width: 8em;
+  padding-top: 0em;
 }
 
 .profileFormBoxWide .formLabel {
@@ -478,13 +495,16 @@ table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
 
 
 /* profile screen form box customizations */
-.profileFormBox {
+.profileFormBox, .profileFormBoxNarrow  {
   width: 41.3em;
   background-color: inherit;
   border: none;
 }
-
 .profileFormBoxNarrow {
+  width: 36em;
+}
+
+.formBoxNarrow {
   width: 36em;
 }
 
@@ -494,24 +514,30 @@ table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
 
 
 /* profile screen form box form label to the right */
-.profileFormBox .formLabel {
+.profileFormBox .formLabel, .profileFormBoxNarrow .formLabel {
   white-space: nowrap; 
   text-align: right;
 }
 
+.formBoxNarrow .formLabel {
+  color: #777777; 
+  font-weight: bold;
+}
+ 
+
 /* profile screen right side of form width nowrap */
-.profileFormBox .formValue {
+.profileFormBox .formValue, .profileFormBoxNarrow .formValue {
   width: 25em;
   white-space: nowrap;
 }
 
 /* width of the comboboxes */
-.profileFormBox .formValue div.dijitComboBox {
+.profileFormBox .formValue div.dijitComboBox, .profileFormBoxNarrow .formValue div.dijitComboBox {
   width: 22em;
 }
 
 /* background white */
-.profileFormBox .formValue div.dijitComboBox input.dijitInputInner {
+.profileFormBox .formValue div.dijitComboBox input.dijitInputInner, .profileFormBoxNarrow .formValue div.dijitComboBox input.dijitInputInner  {
   background-color: white !important;
 }
 

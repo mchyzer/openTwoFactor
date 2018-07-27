@@ -204,6 +204,10 @@ public class TwoFactorFilterJ2ee implements Filter {
       TwoFactorServerUtils.assertion(TwoFactorServerUtils.isNotBlank(principalName),
         "There is no user logged in, make sure the container requires authentication");
     }
+    
+    // TODO remove 10021368
+    //principalName = "18823943";
+    
     return principalName;
   }
 
