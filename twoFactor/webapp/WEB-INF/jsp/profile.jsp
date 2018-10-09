@@ -108,7 +108,7 @@
           ${textContainer.text['profilePhoneTextOptionLabel']} </div>
         <div class="formFooter">&nbsp;</div>
       </div>
-      <%-- if we are auto calling / texting and if the user is opted in by phone --%>
+      <%-- if we are auto calling / texting and if the user is opted in by phone - -%>
       <c:if test="${twoFactorRequestContainer.twoFactorConfigContainer.enableAutoCallText && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneOptIn != null && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneOptIn == true}">
         <div class="formRow">
           <div class="formLabel">
@@ -117,7 +117,7 @@
           <div class="formValue">
             <span style="font-size: 0.8em">${textContainer.text['profilePhoneAutoVoiceSubtext']}</span><br />
             <select name="phoneAutoVoiceText">
-              <%-- this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc --%>
+              <%- - this is 0v (first phone voice), 0t (first phone text), 1v (second phone voice), etc - -%>
               <option value="" ></option>
               <option value="0t"
                   ${twoFactorRequestContainer.twoFactorProfileContainer.phoneAutoCalltext == '0t' ? 'selected="selected"' : ''}
@@ -142,6 +142,7 @@
           <div class="formFooter">&nbsp;</div>
         </div>
       </c:if>
+      --%>
       <div class="formRow">
         <div class="formLabel"><span style="font-size: 0.8em">&nbsp;</span><br />
            <b><label for="colleagueLogin0">${textContainer.text['profileFriendLabel1']}</label></b></div>

@@ -65,7 +65,6 @@
                       'selected="selected"' : '' } >${textContainer.text['optinStep3enterBdayYear']}</option>
                   </c:if>
                 
-                
                 </c:forEach>
 
               </select>
@@ -75,7 +74,7 @@
                 >${textContainer.text['optinBirthdayHide']}</a>
               </span>
               <span id="birthdayTextfieldDivId" style="display: none;"> <%-- TODO display none, take out hyzer bday value --%>
-                <input type="password" style="width: 4em" size="20" name="birthdayTextfield" 
+                <input type="password" style="width: 4em" size="20" name="birthdayTextfield" autocomplete="off"
                   value="${twoFactorRequestContainer.twoFactorProfileContainer.defaultBirthdayForTesting}" /> 
                 <span style="color: graytext; font-size: 0.75em;">${textContainer.text['lastFourMask']}</span>
                 <a href="#"  

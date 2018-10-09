@@ -1,7 +1,7 @@
 <%@ include file="../assetsJsp/commonTop.jsp"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
 
-<title>${textContainer.text['optinPhoneInstallTitle']}</title>
+<title>${textContainer.text['callTextEnrollTitle']}</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
@@ -22,10 +22,9 @@
   </div> 
     <div class="paragraphs">
 
-    <h2>${textContainer.text['optinPhoneInstallSubheader']}</h2>
+    <h2>${textContainer.text['callTextEnrollSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
-    <br /><br />
     
               <c:choose>
                 <%-- see if the user has any phones --%> 
@@ -43,7 +42,7 @@
                             <c:choose>
                               
                               <c:when test="${twoFactorPhoneForScreen.voice}">
-                                <form action="UiMain.optinWizardPhoneCodeSent" method="post" style="display: inline">
+                                <form action="UiMain.defaultCallTextEnrollSubmit" method="post" style="display: inline">
                                   <input type="hidden" name="birthdayTextfield" 
                                     value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
                                   <input value="${textContainer.textEscapeDouble['havingTroubleVoicePrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
@@ -62,7 +61,7 @@
                           </div>
                           <div class="formValue" style="width: 12em">
                             <c:if test="${twoFactorPhoneForScreen.text}">
-                              <form action="UiMain.optinWizardPhoneCodeSent" method="post" style="display: inline">
+                              <form action="UiMain.defaultCallTextEnrollSubmit" method="post" style="display: inline">
                                 <input type="hidden" name="birthdayTextfield" 
                                   value="${twoFactorRequestContainer.twoFactorUserLoggedIn.birthDayUuid}" />
                                 <input value="${textContainer.textEscapeDouble['havingTroubleTextPrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
@@ -94,7 +93,7 @@
     
     <br />
     <br />
-    <a href="../../twoFactorUi/app/UiMain.optinWizardConfirmApp">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
     
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom">

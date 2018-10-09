@@ -4,6 +4,7 @@
  */
 package org.openTwoFactor.server.ui.beans;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
@@ -139,6 +140,79 @@ public class TwoFactorDuoPushContainer {
         this.pushForWeb = TwoFactorServerUtils.booleanValue(twoFactorUser.getDuoPushByDefault(), false);
       }
     }
+  }
+  
+  /**
+   * null safe way to get push phone label
+   * @return the push phone label
+   */
+  public String getPushPhoneLabel() {
+    JSONObject jsonObject = this.duoUser;
+    if (jsonObject == null) {
+      return null;
+    }
+    
+//    {  
+//      "response":{  
+//         "phones":[  
+//            {  
+//               "activated":true,
+//               "capabilities":[  
+//                  "auto",
+//                  "push",
+//                  "mobile_otp"
+//               ],
+//               "extension":"",
+//               "last_seen":"2018-09-26T15:58:33",
+//               "name":"phone_push",
+//               "number":"",
+//               "phone_id":"DPVNA9Q331ENU27RKA6Y",
+//               "platform":"Apple iOS",
+//               "postdelay":"",
+//               "predelay":"",
+//               "sms_passcodes_sent":false,
+//               "type":"Mobile"
+    
+    JSONObject responseJsonObject = null;
+    if (!jsonObject.has("response")) {
+      responseJsonObject = jsonObject;
+    } else {
+      responseJsonObject = jsonObject.getJSONObject("response");
+
+    }
+    
+    if (!responseJsonObject.has("phones")) {
+      return null;
+    }
+    
+    JSONArray phoneJsonArray = responseJsonObject.getJSONArray("phones");
+    
+    for (int i=0;i<phoneJsonArray.size();i++) {
+      JSONObject phoneObject = phoneJsonArray.getJSONObject(i);
+      if (phoneObject.has("name")) {
+        if (StringUtils.equals(phoneObject.getString("name"), "phone_push")) {
+          StringBuilder response = new StringBuilder();
+          if (phoneObject.has("type")) {
+            response.append("Type: ").append(phoneObject.getString("type"));
+          }
+          if (phoneObject.has("platform")) {
+            if (response.length() > 0) {
+              response.append(", ");
+            }
+            response.append("platform: ").append(phoneObject.getString("platform"));
+          }
+          if (phoneObject.has("phone_id")) {
+            if (response.length() > 0) {
+              response.append(", ");
+            }
+            response.append("id: ").append(StringUtils.abbreviate(phoneObject.getString("phone_id"), 6));
+          }
+          return response.toString();
+        }
+      }
+    }
+    
+    return null;
   }
   
   /**

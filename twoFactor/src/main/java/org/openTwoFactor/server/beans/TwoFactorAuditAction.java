@@ -683,6 +683,39 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * auto call text enroll
+   */
+  AUTO_CALL_TEXT_ENROLL {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAutoCallTextEnroll";
+    }
+    
+  }, 
+
+  
+  /**
+   * auto call text unenroll
+   */
+  AUTO_CALL_TEXT_UNENROLL {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAutoCallTextUnenroll";
+    }
+    
+  }, 
+
+  /**
    * authn wrong password
    */
   AUTHN_WRONG_PASSWORD {

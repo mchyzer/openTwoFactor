@@ -129,35 +129,40 @@
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasColleague0}">
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin0">${textContainer.text['index2FriendLabel1']}</label></div>
-            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName0) }</div>
+            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName0) }
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasColleague1}">
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin1">${textContainer.text['index2FriendLabel2']}</label></div>
-            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName1) }</div>
+            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName1) }
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasColleague2}">
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin2">${textContainer.text['index2FriendLabel3']}</label></div>
-            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName2) }</div>
+            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName2) }
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasColleague3}">
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin3">${textContainer.text['index2FriendLabel4']}</label></div>
-            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName3) }</div>
+            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName3) }
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasColleague4}">
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin4">${textContainer.text['index2FriendLabel5']}</label></div>
-            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName4) }</div>
+            <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName4) }
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
@@ -168,7 +173,11 @@
 
           <h4 style="color:black">${textContainer.text['index2Devices']}
           &nbsp; <a href="#" onclick="$('#devicesInstructions').toggle('slow'); return false;"><img src="../../assets/orange-question-mark-icon-png-clip-art-30a.png" width="20" /></a></h4>
+          
+          <div id="devicesInstructions" style="display: none;">${textContainer.text['deviceInstructionsMain']}</div>
+          
           <div class="formBoxNarrow profileFormBoxNarrow">
+            
             <div class="formRow">
               <div class="formLabel">${textContainer.text['index2DuoPushLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
@@ -182,7 +191,7 @@
                         type="submit" />
                     </form>
                     &nbsp;
-                    <form action="../../twoFactorUi/app/UiMain.testDuoPush2" method="post" style="display: inline;">
+                    <form action="../../twoFactorUi/app/UiMain.duoPushTestOnly" method="post" style="display: inline;">
                       <input value="${textContainer.textEscapeDouble['index2DuoPushTestButton']}" class="indexLinkButton"
                         type="submit" />
                     </form>
@@ -199,7 +208,26 @@
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
-            
+
+            <c:choose>
+              <c:when  test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
+                        
+              <div class="formRow">
+                <div class="formLabel">${textContainer.text['index2DuoPushPhoneLabel']}</div>
+                <div class="formValue" style="white-space: nowrap">
+                  ${twoFactorRequestContainer.twoFactorDuoPushContainer.pushPhoneLabel}
+                  <br />
+                  <form action="../../twoFactorUi/app/UiMain.duoPushChangePhone" method="post" style="display: inline;">
+                    <input value="${textContainer.textEscapeDouble['index2ChangePhonesButton']}" class="indexLinkButton"
+                      type="submit" />
+                  </form>
+                  
+                </div>
+                <div class="formFooter">&nbsp;</div>
+              </div>
+            </c:when>
+          </c:choose>
+
             <c:choose>
               <c:when  test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
                 <div class="formRow">
@@ -232,9 +260,55 @@
             </c:choose>
             
             <div class="formRow">
-              <div class="formLabel">Default phone</div>
+              <div class="formLabel">${textContainer.text['index2VoiceTextByDefaultLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
-                No, you are using default Duo Push
+                <c:choose>
+              
+                  <c:when  test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
+                    ${textContainer.text['index2VoiceTextByDefaultPush']}
+                  
+                  
+                  </c:when>
+                  
+                  <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.phoneAutoCallText 
+                      && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneAutoCallTextType == 'voice'}">
+                    ${textContainer.text['index2VoiceByDefault']}
+                  </c:when>
+                  
+                  <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.phoneAutoCallText 
+                      && twoFactorRequestContainer.twoFactorUserLoggedIn.phoneAutoCallTextType == 'text'}">
+                    ${textContainer.text['index2TextByDefault']}
+                  </c:when>
+                  
+                  <c:otherwise>
+                    ${textContainer.text['index2VoiceTextByDefaultNo']}
+                  </c:otherwise>
+
+                </c:choose>
+                
+                <c:if test="${! twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}"> 
+                  <br />
+                  <c:choose>
+                    <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.phoneAutoCallText}">
+                      <form action="../../twoFactorUi/app/UiMain.defaultCallTextUnenroll" method="post" style="display: inline;">
+                        <input value="${textContainer.textEscapeDouble['index2UnenrollPhoneTextDefaultButton']}" class="indexLinkButton"
+                          type="submit" />
+                      </form><br />
+                      <form action="../../twoFactorUi/app/UiMain.defaultCallTextChange" method="post" style="display: inline;">
+                        <input value="${textContainer.textEscapeDouble['index2ChangePhoneTextDefaultButton']}" class="indexLinkButton"
+                          type="submit" />
+                      </form> &nbsp;
+                      
+                    </c:when>
+                    <c:otherwise>
+                      <form action="../../twoFactorUi/app/UiMain.defaultCallTextEnroll" method="post" style="display: inline;">
+                        <input value="${textContainer.textEscapeDouble['index2EnrollPhoneTextDefaultButton']}" class="indexLinkButton"
+                          type="submit" />
+                      </form>
+                    </c:otherwise>
+                  </c:choose>
+                </c:if>
+                
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
@@ -252,10 +326,10 @@
             </div>
             
             <div class="formRow">
-              <div class="formLabel">Google</div>
+              <div class="formLabel">HOTP</div>
               <div class="formValue" style="white-space: nowrap">
                 <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Add phone" class="indexLinkButton"
+                  <input value="Add HOTP app" class="indexLinkButton"
                     type="submit" />
                 </form>
                 &nbsp;
@@ -298,7 +372,6 @@
       
     </div>
 
-    <br /><br />
     <br /><br />
     
       <form action="../../twoFactorUi/app/UiMain.userAudits" method="get" style="display: inline">

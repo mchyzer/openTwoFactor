@@ -1,7 +1,7 @@
 <%@ include file="../assetsJsp/commonTop.jsp"%>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
 
-<title>${textContainer.text['optinAppIntegrateTitle']}</title>
+<title>${textContainer.text['callTextConfirmPhoneCodeTitle']}</title>
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
@@ -20,36 +20,29 @@
     </div> 
     <div class="clearboth"></div> 
   </div> 
-  <form action="UiMain.optinWizardSubmitAppIntegrate2" method="post">
+  <form action="UiMain.defaultCallTextSubmitPhoneCode" method="post">
     <div class="paragraphs">
 
-    <h2>${textContainer.text['optinAppIntegrateSubheader2']}</h2>
+    <h2>${textContainer.text['callTextConfirmPhoneCodeSubheader']}</h2>
     <br /><br />
     <%@ include file="../assetsJsp/commonError.jsp"%>
     <br />
-    ${textContainer.text['optinAppIntegrateText']}
-    
+    ${textContainer.text['callTextConfirmPhoneCodeText']}
+    <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
     <br /><br />
-    <img src="${twoFactorRequestContainer.twoFactorDuoPushContainer.barcodeUrl}" 
-      alt="${textContainer.textEscapeDouble['optinAppIntegrateQrAlt']}"/>
-    <br /><br />
-    ${textContainer.text['duoPushEnrollUrl']}<br />
-    <br />
-    ${textContainer.text['optinAppIntegrateTextBottom']}
-    
     <br />
     <br />
     <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
     <input value="${textContainer.textEscapeDouble['buttonNextStep']}" class="tfBlueButton" 
        type="submit" />
-    
+
     <c:if test="${twoFactorRequestContainer.hasLogoutUrl}">
       <div class="logoutBottom">
         <a href="../../twoFactorUnprotectedUi/app/UiMainUnprotected.logout">${textContainer.textEscapeXml['buttonLogOut']}</a>
         &nbsp; &nbsp;      
       </div>
     </c:if>
-    
+
     <br />
     <br />
     <%@ include file="../assetsJsp/commonAbout.jsp"%>

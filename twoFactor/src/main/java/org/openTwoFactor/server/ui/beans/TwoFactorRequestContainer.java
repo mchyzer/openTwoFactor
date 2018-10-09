@@ -70,6 +70,16 @@ public class TwoFactorRequestContainer {
    */
   private TwoFactorDuoPushContainer twoFactorDuoPushContainer;
   
+  
+  
+  
+  /**
+   * @param twoFactorDuoPushContainer1 the twoFactorDuoPushContainer to set
+   */
+  public void setTwoFactorDuoPushContainer(TwoFactorDuoPushContainer twoFactorDuoPushContainer1) {
+    this.twoFactorDuoPushContainer = twoFactorDuoPushContainer1;
+  }
+
   /**
    * two factor duo push container
    * @return the twoFactorDuoPushContainer

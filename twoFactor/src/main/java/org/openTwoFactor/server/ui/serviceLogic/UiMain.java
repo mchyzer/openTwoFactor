@@ -233,6 +233,12 @@ public class UiMain extends UiServiceLogicBase {
    */
   public void index(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
     
+    if (TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.use.index2", true)) {
+      index2(httpServletRequest, httpServletResponse);
+      return;
+    }
+
+    
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
@@ -253,7 +259,7 @@ public class UiMain extends UiServiceLogicBase {
    * @param httpServletRequest
    * @param httpServletResponse
    */
-  public void index2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  private void index2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
     
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
@@ -271,7 +277,7 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
     
     profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
-        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        loggedInUser, httpServletRequest.getHeader("User-Agent"), 
         httpServletRequest.getHeader("User-Agent"), subjectSource);
 
     showJsp("twoFactorIndex2.jsp");
@@ -512,8 +518,7 @@ public class UiMain extends UiServiceLogicBase {
       showJsp("showOneTimeCodes.jsp");
 
     } else {
-    
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -577,7 +582,7 @@ public class UiMain extends UiServiceLogicBase {
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -653,23 +658,23 @@ public class UiMain extends UiServiceLogicBase {
    * @param httpServletRequest
    * @param httpServletResponse
    */
-  public void duoPushUnenroll(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  public void duoPushChangePhone(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
 
     String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
 
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
 
-    boolean success = duoPushUnenrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+    boolean success = duoPushChangePhoneLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"));
 
     if (success) {
 
-      showJsp("duoPush.jsp");
+      showJsp("optinAppInstall2.jsp");
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
 
   }
@@ -717,6 +722,9 @@ public class UiMain extends UiServiceLogicBase {
 
     DuoCommands.deleteDuoPhone(phoneId);
 
+    //clear this out so we get a clear shake
+    twoFactorRequestContainer.setTwoFactorDuoPushContainer(null);
+    
     TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
         TwoFactorAuditAction.DUO_DISABLE_PUSH, ipAddress, 
         userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -752,7 +760,7 @@ public class UiMain extends UiServiceLogicBase {
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -876,7 +884,7 @@ public class UiMain extends UiServiceLogicBase {
     if (success) {
       showJsp("optinAppInstall2.jsp");
     } else {
-      index2(httpServletRequest, httpServletResponse);
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -936,7 +944,7 @@ public class UiMain extends UiServiceLogicBase {
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -961,7 +969,7 @@ public class UiMain extends UiServiceLogicBase {
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -1101,7 +1109,7 @@ public class UiMain extends UiServiceLogicBase {
 
     } else {
     
-      showJsp("twoFactorIndex.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -1185,7 +1193,7 @@ public class UiMain extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource);
     
-    showJsp("twoFactorIndex.jsp");
+    index(httpServletRequest, httpServletResponse);
   }
 
   /**
@@ -1267,6 +1275,12 @@ public class UiMain extends UiServiceLogicBase {
 
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneOrDeviceNotOptedIn"));
 
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return AddPhoneOrDeviceView.index;
     }
     
@@ -1321,6 +1335,7 @@ public class UiMain extends UiServiceLogicBase {
        */
       @Override
       public AddPhoneTestSubmitView toAddPhoneTestView() {
+        
         return AddPhoneTestSubmitView.index;
       }
 
@@ -1381,6 +1396,12 @@ public class UiMain extends UiServiceLogicBase {
     if (!twoFactorUser.isOptedIn()) {
 
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneOrDeviceNotOptedIn"));
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
 
       return AddPhoneView.index;
     }
@@ -1451,6 +1472,12 @@ public class UiMain extends UiServiceLogicBase {
       LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
 
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneError"));
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
 
       //if you cant send email, dont do it
       return AddPhoneView.index;
@@ -1915,7 +1942,6 @@ public class UiMain extends UiServiceLogicBase {
     boolean hasAuthorized = false;
     boolean hasNotAuthorized = false;
     
-    //TODO batch this up
     for (int i=0;i<TwoFactorServerUtils.length(usersWhoPickedThisUserToOptOut);i++) {
       TwoFactorUser current = usersWhoPickedThisUserToOptOut.get(i);
       current = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, current.getLoginid());
@@ -2132,6 +2158,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinTestSubmitView.index;
     }
 
@@ -2205,6 +2240,13 @@ public class UiMain extends UiServiceLogicBase {
           if (StringUtils.isBlank(twoFactorSecret)) {
             
             twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinSubmitErrorInconsistent"));
+            
+            twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+            
+            profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                loggedInUser, ipAddress, 
+                userAgent, subjectSource);
+
             return OptinTestSubmitView.index;
             
           }
@@ -2723,7 +2765,7 @@ public class UiMain extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"));
     
-    showJsp("twoFactorIndex.jsp");
+    index(httpServletRequest, httpServletResponse);
   }
   
   /**
@@ -2886,11 +2928,23 @@ public class UiMain extends UiServiceLogicBase {
     if (!twoFactorUser.isOptedIn()) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("viewReportsErrorLoggedInSubjectNotOptedIn"));
 
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return ReportsView.index;
     }
 
     if (!twoFactorUser.isHasReportPrivilege()) {
       twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("viewReportsErrorLoggedInSubjectHasNoReports"));
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
 
       return ReportsView.index;
     }
@@ -3236,7 +3290,7 @@ public class UiMain extends UiServiceLogicBase {
     String phoneVoice2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneVoice2");
     String phoneText2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneText2");
 
-    String phoneAutoVoiceText = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneAutoVoiceText");
+    //String phoneAutoVoiceText = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phoneAutoVoiceText");
     
     String optinTypeName = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optinTypeName");
 
@@ -3251,8 +3305,7 @@ public class UiMain extends UiServiceLogicBase {
         loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), email0, colleagueLogin0, colleagueLogin1,
         colleagueLogin2, colleagueLogin3, colleagueLogin4, phone0, phoneVoice0, phoneText0, 
-        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin, optinForApplicationsWhichRequire,
-        phoneAutoVoiceText);
+        phone1, phoneVoice1, phoneText1, phone2, phoneVoice2, phoneText2, subjectSource, profileForOptin, optinForApplicationsWhichRequire);
   
     if (success) {
       
@@ -3320,7 +3373,6 @@ public class UiMain extends UiServiceLogicBase {
    * @param subjectSource 
    * @param profileForOptin 
    * @param optinForApplicationsWhichRequire
-   * @param phoneAutoVoiceText
    * @return true if ok, false if not
    */
   public boolean profileSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
@@ -3331,7 +3383,7 @@ public class UiMain extends UiServiceLogicBase {
       final String phone0, final String phoneVoice0, final String phoneText0, 
       final String phone1, final String phoneVoice1, final String phoneText1, final String phone2, 
       final String phoneVoice2, final String phoneText2, final Source subjectSource, final boolean profileForOptin, 
-      final boolean optinForApplicationsWhichRequire, final String phoneAutoVoiceText) {
+      final boolean optinForApplicationsWhichRequire) {
     
     final Set<TwoFactorUser> newColleagues = new HashSet<TwoFactorUser>();
     
@@ -3387,7 +3439,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorProfileContainer.setPhoneVoice2(phoneVoice2);
         twoFactorProfileContainer.setOptinForAll(!optinForApplicationsWhichRequire);
         twoFactorProfileContainer.setOptinForApplicationsWhichRequire(optinForApplicationsWhichRequire);
-        twoFactorProfileContainer.setPhoneAutoCalltext(phoneAutoVoiceText);
+        //twoFactorProfileContainer.setPhoneAutoCalltext(phoneAutoVoiceText);
         
         String errorMessage = null;
         
@@ -3446,35 +3498,35 @@ public class UiMain extends UiServiceLogicBase {
           errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughPhones");
         }
 
-        if (StringUtils.isBlank(errorMessage) && !StringUtils.isBlank(phoneAutoVoiceText)) {
-          if (StringUtils.equals("0t", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneText0, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else if (StringUtils.equals("0v", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneVoice0, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else if (StringUtils.equals("1t", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneText1, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneVoice1, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else if (StringUtils.equals("2t", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneText2, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
-            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneVoice2, "true") ) {
-              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
-            }
-          } else {
-            throw new RuntimeException("Invalid value for phoneAutoVoiceText!!!!! '" + phoneAutoVoiceText + "'");
-          }
-        }
+//        if (StringUtils.isBlank(errorMessage) && !StringUtils.isBlank(phoneAutoVoiceText)) {
+//          if (StringUtils.equals("0t", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneText0, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else if (StringUtils.equals("0v", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneVoice0, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else if (StringUtils.equals("1t", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneText1, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone1) || !StringUtils.equals(phoneVoice1, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else if (StringUtils.equals("2t", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneText2, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
+//            if (StringUtils.isBlank(phone2) || !StringUtils.equals(phoneVoice2, "true") ) {
+//              errorMessage = TextContainer.retrieveFromRequest().getText().get("profileAutoVoiceTextInvalid");
+//            }
+//          } else {
+//            throw new RuntimeException("Invalid value for phoneAutoVoiceText!!!!! '" + phoneAutoVoiceText + "'");
+//          }
+//        }
 
         if (!StringUtils.isBlank(errorMessage) ) {
           twoFactorRequestContainer.setError(errorMessage);
@@ -3493,7 +3545,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhoneIsVoice1(StringUtils.equals(phoneVoice1, "true") ? true : false);
         twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
 
-        twoFactorUser.setPhoneAutoCalltext(phoneAutoVoiceText);
+        //stwoFactorUser.setPhoneAutoCalltext(phoneAutoVoiceText);
                 
         twoFactorUser.setOptInOnlyIfRequired(optinForApplicationsWhichRequire);
         
@@ -3608,27 +3660,27 @@ public class UiMain extends UiServiceLogicBase {
       if (!StringUtils.isBlank(duoUserId)) {
         DuoCommands.migratePhonesToDuoBySomeId(twoFactorRequestContainer.getTwoFactorUserLoggedIn().getLoginid(), false);
         
-        String newPhoneAutoDuoPhoneId = null;
-        
-        String phoneNumber = null;
-        if (StringUtils.equals("0v", phoneAutoVoiceText)) {
-          phoneNumber = phone0;
-        } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
-          phoneNumber = phone1;
-        } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
-          phoneNumber = phone2;
-        }
-
-        if (!StringUtils.isBlank(phoneNumber)) {
-          JSONObject duoPhone = DuoCommands.duoPhoneByIdOrNumber(phoneNumber, false);
-          
-          newPhoneAutoDuoPhoneId = StringUtils.trimToNull(duoPhone == null ? null : duoPhone.getString("phone_id"));
-        }
-        
-        if (!StringUtils.equals(newPhoneAutoDuoPhoneId, twoFactorUser.getPhoneAutoDuoPhoneId())) {
-          twoFactorUser.setPhoneAutoDuoPhoneId(newPhoneAutoDuoPhoneId);
-          twoFactorUser.store(twoFactorDaoFactory);
-        }
+//        String newPhoneAutoDuoPhoneId = null;
+//        
+//        String phoneNumber = null;
+//        if (StringUtils.equals("0v", phoneAutoVoiceText)) {
+//          phoneNumber = phone0;
+//        } else if (StringUtils.equals("1v", phoneAutoVoiceText)) {
+//          phoneNumber = phone1;
+//        } else if (StringUtils.equals("2v", phoneAutoVoiceText)) {
+//          phoneNumber = phone2;
+//        }
+//
+//        if (!StringUtils.isBlank(phoneNumber)) {
+//          JSONObject duoPhone = DuoCommands.duoPhoneByIdOrNumber(phoneNumber, false);
+//          
+//          newPhoneAutoDuoPhoneId = StringUtils.trimToNull(duoPhone == null ? null : duoPhone.getString("phone_id"));
+//        }
+//        
+//        if (!StringUtils.equals(newPhoneAutoDuoPhoneId, twoFactorUser.getPhoneAutoDuoPhoneId())) {
+//          twoFactorUser.setPhoneAutoDuoPhoneId(newPhoneAutoDuoPhoneId);
+//          twoFactorUser.store(twoFactorDaoFactory);
+//        }
       }
     }
     
@@ -3878,6 +3930,15 @@ public class UiMain extends UiServiceLogicBase {
 
     if (!StringUtils.isBlank(error[0])) {
       twoFactorRequestContainer.setError(error[0]);
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinView.index;
     }
 
@@ -4023,6 +4084,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinView.index;
     }
 
@@ -4038,6 +4108,12 @@ public class UiMain extends UiServiceLogicBase {
         if (twoFactorUser.isOptedIn()) {
 
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinStep1optedIn"));
+
+          twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+          
+          profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource);
 
           return OptinView.index;
         }
@@ -4073,6 +4149,13 @@ public class UiMain extends UiServiceLogicBase {
         }
 
         if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+          
+          twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+          
+          profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource);
+
           return OptinView.index;
         }
         
@@ -4228,6 +4311,13 @@ public class UiMain extends UiServiceLogicBase {
         if (StringUtils.isBlank(twoFactorSecret)) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneSubmitErrorInconsistent"));
+          
+          twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+          
+          profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource);
+
           return AddPhoneTestSubmitView.index;
           
         }
@@ -4304,6 +4394,12 @@ public class UiMain extends UiServiceLogicBase {
             userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
 
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addPhoneSuccess"));
+
+        twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+        
+        profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+            loggedInUser, ipAddress, 
+            userAgent, subjectSource);
 
         return AddPhoneTestSubmitView.index;
       }
@@ -4430,6 +4526,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSetupAppDoneView.index;
     }
 
@@ -4456,6 +4561,13 @@ public class UiMain extends UiServiceLogicBase {
   
           if (!initNewOathCode(twoFactorRequestContainer, 
               twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+            
+            twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+            
+            profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                loggedInUser, ipAddress, 
+                userAgent, subjectSource);
+
             return OptinWizardSetupAppDoneView.index;
           }
   
@@ -4476,6 +4588,12 @@ public class UiMain extends UiServiceLogicBase {
           return OptinWizardSetupAppDoneView.optinAppIntegrate;
 
         }
+
+        twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+        
+        profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+            loggedInUser, ipAddress, 
+            userAgent, subjectSource);
 
         return OptinWizardSetupAppDoneView.index;
         
@@ -4536,6 +4654,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitAppIntegrateView.index;
     }
 
@@ -4696,6 +4823,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitTypeView.index;
     }
 
@@ -5552,6 +5688,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitBirthdayView.index;
     }
 
@@ -5616,6 +5761,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardWelcomeView.index;
     }
   
@@ -5632,6 +5786,12 @@ public class UiMain extends UiServiceLogicBase {
   
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinStep1optedIn"));
   
+          twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+          
+          profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource);
+
           return OptinWizardWelcomeView.index;
         }
         
@@ -5695,6 +5855,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitAppTestView.index;
     }
   
@@ -5796,6 +5965,12 @@ public class UiMain extends UiServiceLogicBase {
           }
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushEnrolledInPushForWeb"));
           
+          twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+          
+          profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+              loggedInUser, ipAddress, 
+              userAgent, subjectSource);
+
           return OptinWizardSubmitAppTestView.index;
         }
 
@@ -5895,7 +6070,7 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
-   * pink phone code
+   * pick phone code
    * @param httpServletRequest
    * @param httpServletResponse
    */
@@ -5949,6 +6124,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardPhoneCodeSentView.index;
     }
   
@@ -6035,6 +6219,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardTotpAppIntegrateView.index;
     }
   
@@ -6120,6 +6313,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardTotpAppInstallView.index;
     }
 
@@ -6156,6 +6358,13 @@ public class UiMain extends UiServiceLogicBase {
           if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
             String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
             if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+              
+              twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+              
+              profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                  loggedInUser, ipAddress, 
+                  userAgent, subjectSource);
+
               return OptinWizardTotpAppInstallView.index;
             }
           } else {
@@ -6172,10 +6381,24 @@ public class UiMain extends UiServiceLogicBase {
 
             if (!StringUtils.isBlank(error[0])) {
               twoFactorRequestContainer.setError(error[0]);
+              
+              twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+              
+              profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                  loggedInUser, ipAddress, 
+                  userAgent, subjectSource);
+
               return OptinWizardTotpAppInstallView.index;
             }
             twoFactorUser.setTwoFactorSecret(null);
             if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser)) {
+              
+              twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+              
+              profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                  loggedInUser, ipAddress, 
+                  userAgent, subjectSource);
+
               return OptinWizardTotpAppInstallView.index;
             }
 
@@ -6224,6 +6447,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitEmailView.index;
     }
   
@@ -6380,6 +6612,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitPhonesView.index;
     }
   
@@ -6565,6 +6806,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitFriendsView.index;
     }
   
@@ -6843,6 +7093,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitPhoneCodeView.index;
     }
   
@@ -6976,6 +7235,15 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitFobSerialView.index;
     }
 
@@ -7168,6 +7436,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardTotpAppInstallSelectTypeView.index;
     }
   
@@ -7246,6 +7523,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitTotpAppIntegrateView.index;
     }
   
@@ -7327,6 +7613,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardSubmitTotpAppCodeView.index;
     }
   
@@ -7713,6 +8008,15 @@ public class UiMain extends UiServiceLogicBase {
     }
   
     if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+
       return OptinWizardAddPushView.index;
     }
   
@@ -7790,6 +8094,13 @@ public class UiMain extends UiServiceLogicBase {
     if (twoFactorUser.isOptedIn()) {
       return OptinWizardDoneView.optinWizardDone;
     }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+    
+    profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, ipAddress, 
+        userAgent, subjectSource);
+
     return OptinWizardDoneView.index;
     
   }
@@ -7806,13 +8117,106 @@ public class UiMain extends UiServiceLogicBase {
   
     TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
   
+    @SuppressWarnings("unused")
     boolean success = duoPushUnenrollLogic2(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
         loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"));
   
-    index2(httpServletRequest, httpServletResponse);
+    index(httpServletRequest, httpServletResponse);
   
   }
+
+  
+  /**
+   * unenroll fro auto call text
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void defaultCallTextChange(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    @SuppressWarnings("unused")
+    boolean success = defaultCallTextUnenrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    defaultCallTextEnroll(httpServletRequest, httpServletResponse);
+  }
+
+  
+  /**
+   * unenroll fro auto call text
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void defaultCallTextUnenroll(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    @SuppressWarnings("unused")
+    boolean success = defaultCallTextUnenrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    index(httpServletRequest, httpServletResponse);
+  
+  }
+
+  /**
+   * unenroll from duo push
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean defaultCallTextUnenrollLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isDuoEnabled()) {
+      return false;
+    }
+    
+    if (!twoFactorUser.isOptedIn()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("index2EnrollPhoneTextDefaultNotOptedIn"));
+      return false;
+    }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+    
+    twoFactorUser.setPhoneAutoCalltext(null);
+    twoFactorUser.setPhoneOptIn(false);
+
+    twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+  
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.AUTO_CALL_TEXT_UNENROLL, ipAddress, 
+        userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+    //opt in to duo
+    if (duoRegisterUsers()) {
+
+      DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+
+    }
+
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("index2EnrollPhoneTextUnenrollSuccess"));
+  
+    return true;
+  }
+
 
 
   /**
@@ -7858,6 +8262,9 @@ public class UiMain extends UiServiceLogicBase {
   
     DuoCommands.deleteDuoPhone(phoneId);
   
+    //clear this out so we get a clear shake
+    twoFactorRequestContainer.setTwoFactorDuoPushContainer(null);
+    
     TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
         TwoFactorAuditAction.DUO_DISABLE_PUSH, ipAddress, 
         userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
@@ -7893,7 +8300,7 @@ public class UiMain extends UiServiceLogicBase {
     if (success) {
       showJsp("optinAppIntegrate2.jsp");
     } else {
-      showJsp("twoFactorIndex2.jsp");
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -7984,7 +8391,7 @@ public class UiMain extends UiServiceLogicBase {
     if (success) {
       showJsp("optinAppTest2.jsp");
     } else {
-      index2(httpServletRequest, httpServletResponse);
+      index(httpServletRequest, httpServletResponse);
     }
   }
 
@@ -8074,7 +8481,7 @@ public class UiMain extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource);
     
-    index2(httpServletRequest, httpServletResponse);
+    index(httpServletRequest, httpServletResponse);
     
   }
 
@@ -8185,6 +8592,483 @@ public class UiMain extends UiServiceLogicBase {
       }
     });
   
+  }
+
+
+  /**
+   * duo push test
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushTestOnly(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    duoPushTestOnlyLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+//    if (success) {
+//  
+//      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushOnlyTestSuccess"));
+//
+//    } else {
+//    
+//      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushOnlyTestFailure"));
+//
+//    }
+    index(httpServletRequest, httpServletResponse);
+  }
+
+
+  /**
+   * duo push test
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean duoPushTestOnlyLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isDuoEnabled()) {
+      return false;
+    }
+    
+    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return false;
+    }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+  
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()
+        || StringUtils.isBlank(twoFactorUser.getDuoPushPhoneId())) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+      return false;
+    }
+  
+    String txId = DuoCommands.duoInitiatePushByPhoneId(twoFactorUser.getDuoUserId(), 
+        twoFactorUser.getDuoPushPhoneId(), null, null);
+    
+    if (StringUtils.isBlank(txId)) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotInPush"));
+      return false;
+    }
+  
+    for (int i=0;i<20;i++) {
+    
+      TwoFactorServerUtils.sleep(1000);
+  
+      if (DuoCommands.duoPushOrPhoneSuccess(txId, null)) {
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushTestSuccess"));
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.DUO_ENABLE_PUSH_TEST_SUCCESS, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+        
+        return true;
+      }
+      
+    }
+    
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.DUO_ENABLE_PUSH_TEST_FAILURE, ipAddress, 
+        userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+    
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoPushTestFailure"));
+    return false;
+  }
+
+
+  /**
+   * duo push unenroll.
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushUnenroll(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    boolean success = duoPushUnenrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    if (success) {
+  
+      showJsp("duoPush.jsp");
+  
+    } else {
+    
+      index(httpServletRequest, httpServletResponse);
+    }
+  
+  }
+
+
+  /**
+   * unenroll from duo push
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean duoPushChangePhoneLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    boolean success = duoPushUnenrollLogic2(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, userAgent);
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    if (success) {
+      success = duoPushEnroll2Logic(
+          TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+          ipAddress, 
+          userAgent, subjectSource);
+
+    }
+    
+    return success;
+  }
+
+
+  /**
+   * unenroll in push for web
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushUnenrollWeb2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    duoPushUnenrollWebLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    index(httpServletRequest, httpServletResponse);
+  }
+
+
+  /**
+   * enroll in push for web
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoPushEnrollWeb2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    duoPushEnrollWebLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    index(httpServletRequest, httpServletResponse);
+  }
+
+
+  /**
+   * enroll in auto text call from weblogin
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void defaultCallTextEnroll(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    boolean success = defaultCallTextEnrollLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    if (success) {
+  
+      showJsp("callTextEnroll.jsp");
+  
+    } else {
+    
+      index(httpServletRequest, httpServletResponse);
+    }
+  
+  }
+
+
+  /**
+   * unenroll from duo push
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean defaultCallTextEnrollLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorRequestContainer.getTwoFactorDuoPushContainer().isDuoEnabled()) {
+      return false;
+    }
+    
+    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return false;
+    }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+
+    if (twoFactorRequestContainer.getTwoFactorDuoPushContainer().isEnrolledInDuoPush()) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("callTextErrorInPush"));
+      return false;
+    }
+    
+    new UiMainPublic().setupNonFactorIndex(twoFactorDaoFactory, twoFactorRequestContainer, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+
+//    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+//      
+//      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+//        
+//        twoFactorUser.set
+//        twoFactorUser.store(twoFactorDaoFactory);
+//        
+//        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+//            TwoFactorAuditAction.AUTO_CALL_TEXT_UNENROLL, ipAddress, 
+//            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+//        
+//        return null;
+//      }
+//    });
+
+    return true;
+  }
+
+
+  /**
+   * set or change phone voice text from weblogin
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void defaultCallTextEnrollSubmit(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    int phoneIndex = Integer.parseInt(httpServletRequest.getParameter("phoneIndex"));
+    String phoneType = httpServletRequest.getParameter("phoneType");
+  
+    defaultCallTextEnrollSubmitLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid, phoneIndex, phoneType);
+  
+    showJsp("callTextConfirmPhoneCode.jsp");
+  }
+
+
+  /**
+   * set or change phone voice text from weblogin
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @param phoneIndex index of phone (0, 1, 2)
+   * @param phoneType voice or text
+   * @return if should proceed
+   */
+  public boolean defaultCallTextEnrollSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final int phoneIndex,
+      final String phoneType) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+  
+      return false;
+    }
+  
+    return (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        //this is 0t, 1v, etc
+        twoFactorUser.setPhoneAutoCalltext(Integer.toString(phoneIndex) + phoneType.charAt(0));
+        twoFactorUser.setPhoneOptIn(false);
+        twoFactorUser.store(twoFactorDaoFactory);
+        
+        new UiMainPublic().sendPhoneCode(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, 
+            loggedInUser, ipAddress, 
+            userAgent, phoneIndex, phoneType, true, false, null);        
+
+        return true;
+      }
+    });
+  
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void defaultCallTextSubmitPhoneCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String birthDayUuid = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+  
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    defaultCallTextSubmitPhoneCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        birthDayUuid, twoFactorPass);
+  
+    index(httpServletRequest, httpServletResponse);
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param birthDayUuid 
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  public boolean defaultCallTextSubmitPhoneCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String birthDayUuid, final String twoFactorPass) {
+  
+    boolean userOk = !userCantLoginNotActiveLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, subjectSource);
+  
+    if (userOk) {
+      userOk = !hasTooManyUsersLockoutLogic(subjectSource, TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser);
+    }
+  
+    if (!userOk) {
+      
+      TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+      twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+      
+      profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+          loggedInUser, ipAddress, 
+          userAgent, subjectSource);
+  
+      return false;
+    }
+  
+    boolean result = (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (!StringUtils.equals(twoFactorPass, twoFactorUser.getPhoneCodeUnencryptedIfNotExpired())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("phoneCodeDoesntMatchError"));
+          return false;
+        }
+  
+        twoFactorUser.setPhoneOptIn(true);
+        
+        twoFactorUser.store(twoFactorDaoFactory);
+  
+        //opt in to duo
+        if (duoRegisterUsers()) {
+  
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+  
+        }
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.AUTO_CALL_TEXT_ENROLL, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("callTextConfirmSuccessText"));
+  
+        return true;
+      }
+    });
+  
+    return result;
   }
 
 
