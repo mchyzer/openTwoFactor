@@ -5,6 +5,7 @@
 package org.openTwoFactor.server.hibernate.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao;
@@ -120,6 +121,17 @@ public class HibernateTwoFactorDeviceSerialDao implements TwoFactorDeviceSerialD
         "select tfds from TwoFactorDeviceSerial as tfds order by tfds.uuid")
         .list(TwoFactorDeviceSerial.class);
     return theList;
+  }
+
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveByUserUuid(java.lang.String)
+   */
+  public Set<TwoFactorDeviceSerial> retrieveByUserUuid(String userUuid) {
+    Set<TwoFactorDeviceSerial> theSet = HibernateSession.byHqlStatic().createQuery(
+        "select tfds from TwoFactorDeviceSerial as tfds where tfds.userUuid = :userUuid ")
+        .setString("userUuid", userUuid)
+        .listSet(TwoFactorDeviceSerial.class);
+    return theSet;
   }
 
 }

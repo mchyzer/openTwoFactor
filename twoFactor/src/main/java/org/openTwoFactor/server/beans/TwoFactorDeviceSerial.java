@@ -290,6 +290,37 @@ public class TwoFactorDeviceSerial extends TwoFactorHibernateBeanBase {
   }
 
   /**
+   * retrieve by user uuid
+   * @param twoFactorDaoFactory
+   * @param userUuid
+   * @return device serials that match
+   */
+  public static Set<TwoFactorDeviceSerial> retrieveByUserUuid(
+      final TwoFactorDaoFactory twoFactorDaoFactory, final String userUuid) {
+
+    if (TwoFactorServerUtils.isBlank(userUuid)) {
+      throw new RuntimeException("Why is userUuid blank? ");
+    }
+    
+    Set<TwoFactorDeviceSerial> result = (Set<TwoFactorDeviceSerial>)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READONLY_OR_USE_EXISTING, TfAuditControl.WILL_NOT_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        
+        Set<TwoFactorDeviceSerial> twoFactorDeviceSerials = twoFactorDaoFactory.getTwoFactorDeviceSerial()
+            .retrieveByUserUuid(userUuid);
+        
+        return twoFactorDeviceSerials;
+        
+      }
+    });
+    
+    return result;
+    
+  }
+
+  /**
    * retrieve a device serial record by serial number
    * @param twoFactorDaoFactory
    * @param loginid

@@ -64,9 +64,18 @@
               <div class="formLabel"><b>${textContainer.text['profileEmailLabel']}</b></div>
               <div class="formValue">
                 ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 
-                ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
-                href="${textContainer.textEscapeDouble['profileEditEmailLinkUrl']}" 
-                target="_blank">${textContainer.textEscapeXml['profileEditEmailLinkText']}</a>${textContainer.text['profileEditEmailSuffix']}
+                
+                <c:choose>
+                  <c:when  test="${ (!twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn) && twoFactorRequestContainer.twoFactorUserLoggedIn.requiredToOptin}">
+                    ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlertCant']}'); return false"
+                    href="#" 
+                  </c:when>
+                  <c:otherwise>
+                    ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
+                    href="${textContainer.textEscapeDouble['profileEditEmailLinkUrl']}" target="_blank"
+                  </c:otherwise>
+                </c:choose>
+                >${textContainer.textEscapeXml['profileEditEmailLinkText']}</a>${textContainer.text['profileEditEmailSuffix']}
               </div>
             </c:otherwise>
           </c:choose>

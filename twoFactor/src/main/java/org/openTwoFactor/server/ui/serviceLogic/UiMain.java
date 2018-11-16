@@ -1227,7 +1227,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp");
+    index("twoFactorIndex2.jsp");
 
     /**
      * 
@@ -1328,7 +1328,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp") {
+    index("twoFactorIndex2.jsp") {
 
       /**
        * @see AddPhoneView#toAddPhoneTestView()
@@ -1975,7 +1975,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -2015,7 +2015,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp");
+    index("twoFactorIndex2.jsp");
     
     /**
      * 
@@ -2050,7 +2050,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
 
     /**
      */
@@ -2089,7 +2089,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
 
     /**
      */
@@ -2793,7 +2793,7 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setTwoFactorSecretTemp(null);
         String resultMessage = null;
         
-        if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
+        if (!twoFactorUser.isOptedIn()) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("untrustBrowserErrorNotOptedIn"));
           
@@ -2877,7 +2877,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp");
+    index("twoFactorIndex2.jsp");
 
     /**
      * 
@@ -4467,7 +4467,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -4927,7 +4927,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5005,7 +5005,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5045,7 +5045,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5084,7 +5084,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5123,15 +5123,16 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
     //optinAppTest("optinAppTest.jsp"),
 
     /**
+     * install the app
      */
-    //optinAppIntegrate("optinAppIntegrate.jsp"),
+    optinAppInstall("optinAppInstall.jsp"),
 
     /**
      */
@@ -5170,7 +5171,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5214,7 +5215,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5254,7 +5255,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5298,7 +5299,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5346,7 +5347,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5386,7 +5387,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5426,7 +5427,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5459,7 +5460,6 @@ public class UiMain extends UiServiceLogicBase {
     }
   }
 
-
   /**
    * 
    */
@@ -5471,7 +5471,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5511,7 +5511,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5551,7 +5551,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
     
     /**
      */
@@ -5596,7 +5596,7 @@ public class UiMain extends UiServiceLogicBase {
 
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
 
     /**
      */
@@ -5632,7 +5632,7 @@ public class UiMain extends UiServiceLogicBase {
     
     /**
      */
-    index("twoFactorIndex.jsp"),
+    index("twoFactorIndex2.jsp"),
   
     /**
      */
@@ -5890,7 +5890,7 @@ public class UiMain extends UiServiceLogicBase {
         if (TwoFactorServerUtils.length(pieces) != 3 || !StringUtils.equals("uiSoNoBrowserId", pieces[1])) {
           
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
-          return OptinWizardSubmitAppTestView.optinWelcome;
+          return OptinWizardSubmitAppTestView.optinAppInstall;
           
         }
         
@@ -5976,7 +5976,7 @@ public class UiMain extends UiServiceLogicBase {
 
         //problem, try again?
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinAppTestErrorText"));
-        return OptinWizardSubmitAppTestView.optinWelcome;
+        return OptinWizardSubmitAppTestView.optinAppInstall;
         
       }
     });
@@ -7357,7 +7357,20 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setTwoFactorSecretTemp(null);
   
         twoFactorUser.store(twoFactorDaoFactory);
-  
+          
+        twoFactorDeviceSerial.setUserUuid(twoFactorUser.getUuid());
+        twoFactorDeviceSerial.setWhenRegistered(System.currentTimeMillis());
+        twoFactorDeviceSerial.store(twoFactorDaoFactory);
+
+        twoFactorRequestContainer.getTwoFactorAdminContainer().setImportSerial(serialNumber);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.REGISTER_FOB_SERIAL_NUMBER, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+            TextContainer.retrieveFromRequest().getText().get("optionStep2auditRegisterFob"),
+            null);
+
+        
         //opt in to duo
         if (duoRegisterUsers()) {
   
@@ -9063,6 +9076,316 @@ public class UiMain extends UiServiceLogicBase {
   
         //opt the user in
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("callTextConfirmSuccessText"));
+  
+        return true;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * show one time codes
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void showOneTimeCodes2(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    boolean success = showOneTimeCodes2Logic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    if (success) {
+  
+      showJsp("showOneTimeCodes2.jsp");
+  
+    } else {
+      index(httpServletRequest, httpServletResponse);
+    }
+  }
+
+
+  /**
+   * show one time codes
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean showOneTimeCodes2Logic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    boolean result = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+        //generate the codes
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("codesErrorAlreadyOptedIn"));
+          return false;
+        }
+        
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, twoFactorRequestContainer, ipAddress, userAgent);
+        
+        return true;
+      }
+    });
+    
+    return result;
+  }
+
+
+  /**
+   * add a fob
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void keychainFobAdd(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    keychainFobAddLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"));
+  
+    showJsp("fobRegister.jsp");
+  }
+
+
+  /**
+   * enroll in push for web
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @return true if ok, false if not
+   */
+  public boolean keychainFobAddLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent) {
+    
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return false;
+    }
+    
+    twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+  
+    return true;
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void keychainFobAddSubmit(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String serialNumber = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("serialNumber");
+  
+    String twoFactorCode = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+    
+    String twoFactorCode2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode2");
+    
+    boolean backToIndex = keychainFobAddSubmitLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        serialNumber, twoFactorCode, twoFactorCode2);
+    
+    if (backToIndex) {
+      index(httpServletRequest, httpServletResponse);
+    } else {
+      showJsp("fobRegister.jsp");
+    }
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param serialNumber
+   * @param twoFactorCodeString
+   * @param twoFactorCode2String
+   * @return true to go back to index. or false to stay on this page
+   */
+  public boolean keychainFobAddSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String serialNumber, final String twoFactorCodeString,
+      final String twoFactorCode2String) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    final TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn() || StringUtils.isBlank(twoFactorUser.getTwoFactorSecretUnencrypted())) {
+      twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("duoErrorNotOptedIn"));
+      return true;
+    }
+  
+    boolean result =  (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+    
+        if (StringUtils.isBlank(serialNumber)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRequired"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+  
+        //lets make sure the serial number exists
+        TwoFactorDeviceSerial twoFactorDeviceSerial = TwoFactorDeviceSerial.retrieveBySerial(twoFactorDaoFactory, serialNumber);
+       
+        if (twoFactorDeviceSerial == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialNotFound"));
+          return false;
+        }
+  
+        //lets see if this device has been registered to someone else
+        if (!StringUtils.isBlank(twoFactorDeviceSerial.getUserUuid()) 
+            && !StringUtils.equals(twoFactorDeviceSerial.getUserUuid(), twoFactorUser.getUuid())) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorSerialRegisteredToSomeoneElse"));
+          return false;
+        }
+  
+        String twoFactorSecret = twoFactorDeviceSerial.getTwoFactorSecretUnencrypted();
+  
+        Base32 codec = new Base32();
+        byte[] twoFactorSecretPlainText = codec.decode(twoFactorSecret);
+  
+        if (StringUtils.isBlank(twoFactorCodeString)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode1Required"));
+          return false;
+          
+        }
+  
+        if (StringUtils.isBlank(twoFactorCode2String)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode2Required"));
+          return OptinWizardSubmitFobSerialView.optinFobRegister;
+          
+        }
+  
+        int twoFactorCode = -1;
+  
+        try {
+          twoFactorCode = TwoFactorServerUtils.intObjectValue(twoFactorCodeString, true);
+        } catch (Exception e) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode1Invalid"));
+          return false;
+          
+        }
+  
+        int twoFactorCode2 = -1;
+  
+        try {
+          twoFactorCode2 = TwoFactorServerUtils.intObjectValue(twoFactorCode2String, true);
+        } catch (Exception e) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCode2Invalid"));
+          return false;
+          
+        }
+  
+        int nextIndex = -1;
+        boolean foundTokenIndex = false;
+        for (int i=0;i<20000;i++) {
+          if (twoFactorCode == new TwoFactorLogic().hotpPassword(twoFactorSecretPlainText, i)
+              && twoFactorCode2 == new TwoFactorLogic().hotpPassword(twoFactorSecretPlainText, i+1)) {
+            nextIndex = i+2;
+            foundTokenIndex = true;
+            break;
+          }
+        }
+        
+        if (!foundTokenIndex) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodesInvalid"));
+          return false;
+        }
+  
+        twoFactorUser.setTokenIndex((long)nextIndex);
+  
+        twoFactorUser.setOptInOnlyIfRequired(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+        twoFactorUser.setDatePhoneCodeSent(null);
+  
+        //move from temp to real code
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
+        twoFactorUser.setTwoFactorSecretTemp(null);
+  
+        twoFactorUser.store(twoFactorDaoFactory);
+  
+        twoFactorDeviceSerial.setUserUuid(twoFactorUser.getUuid());
+        twoFactorDeviceSerial.setWhenRegistered(System.currentTimeMillis());
+        twoFactorDeviceSerial.store(twoFactorDaoFactory);
+
+        twoFactorRequestContainer.getTwoFactorAdminContainer().setImportSerial(serialNumber);
+        
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.REGISTER_FOB_SERIAL_NUMBER, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), 
+            TextContainer.retrieveFromRequest().getText().get("optionStep2auditRegisterFob"),
+            null);
+
+        //opt in to duo
+        if (duoRegisterUsers()) {
+  
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+  
+        }
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.FOB_ADD, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+            twoFactorRequestContainer, ipAddress, userAgent);
+  
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("addFobSuccessMessage"));
   
         return true;
       }

@@ -79,12 +79,23 @@
       <div class="formBoxNarrow profileFormBoxNarrow">
         <div class="formRow">
           <div class="formLabel">${textContainer.text['profileEmailLabel']}</div>
+          
           <div class="formValue" style="white-space: nowrap">
             ${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.email0) } 
-            (<a href="https://directory.apps.upenn.edu/directory/jsp/fast.do?fastStart=profile"
-              onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
-              >edit email address</a>)
+            
+            <c:choose>
+              <c:when  test="${ (!twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn) && twoFactorRequestContainer.twoFactorUserLoggedIn.requiredToOptin}">
+                ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlertCant']}'); return false"
+                href="#" 
+              </c:when>
+              <c:otherwise>
+                ${textContainer.text['profileEditEmailPrefix']}<a onclick="alert('${textContainer.textEscapeSingleDouble['profileEditEmailLinkAlert']}'); return true;"
+                href="${textContainer.textEscapeDouble['profileEditEmailLinkUrl']}" target="_blank"
+              </c:otherwise>
+            </c:choose>
+            >${textContainer.textEscapeXml['profileEditEmailLinkText']}</a>${textContainer.text['profileEditEmailSuffix']}
           </div>
+
           <div class="formFooter">&nbsp;</div>
         </div>
         <c:if test="${twoFactorRequestContainer.twoFactorProfileContainer.hasPhone0}">
@@ -315,16 +326,23 @@
             
             
             <div class="formRow">
-              <div class="formLabel">Keychain fob</div>
+              <div class="formLabel">${textContainer.text['keychainFobLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
-                <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Add" class="indexLinkButton"
-                    type="submit" />
-                </form>
+                <c:choose>
+                  <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.hasFob}">
+                    ${textContainer.text['keychainFobHasFob']}
+                  </c:when>
+                  <c:otherwise>
+                    <form action="../../twoFactorUi/app/UiMain.keychainFobAdd" method="post" style="display: inline;">
+                      <input value="${textContainer.textEscapeDouble['keychainFobAddButtonLabel']}" class="indexLinkButton"
+                        type="submit" />
+                    </form>
+                  </c:otherwise>
+                </c:choose>
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
-            
+            <%--
             <div class="formRow">
               <div class="formLabel">HOTP</div>
               <div class="formValue" style="white-space: nowrap">
@@ -340,27 +358,36 @@
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
-            
+            --%>
             <div class="formRow">
-              <div class="formLabel">Browser trust</div>
+              <div class="formLabel">${textContainer.text['trustedBrowserCountLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
-                You have 7 trusted browsers<br />
-                <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Untrust browsers" class="indexLinkButton"
-                    type="submit" />
-                </form>
+                
+                ${textContainer.text['trustedBrowserCountText']}
+                <c:if test="${twoFactorRequestContainer.twoFactorUntrustBrowserContainer.numberOfBrowsersWithoutUntrusting > 0} ">
+                  <br />
+                  <form action="../../twoFactorUi/app/UiMain.untrustBrowsers" method="post" style="display: inline;">
+                    <input value="${textContainer.textEscapeDouble['untrustBrowserButtonText']}" class="indexLinkButton"
+                      type="submit" />
+                  </form>
+                </c:if>
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
             
             <div class="formRow">
-              <div class="formLabel">Printed codes</div>
+              <div class="formLabel">${textContainer.textEscapeDouble['printedCodesLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
-                Current index is 37<br />
-                <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Generate new codes" class="indexLinkButton"
-                    type="submit" />
+                
+                ${textContainer.text['printedCodesCurrentIndex']}
+                
+                <br />
+                
+                <form action="../../twoFactorUi/app/UiMain.showOneTimeCodes2" method="post" style="display: inline">
+                  <input value="${textContainer.textEscapeDouble['buttonGenerateCodes']}" class="indexLinkButton"
+                   type="submit" />
                 </form>
+                
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
@@ -383,6 +410,7 @@
         <input value="${textContainer.textEscapeDouble['buttonHelpFriend']}" class="tfBlueButton"
          type="submit" />
       </form>
+      &nbsp;
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.admin}">
           <form action="../../twoFactorAdminUi/app/UiMainAdmin.adminIndex" method="get" style="display: inline">

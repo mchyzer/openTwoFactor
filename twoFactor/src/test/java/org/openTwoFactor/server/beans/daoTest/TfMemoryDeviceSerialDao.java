@@ -6,8 +6,10 @@ package org.openTwoFactor.server.beans.daoTest;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
@@ -123,6 +125,22 @@ public class TfMemoryDeviceSerialDao implements TwoFactorDeviceSerialDao {
   @Override
   public List<TwoFactorDeviceSerial> retrieveAll() {
     return new ArrayList<TwoFactorDeviceSerial>(deviceSerials);
+  }
+
+  /**
+   * @see org.openTwoFactor.server.dao.TwoFactorDeviceSerialDao#retrieveByUserUuid(java.lang.String)
+   */
+  public Set<TwoFactorDeviceSerial> retrieveByUserUuid(String userUuid) {
+    
+    Set<TwoFactorDeviceSerial> results = new HashSet<TwoFactorDeviceSerial>();
+    
+    for (TwoFactorDeviceSerial twoFactorDeviceSerial : TwoFactorServerUtils.nonNull(deviceSerials)) {
+      if (StringUtils.equals(userUuid, twoFactorDeviceSerial.getUserUuid())) {
+        results.add(twoFactorDeviceSerial);
+      }
+    }
+    return results;
+    
   }
 
 }

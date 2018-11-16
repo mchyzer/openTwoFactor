@@ -54,6 +54,30 @@ import edu.internet2.middleware.subject.Subject;
 public class TwoFactorUser extends TwoFactorHibernateBeanBase {
 
   /**
+   * if has fob attached
+   * @return true if has fob
+   */
+  public boolean isHasFob() {
+    return !StringUtils.isBlank(this.getFobSerial());
+  }
+  
+  /**
+   * get the fob serial number
+   * @return the serial number
+   */
+  public String getFobSerial() {
+    Set<TwoFactorDeviceSerial> twoFactorDeviceSerials = TwoFactorDeviceSerial.retrieveByUserUuid(TwoFactorDaoFactory.getFactory(), this.getUuid());
+    if (TwoFactorServerUtils.length(twoFactorDeviceSerials) > 0) {
+      for (TwoFactorDeviceSerial twoFactorDeviceSerial : twoFactorDeviceSerials) {
+        if (this.isOptedIn() && StringUtils.equals(this.getTwoFactorSecretUnencrypted(), twoFactorDeviceSerial.getTwoFactorSecretUnencrypted())) {
+          return twoFactorDeviceSerial.getSerialNumber();
+        }
+      }
+    }
+    return null;
+  }
+  
+  /**
    * get number of colleagues
    * @return number of colleagues
    */

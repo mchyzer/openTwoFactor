@@ -25,11 +25,16 @@
     
   </div>
     
-  <br />
-  <br />
   <%@ include file="../assetsJsp/commonError.jsp"%>
-    <br /><br />
-    <br /><br />
+    <br />
+    <br />
+
+    <form action="../../twoFactorUi/app/UiMain.optinWizard" method="get" style="display: inline">
+      <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
+       type="submit" />
+    </form>
+
+    &nbsp; &nbsp;
 
     <form action="../../twoFactorUi/app/UiMain.index" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonManageSettings']}" class="tfBlueButton"
@@ -38,13 +43,6 @@
     
     &nbsp; &nbsp;
     
-    <form action="../../twoFactorUi/app/UiMain.optinWizard" method="get" style="display: inline">
-      <input value="${textContainer.textEscapeDouble['buttonOptIn']}" class="tfBlueButton"
-       type="submit" />
-    </form>
-
-    &nbsp; &nbsp;
-
     <form action="../../twoFactorPublicUi/app/UiMainPublic.index" method="get" style="display: inline">
       <input value="${textContainer.textEscapeDouble['buttonHavingTrouble']}" class="tfBlueButton"
        type="submit" />

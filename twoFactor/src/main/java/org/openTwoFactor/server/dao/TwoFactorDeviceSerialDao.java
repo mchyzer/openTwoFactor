@@ -5,6 +5,7 @@
 package org.openTwoFactor.server.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 
@@ -14,7 +15,14 @@ import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
  * data access object interface for device serial table
  */
 public interface TwoFactorDeviceSerialDao {
-  
+
+  /**
+   * find the device serial by the user who registered the token
+   * @param userUuid
+   * @return device serial row
+   */
+  public Set<TwoFactorDeviceSerial> retrieveByUserUuid(String userUuid);
+
   /**
    * find the device serial by the encrypted secret
    * @param secretEncrypted

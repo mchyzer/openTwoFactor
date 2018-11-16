@@ -22,6 +22,38 @@ public enum TwoFactorAuditAction {
     }
 
   }, 
+  
+  /**
+   * add fob
+   */
+  FOB_ADD {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsFobAdd";
+    }
+
+  }, 
+  
+  /**
+   * remove fob
+   */
+  FOB_REMOVE {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsFobRemove";
+    }
+
+  }, 
   /**
    * wrong bday
    */
