@@ -106,6 +106,49 @@
         ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfColleagues}
         ${textContainer.text['adminNumberOfColleagues']}
         <br />
+        <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfColleagues > 0 }">
+        ${textContainer.text['adminColleaguesThisPersonHasChosen']}
+          <ul>
+            <c:forEach items="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.colleagues}" var="colleague">
+              <li>${colleague.descriptionAdmin}
+                &nbsp;
+                
+                <form action="../../twoFactorAdminUi/app/UiMainAdmin.removeFriend" method="post" style="display: inline; font-size: smaller">
+                  <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                  <input type="hidden" name="userIdOperatingOn" value="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.uuid }" />
+                  <input type="hidden" name="fromUserUuid" value="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.uuid }" />
+                  <input type="hidden" name="toUserUuid" value="${colleague.uuid }" />
+                  <input type="hidden" name="reason" value="removeForFriendRequester" />
+                </form>
+              
+              </li>
+            </c:forEach>
+          </ul>      
+        </c:if>
+
+
+        ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfUsersWhoPickedThisUserToOptThemOut}
+        ${textContainer.text['adminNumberOfColleaguesWhoPickedThisUser']}
+        <br />
+        <c:if test="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfUsersWhoPickedThisUserToOptThemOut > 0 }">
+        ${textContainer.text['adminPeopleSelectedThisUserAsColleague']}
+          <ul>
+            <c:forEach items="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.usersWhoPickedThisUserToOptThemOut}" var="colleague">
+              <li>${colleague.descriptionAdmin}
+                &nbsp;
+                
+                <form action="../../twoFactorAdminUi/app/UiMainAdmin.removeFriend" method="post" style="display: inline; font-size: smaller">
+                  <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                  <input type="hidden" name="userIdOperatingOn" value="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.uuid }" />
+                  <input type="hidden" name="fromUserUuid" value="${colleague.uuid }" />
+                  <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.uuid }" />
+                  <input type="hidden" name="reason" value="doesntWantToBeFriendOfRequester" />
+                </form>
+              
+              </li>
+            </c:forEach>
+          </ul>      
+        </c:if>
         
         ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfPhones}
         ${textContainer.text['adminNumberOfPhones']}

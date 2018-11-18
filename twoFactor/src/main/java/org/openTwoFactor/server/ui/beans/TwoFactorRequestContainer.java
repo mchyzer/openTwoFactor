@@ -12,6 +12,7 @@ import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
+import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
@@ -317,6 +318,7 @@ public class TwoFactorRequestContainer {
 
       TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByLoginidOrCreate(twoFactorDaoFactory, loggedInUser);
       
+      twoFactorUser.setSubjectSource(TfSourceUtils.mainSource());
       this.setTwoFactorUserLoggedIn(twoFactorUser);
       
     }

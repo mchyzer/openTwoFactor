@@ -2,3 +2,4 @@
 /log4j.properties
 /sources.xml
 /grouper.client.properties
+/twoFactor.server.local.properties.daemon

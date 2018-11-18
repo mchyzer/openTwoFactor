@@ -277,7 +277,7 @@ public class UiMain extends UiServiceLogicBase {
     twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
     
     profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
-        loggedInUser, httpServletRequest.getHeader("User-Agent"), 
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource);
 
     showJsp("twoFactorIndex2.jsp");
@@ -3699,6 +3699,11 @@ public class UiMain extends UiServiceLogicBase {
   private void notifyNewColleagues(final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final Source subjectSource,
       final Set<TwoFactorUser> newColleagues, final TwoFactorUser twoFactorUser) {
+    
+    if (!TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twostep.notify.newColleagues", false)) {
+      return;
+    }
+    
     twoFactorUser.setSubjectSource(subjectSource);
     
     
@@ -9392,6 +9397,145 @@ public class UiMain extends UiServiceLogicBase {
     });
   
     return result;
+  }
+
+
+  /**
+   * remove a friend
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void removeFriend(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    // one of these needs to be there
+    String fromUserUuid = httpServletRequest.getParameter("fromUserUuid");
+    String toUserUuid = httpServletRequest.getParameter("toUserUuid");
+    
+    Source subjectSource = TfSourceUtils.mainSource();
+    TwoFactorDaoFactory twoFactorDaoFactory = TwoFactorDaoFactory.getFactory();
+    String ipAddress = httpServletRequest.getRemoteAddr();
+    String userAgent = httpServletRequest.getHeader("User-Agent");
+    removeFriendLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, 
+        ipAddress, 
+        userAgent, fromUserUuid, toUserUuid, subjectSource);
+  
+    index(httpServletRequest, httServletResponse);
+  }
+
+
+  /**
+   * remove a friend
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param fromUserUuid
+   * @param toUserUuid
+   * @param subjectSource
+   */
+  public void removeFriendLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, String fromUserUuid, String toUserUuid, final Source subjectSource) {
+  
+    final String[] fromUserUuidArray = new String[]{fromUserUuid};
+    final String[] toUserUuidArray = new String[]{toUserUuid};
+    
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp.setSubjectSource(subjectSource);
+        
+        if (!StringUtils.isBlank(fromUserUuidArray[0]) && !StringUtils.isBlank(toUserUuidArray[0])) {
+          throw new RuntimeException("Cant pass in from user uuid and to user uuid!");
+        }
+        
+        boolean removeMyFriend = StringUtils.isBlank(fromUserUuidArray[0]);
+        // removeForFriendRequester or removeForFriendRequestee
+        String reason = removeMyFriend ? "removeMyFriend" : "removeMeFromSomeonesList";
+      
+        if (removeMyFriend) {
+          fromUserUuidArray[0] = twoFactorUserUsingApp.getUuid();
+        } else {
+          toUserUuidArray[0] = twoFactorUserUsingApp.getUuid();
+        }
+
+        
+        TwoFactorUser twoFactorUserLosingFriend = StringUtils.equals(twoFactorUserUsingApp.getUuid(), fromUserUuidArray[0]) ? 
+            twoFactorUserUsingApp : TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, fromUserUuidArray[0]);
+        twoFactorUserLosingFriend.setSubjectSource(subjectSource);
+        TwoFactorUser twoFactorUserLostFriend = StringUtils.equals(twoFactorUserUsingApp.getUuid(), toUserUuidArray[0]) ? 
+            twoFactorUserUsingApp : TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, toUserUuidArray[0]);
+        twoFactorUserLostFriend.setSubjectSource(subjectSource);
+  
+        boolean foundFriend = false;
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid0(), toUserUuidArray[0])) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid0(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid1(), toUserUuidArray[0])) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid1(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid2(), toUserUuidArray[0])) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid2(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid3(), toUserUuidArray[0])) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid3(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid4(), toUserUuidArray[0])) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid4(null);
+        }
+        
+        if (!foundFriend) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminColleaguesRemoveFriendNotFound"));
+          return null;
+        }
+  
+        twoFactorUserLosingFriend.store(twoFactorDaoFactory);
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.REMOVE_FRIEND, ipAddress, 
+            userAgent, twoFactorUserLostFriend.getUuid(),
+            twoFactorUserUsingApp.getUuid(), "Removed friend: " + twoFactorUserLostFriend.getNetId()
+            + ": " + twoFactorUserLostFriend.getName() + ", from: " + twoFactorUserLosingFriend.getNetId()
+            + ": " + twoFactorUserLosingFriend.getName() + ", reason: " + reason, null);
+  
+        if (!removeMyFriend) {
+          TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+              TwoFactorAuditAction.REMOVE_FRIEND, ipAddress, 
+              userAgent, twoFactorUserLosingFriend.getUuid(),
+              twoFactorUserUsingApp.getUuid(), "Removed friend: " + twoFactorUserLostFriend.getNetId()
+              + ": " + twoFactorUserLostFriend.getName() + ", from: " + twoFactorUserLosingFriend.getNetId()
+              + ": " + twoFactorUserLosingFriend.getName() + ", reason: " + reason, null);
+        }
+        
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminColleaguesRemoveFriendSuccess"));
+  
+        return null;
+      }
+    });
+    
+          
   }
 
 

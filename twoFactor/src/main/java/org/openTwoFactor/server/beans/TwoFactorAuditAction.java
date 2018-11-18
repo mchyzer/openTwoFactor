@@ -680,6 +680,22 @@ public enum TwoFactorAuditAction {
     
   },
 
+  /**
+   * remove friend
+   */
+  REMOVE_FRIEND {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsRemoveFriend";
+    }
+    
+  },
+
 
   /**
    * view report

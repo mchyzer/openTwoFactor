@@ -90,6 +90,8 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
       "reportUuid", "reportType", "reportNameSystem", "reportNameDisplay", "reportNameSystemSelect",
       "reportPrivilegeUuid", "parentReportUuid", "childReportUuid", "reportRollupUuid", "relay",
       "checkedIdName", "checkedNameName", "userIdName", "netIdName", "lastFourName", "checkedDeptName",
+      
+      "fromUserUuid", "toUserUuid", "reason",
 
       //for status calls
       "status", "diagnosticType",

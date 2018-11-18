@@ -68,6 +68,145 @@ public class UiMainAdmin extends UiServiceLogicBase {
   private static final Log LOG = TwoFactorServerUtils.getLog(UiMainAdmin.class);
 
   /**
+   * remove a friend
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void removeFriend(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+
+    String fromUserUuid = httpServletRequest.getParameter("fromUserUuid");
+    String toUserUuid = httpServletRequest.getParameter("toUserUuid");
+    
+    // removeForFriendRequester or removeForFriendRequestee
+    String reason = httpServletRequest.getParameter("reason");
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    TwoFactorDaoFactory twoFactorDaoFactory = TwoFactorDaoFactory.getFactory();
+    String ipAddress = httpServletRequest.getRemoteAddr();
+    String userAgent = httpServletRequest.getHeader("User-Agent");
+    removeFriendLogic(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, 
+        ipAddress, 
+        userAgent, userIdOperatingOn, fromUserUuid, toUserUuid, reason, subjectSource);
+  
+    userIdSubmit(httpServletRequest, httServletResponse);
+  }
+  
+  /**
+   * remove a friend
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param userIdOperatingOn
+   * @param loggedInUser
+   * @param fromUserUuid
+   * @param toUserUuid
+   * @param reason
+   * @param subjectSource
+   */
+  public void removeFriendLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String userIdOperatingOn, final String fromUserUuid, final String toUserUuid, final String reason, final Source subjectSource) {
+  
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp.setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp.isAdmin()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return null;
+        }
+  
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
+  
+        
+        //make sure searching for a user id
+        if (StringUtils.isBlank(userIdOperatingOn)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
+          return AdminSubmitView.admin;
+        }
+  
+        TwoFactorUser twoFactorUserLosingFriend = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, fromUserUuid);
+        twoFactorUserLosingFriend.setSubjectSource(subjectSource);
+        TwoFactorUser twoFactorUserLostFriend = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, toUserUuid);
+        twoFactorUserLostFriend.setSubjectSource(subjectSource);
+
+        boolean foundFriend = false;
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid0(), toUserUuid)) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid0(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid1(), toUserUuid)) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid1(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid2(), toUserUuid)) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid2(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid3(), toUserUuid)) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid3(null);
+        }
+        
+        if (StringUtils.equals(twoFactorUserLosingFriend.getColleagueUserUuid4(), toUserUuid)) {
+          foundFriend = true;
+          twoFactorUserLosingFriend.setColleagueUserUuid4(null);
+        }
+        
+        if (!foundFriend) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminColleaguesRemoveFriendNotFound"));
+          return null;
+        }
+  
+        twoFactorUserLosingFriend.store(twoFactorDaoFactory);
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.REMOVE_FRIEND, ipAddress, 
+            userAgent, twoFactorUserLostFriend.getUuid(),
+            twoFactorUserUsingApp.getUuid(), "Removed friend: " + twoFactorUserLostFriend.getNetId()
+              + ": " + twoFactorUserLostFriend.getName() + ", from: " + twoFactorUserLosingFriend.getNetId()
+              + ": " + twoFactorUserLosingFriend.getName() + ", reason: " + reason, null);
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.REMOVE_FRIEND, ipAddress, 
+            userAgent, twoFactorUserLosingFriend.getUuid(),
+            twoFactorUserUsingApp.getUuid(), "Removed friend: " + twoFactorUserLostFriend.getNetId()
+            + ": " + twoFactorUserLostFriend.getName() + ", from: " + twoFactorUserLosingFriend.getNetId()
+            + ": " + twoFactorUserLosingFriend.getName() + ", reason: " + reason, null);
+
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminColleaguesRemoveFriendSuccess"));
+
+        return null;
+      }
+    });
+    
+          
+  }
+
+
+  /**
    * 
    * @param httpServletRequest
    * @param httpServletResponse
@@ -931,6 +1070,10 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
     String userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOnName");
 
+    if (StringUtils.isBlank(userIdOperatingOn)) {
+      userIdOperatingOn = httpServletRequest.getParameter("userIdOperatingOn");
+    }
+    
     Source subjectSource = TfSourceUtils.mainSource();
     
     AdminSubmitView adminSubmitView = userIdSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
@@ -954,8 +1097,10 @@ public class UiMainAdmin extends UiServiceLogicBase {
    */
   public AdminSubmitView userIdSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final String userIdOperatingOn, final Source subjectSource) {
+      final String userAgent, String userIdOperatingOn, final Source subjectSource) {
 
+    final String[] userIdOperatingOnArray = new String[]{userIdOperatingOn};
+    
     return (AdminSubmitView)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
         TfAuditControl.WILL_AUDIT, new HibernateHandler() {
       
@@ -976,28 +1121,37 @@ public class UiMainAdmin extends UiServiceLogicBase {
           return AdminSubmitView.index;
         }
 
-        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOn);
-        
         //make sure searching for a user id
-        if (StringUtils.isBlank(userIdOperatingOn)) {
+        if (StringUtils.isBlank(userIdOperatingOnArray[0])) {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserToOperateOnIsRequired"));
           return AdminSubmitView.admin;
         }
 
         Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
-            userIdOperatingOn, true, false, true);
+            userIdOperatingOnArray[0], true, false, true);
         
+        if (subject == null) {
+          //try by user uuid
+          TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(twoFactorDaoFactory, userIdOperatingOnArray[0]);
+          if (twoFactorUser != null) {
+            twoFactorUser.setSubjectSource(subjectSource);
+            userIdOperatingOnArray[0] = twoFactorUser.getLoginid();
+            subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+                userIdOperatingOnArray[0], true, false, true);
+          }
+        }
+
+        twoFactorAdminContainer.setUserIdOperatingOn(userIdOperatingOnArray[0]);
+
         twoFactorAdminContainer.setSubjectOperatingOn(subject);
-        
-        String theUserIdOperatingOn = userIdOperatingOn;
         
         if (subject != null) {
           
-          theUserIdOperatingOn = subject.getId();
+          userIdOperatingOnArray[0] = subject.getId();
           
         }
         
-        TwoFactorUser twoFactorUserOperatingOn = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, theUserIdOperatingOn);
+        TwoFactorUser twoFactorUserOperatingOn = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, userIdOperatingOnArray[0]);
         
         if (twoFactorUserOperatingOn == null) {
           

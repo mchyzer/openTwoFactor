@@ -141,7 +141,16 @@
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin0">${textContainer.text['index2FriendLabel1']}</label></div>
             <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName0) }
-              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
+                          &nbsp;
+                  
+              <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorUserLoggedIn.colleagueUserUuid0 }" />
+              </form>
+            
+              <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a>
+              
+            </div>
             <div class="formFooter">&nbsp;</div>
           </div>
         </c:if>
@@ -149,6 +158,14 @@
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin1">${textContainer.text['index2FriendLabel2']}</label></div>
             <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName1) }
+            
+                                      &nbsp;
+                  
+              <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorUserLoggedIn.colleagueUserUuid1 }" />
+              </form>
+            
               <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
@@ -157,6 +174,13 @@
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin2">${textContainer.text['index2FriendLabel3']}</label></div>
             <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName2) }
+                                      &nbsp;
+                  
+              <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorUserLoggedIn.colleagueUserUuid2 }" />
+              </form>
+            
               <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
@@ -165,6 +189,13 @@
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin3">${textContainer.text['index2FriendLabel4']}</label></div>
             <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName3) }
+                                      &nbsp;
+                  
+              <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorUserLoggedIn.colleagueUserUuid3 }" />
+              </form>
+            
               <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
@@ -173,6 +204,13 @@
           <div class="formRow">
             <div class="formLabel"><label for="colleagueLogin4">${textContainer.text['index2FriendLabel5']}</label></div>
             <div class="formValue">${fn:escapeXml(twoFactorRequestContainer.twoFactorProfileContainer.colleagueName4) }
+                                      &nbsp;
+                  
+              <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                <input value="${textContainer.textEscapeDouble['adminColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                <input type="hidden" name="toUserUuid" value="${twoFactorRequestContainer.twoFactorUserLoggedIn.colleagueUserUuid4 }" />
+              </form>
+            
               <br /><a href="../../twoFactorUi/app/UiMain.helpColleague">${textContainer.text['buttonHelpFriend']}</a></div>
             <div class="formFooter">&nbsp;</div>
           </div>
@@ -397,7 +435,48 @@
         </c:when>
       </c:choose>
       
+      <h4 style="color:black">${textContainer.text['index2usersSelectedMe']}
+      &nbsp; <a href="#" onclick="$('#usersSelectedMeInstructions').toggle('slow'); return false;"><img src="../../assets/orange-question-mark-icon-png-clip-art-30a.png" width="20" /></a></h4>
+      
+      <div id="usersSelectedMeInstructions" style="display: none;">${textContainer.text['usersSelectedMeInstructionsMain']}</div>
+      
+      <div class="formBoxNarrow profileFormBoxNarrow">
+        <c:choose>
+          <c:when test="${twoFactorRequestContainer.twoFactorUserLoggedIn.numberOfUsersWhoPickedThisUserToOptThemOut == 0}">
+          
+            <div class="formRow">
+              <div class="formLabel">${textContainer.text['index2UserSelectedMeNone']}</div>
+              <div class="formValue" style="white-space: nowrap">
+              </div>
+              <div class="formFooter">&nbsp;</div>
+            </div>
+          
+          </c:when>
+          
+          <c:otherwise>
+
+            <c:forEach items="${twoFactorRequestContainer.twoFactorUserLoggedIn.usersWhoPickedThisUserToOptThemOut}" var="colleague">
+          
+              <div class="formRow">
+                <div class="formLabel">${textContainer.text['index2UserSelectedMe']}</div>
+                <div class="formValue" style="white-space: nowrap">
+                  ${colleague.netId}: ${colleague.name}
+                  &nbsp;
+                  
+                  <form action="../../twoFactorUi/app/UiMain.removeFriend" method="post" style="display: inline; font-size: smaller">
+                    <input value="${textContainer.textEscapeDouble['index2ColleaguesRemoveFriend']}" class="tfLinkButton" style="color: #800020" type="submit" />
+                    <input type="hidden" name="fromUserUuid" value="${colleague.uuid }" />
+                  </form>
+                </div>
+                <div class="formFooter">&nbsp;</div>
+              </div>
+            </c:forEach>
+          
+          </c:otherwise>
+        
+        </c:choose>
     </div>
+
 
     <br /><br />
     

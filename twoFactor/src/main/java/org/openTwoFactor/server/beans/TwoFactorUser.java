@@ -51,7 +51,7 @@ import edu.internet2.middleware.subject.Subject;
  * two factor user
  */
 @SuppressWarnings("serial")
-public class TwoFactorUser extends TwoFactorHibernateBeanBase {
+public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Comparable<TwoFactorUser> {
 
   /**
    * if has fob attached
@@ -78,29 +78,80 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * people this user chose
+   * @return the users who are colleagues of this user
+   */
+  public Set<TwoFactorUser> getColleagues() {
+    Set<TwoFactorUser> colleagues = new TreeSet();
+    if (!StringUtils.isBlank(this.getColleagueUserUuid0())) {
+      
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), this.getColleagueUserUuid0());
+      twoFactorUser.setSubjectSource(this.subjectSource);
+      colleagues.add(twoFactorUser);
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid1())) {
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), this.getColleagueUserUuid1());
+      twoFactorUser.setSubjectSource(this.subjectSource);
+      colleagues.add(twoFactorUser);
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid2())) {
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), this.getColleagueUserUuid2());
+      twoFactorUser.setSubjectSource(this.subjectSource);
+      colleagues.add(twoFactorUser);
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid3())) {
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), this.getColleagueUserUuid3());
+      twoFactorUser.setSubjectSource(this.subjectSource);
+      colleagues.add(twoFactorUser);
+    }
+    if (!StringUtils.isBlank(this.getColleagueUserUuid4())) {
+      TwoFactorUser twoFactorUser = TwoFactorUser.retrieveByUuid(TwoFactorDaoFactory.getFactory(), this.getColleagueUserUuid4());
+      twoFactorUser.setSubjectSource(this.subjectSource);
+      colleagues.add(twoFactorUser);
+    }
+    return colleagues;
+  }
+  
+  /**
    * get number of colleagues
    * @return number of colleagues
    */
   public int getNumberOfColleagues() {
-    int colleagueCount = 0;
-    if (!StringUtils.isBlank(this.getColleagueUserUuid0())) {
-      colleagueCount++;
+    return TwoFactorServerUtils.length(this.getColleagues());
+  }
+
+  /**
+   * get number of users who picked this user to opt them out
+   * @return number of users who picked this user to opt them out
+   */
+  public int getNumberOfUsersWhoPickedThisUserToOptThemOut() {
+    return TwoFactorServerUtils.length(this.getUsersWhoPickedThisUserToOptThemOut());
+  }
+
+  /**
+   * users who picked this user to opt them out
+   */
+  private Set<TwoFactorUser> usersWhoPickedThisUserToOptThemOut;
+  
+  /**
+   * users who picked this user to opt them out
+   * @return colleagues who initiated the friendship
+   */
+  public Set<TwoFactorUser> getUsersWhoPickedThisUserToOptThemOut() {
+    if (this.usersWhoPickedThisUserToOptThemOut == null) {
+      Set<TwoFactorUser> theUsersWhoPickedThisUserToOptThemOut = new TreeSet<TwoFactorUser>();
+      
+      List<TwoFactorUser> retrieveUsersWhoPickedThisUserToOptThemOutList = this.twoFactorDaoFactory.getTwoFactorUser().retrieveUsersWhoPickedThisUserToOptThemOut(this.getUuid());
+      
+      for (TwoFactorUser twoFactorUser : retrieveUsersWhoPickedThisUserToOptThemOutList) {
+        twoFactorUser.setSubjectSource(this.subjectSource);
+      }
+
+      theUsersWhoPickedThisUserToOptThemOut.addAll(retrieveUsersWhoPickedThisUserToOptThemOutList);
+      
+      this.usersWhoPickedThisUserToOptThemOut = theUsersWhoPickedThisUserToOptThemOut;
     }
-    if (!StringUtils.isBlank(this.getColleagueUserUuid1())) {
-      colleagueCount++;
-    }
-    if (!StringUtils.isBlank(this.getColleagueUserUuid2())) {
-      colleagueCount++;
-    }
-    if (!StringUtils.isBlank(this.getColleagueUserUuid3())) {
-      colleagueCount++;
-    }
-    if (!StringUtils.isBlank(this.getColleagueUserUuid4())) {
-      colleagueCount++;
-    }
-    
-    return colleagueCount;
-    
+    return this.usersWhoPickedThisUserToOptThemOut;
   }
   
   /**
@@ -150,6 +201,26 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * netId from subject source, or if not found, the loginid
+   * 
+   * @return the name from subject source, or if not found, the loginid
+   */
+  public String getNetId() {
+    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getLoginid(), true, false, false);
+    if (subject != null) {
+      String netIdAttribute = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.subject.netIdAttribute");
+      if (!StringUtils.isBlank(netIdAttribute)) {
+        String netId = subject.getAttributeValue(netIdAttribute);
+        if (!StringUtils.isBlank(netId)) {
+          return netId;
+        }
+      }
+    }
+    return this.getLoginid();
+  }
+  
+
+  /**
    * name from subject source, or if not found, the loginid
    * 
    * @return the name from subject source, or if not found, the loginid
@@ -163,16 +234,27 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
   }
   
   /**
+   * cache this for sorting
+   */
+  private String description = null;
+  
+  /**
    * description from subject source, or if not found, the loginid
    * 
    * @return the description from subject source, or if not found, the loginid
    */
   public String getDescription() {
-    Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getLoginid(), true, false, false);
-    if (subject != null) {
-      return TfSourceUtils.subjectDescription(subject);
+    
+    if (this.description == null) {
+      
+      Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(this.subjectSource, this.getLoginid(), true, false, false);
+      if (subject != null) {
+        this.description = TfSourceUtils.subjectDescription(subject);
+      } else {
+        this.description = this.getLoginid();
+      }
     }
-    return this.getLoginid();
+    return this.description;
   }
   
   /**
@@ -2223,5 +2305,27 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase {
     String theTwoFactorSecret = this.getTwoFactorSecretUnencrypted();
     return TwoFactorServerUtils.base32toHex(theTwoFactorSecret);
   }
+
+  /**
+   * @see java.lang.Comparable#compareTo(java.lang.Object)
+   */
+  public int compareTo(TwoFactorUser o) {
+    if (o == null) {
+      return 1;
+    }
+    String thisDescription = this.getDescription();
+    String otherDescription = o.getDescription();
+    if (StringUtils.equals(thisDescription, otherDescription)) {
+      return 0;
+    }
+    if (thisDescription == null) {
+      return -1;
+    }
+    if (otherDescription == null) {
+      return 1;
+    }
+    return thisDescription.compareTo(otherDescription);
+  }
+
 }
   
