@@ -117,4 +117,21 @@ public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
     return TwoFactorServerUtils.splitTrimToSet(adminsAllowedAdminReports, ",");
   }
 
+  /**
+   * @see org.openTwoFactor.server.TwoFactorAuthorizationInterface#adminLiteUserIds()
+   */
+  public Set<String> adminLiteUserIds() {
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String liteADmins = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.liteAdmins");
+    
+    if (TwoFactorServerUtils.isBlank(liteADmins)) {
+      return new HashSet<String>();
+    }
+
+    return TwoFactorServerUtils.splitTrimToSet(liteADmins, ",");
+  }
+
+
+
 }

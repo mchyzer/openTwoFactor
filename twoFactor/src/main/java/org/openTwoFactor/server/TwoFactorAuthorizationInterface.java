@@ -13,6 +13,12 @@ import java.util.Set;
 public interface TwoFactorAuthorizationInterface {
 
   /**
+   * lite admins can help people who requested help from a friend
+   * @return the list of users
+   */
+  public Set<String> adminLiteUserIds();
+
+  /**
    * admins can view audits of users, opt people out, untrust browsers, etc
    * @return the set of admins
    */

@@ -147,6 +147,20 @@
             </c:when>
             <c:otherwise>
               ${textContainer.text['havingTroubleNoFriends']}
+              <br /><br />
+              <c:choose>
+                <c:when test="${twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" >
+                  ${textContainer.text['havingTroubleYouHaveAllowedFriendNoFriendsParagraph']}
+                </c:when>
+                <c:otherwise>
+                  <form action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline">
+                    <input value="${textContainer.textEscapeDouble['havingTroubleAllowFriendButton']}" class="tfBlueButton"
+                       type="submit" />
+                  </form>
+                </c:otherwise>
+              </c:choose>
+              <br />
+              <br />
             </c:otherwise>
           </c:choose>
           ${textContainer.text['havingTroubleParagraph2end']}    

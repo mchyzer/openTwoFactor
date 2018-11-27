@@ -323,6 +323,289 @@ public class UiMain extends UiServiceLogicBase {
   }
   
   /**
+   * Main screen for lite admin
+   * @param httpServletRequest 
+   * @param httpServletResponse 
+   */
+  public void liteAdmin(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    liteAdminLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    showJsp("liteAdmin.jsp");
+
+  }
+
+  /**
+   * Main screen for lite admin
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param loggedInUser
+   * @param ipAddress 
+   * @param userAgent 
+   * @param subjectSource
+   */
+  public void liteAdminLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+        
+        TwoFactorUser twoFactorUserUsingApp = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUserUsingApp.setSubjectSource(subjectSource);
+
+        if (!TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorAdminContainer().isCanLiteAdmin()) {
+          throw new RuntimeException("Not allowed to lite admin! " + twoFactorUserUsingApp.getLoginid());
+        }
+        
+        return null;
+      }
+    });
+
+  }
+
+  /**
+   * Main screen for lite admin
+   * @param httpServletRequest 
+   * @param httpServletResponse 
+   */
+  public void liteAdminSubmit(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    String netId = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("netIdName");
+
+    String checkedIdString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("checkedIdName");
+    
+    String disclaimerString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("disclaimerName");
+    
+    
+    Source subjectSource = TfSourceUtils.mainSource();
+
+    liteAdminSubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), netId, subjectSource, checkedIdString, disclaimerString);
+
+    index(httpServletRequest, httpServletResponse);
+  }
+
+  /**
+   * Main screen for lite admin
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param loggedInUser
+   * @param ipAddress 
+   * @param userAgent 
+   * @param netIdGettingCode 
+   * @param subjectSource
+   * @param checkedIdString 
+   * @param disclaimerString
+   */
+  public void liteAdminSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final String netIdGettingCode, final Source subjectSource, final String checkedIdString, final String disclaimerString) {
+
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+    
+    final TwoFactorUser[] twoFactorUserGettingCode = new TwoFactorUser[1];
+
+    boolean success = (Boolean)HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+      
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+        
+        boolean innerSuccess = false;
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+
+        if (!TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorAdminContainer().isCanLiteAdmin()) {
+          throw new RuntimeException("Not allowed to lite admin! " + twoFactorUserUsingApp[0].getLoginid());
+        }
+
+        //make sure they have allowed people to opt them out
+        if (!StringUtils.equals("true", checkedIdString)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminNeedToAuthenticate"));
+          return false;
+        }
+
+        if (!StringUtils.equals("true", disclaimerString)) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminNeedToDisclaimer"));
+          return false;
+        }
+
+        //if invalid uuid, something fishy is going on
+        if(!alphaNumericMatcher.matcher(netIdGettingCode).matches()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminInvalidNetId"));
+          return false;
+        }
+        
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, netIdGettingCode, true, false, true);
+        
+        if (subject == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminInvalidNetId"));
+          return false;
+        }
+        
+        twoFactorUserGettingCode[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, subject.getId());
+
+        if (twoFactorUserGettingCode[0] == null) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminInvalidNetId"));
+          return false;
+        }
+
+        twoFactorUserGettingCode[0].setSubjectSource(subjectSource);
+
+        //make sure they have allowed people to opt them out
+        if (!twoFactorUserGettingCode[0].isInvitedColleaguesWithinAllottedTime()) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminErrorUserDidntAllow"));
+          return false;
+        }
+
+        twoFactorUserGettingCode[0].setTwoFactorSecretTemp(null);
+        
+        if (StringUtils.isBlank(twoFactorUserGettingCode[0].getTwoFactorSecret()) || !twoFactorUserGettingCode[0].isOptedIn()) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("helpFriendWarnNotOptedIn"));
+          return false;
+        }
+          
+        innerSuccess = true;
+        
+        //store code and when sent
+        String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
+        
+        //make this since 9 since thats what duo is
+        secretCode = StringUtils.leftPad(secretCode, 9, '0');
+
+        //maybe going from duo
+        //opt in to duo
+        if (UiMain.duoRegisterUsers()) {
+
+          secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUserGettingCode[0].getLoginid());
+          
+        }
+
+        twoFactorUserGettingCode[0].setPhoneCodeUnencrypted(secretCode);
+
+        twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setTwoFactorUserFriend(twoFactorUserGettingCode[0]); 
+
+        twoFactorRequestContainer.getTwoFactorHelpLoggingInContainer().setCodeForFriend(secretCode);
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("liteAdminCodeSuccess"));
+        
+        twoFactorUserGettingCode[0].setDatePhoneCodeSent(System.currentTimeMillis());
+  
+        twoFactorUserGettingCode[0].setDateInvitedColleagues(null);
+        
+        twoFactorUserGettingCode[0].store(twoFactorDaoFactory);
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.GENERATED_CODE_AS_A_LITE_ADMIN, ipAddress, 
+            userAgent, twoFactorUserUsingApp[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
+            TextContainer.retrieveFromRequest().getText().get("liteAdminCodeAuditDescriptionForFriendPrefix") 
+              + " " + twoFactorUserGettingCode[0].getName() +  " (" + twoFactorUserGettingCode[0].getLoginid() + ")", null);
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.LITE_ADMIN_GENERATED_ME_A_CODE, ipAddress, 
+            userAgent, twoFactorUserGettingCode[0].getUuid(), twoFactorUserUsingApp[0].getUuid(), 
+            TextContainer.retrieveFromRequest().getText().get("liteAdminCodeAuditDescriptionPrefix")
+            + " " + twoFactorUserUsingApp[0].getName() +  " (" + twoFactorUserUsingApp[0].getLoginid() + ")", null);
+
+        return innerSuccess;
+      }
+    });
+
+    String userEmailLoggedIn = null;
+    
+    String userEmailColleague = null;
+    
+    try {
+      //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+      if (success && subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+          && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForGenerateCodeByLiteAdmin", true)) {
+        
+        Subject sourceSubjectLoggedIn = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+        Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            twoFactorUserGettingCode[0].getLoginid(), true, false, true);
+        
+        userEmailLoggedIn = UiMain.retrieveUserEmail(sourceSubjectLoggedIn, twoFactorUserUsingApp[0]);
+  
+        userEmailColleague = UiMain.retrieveUserEmail(sourceSubjectPersonPicked, twoFactorUserGettingCode[0]);
+        
+        //set the default text container...
+        String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdminSubject");
+        subject = TextContainer.massageText("emailGenerateCodeByAdminSubject", subject);
+  
+        String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdminBody");
+        body = TextContainer.massageText("emailGenerateCodeByAdminBody", body);
+        
+        String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.adminGenerateCodes");
+        
+        TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+        
+        boolean sendEmail = true;
+        boolean sendToFriend = true;
+        //there is no email address????
+        if (StringUtils.isBlank(userEmailColleague)) {
+          sendToFriend = false;
+          LOG.warn("Did not send email to logged in user: " + userEmailColleague + ", no email address...");
+          if (StringUtils.isBlank(bccsString)) {
+            sendEmail = false;
+          } else {
+            twoFactorMail.addTo(bccsString);
+          }
+        } else {
+          twoFactorMail.addTo(userEmailColleague);
+          twoFactorMail.addBcc(bccsString);
+        }
+        
+        if (sendToFriend && StringUtils.isBlank(userEmailLoggedIn)) {
+          LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+        } else {
+          twoFactorMail.addBcc(userEmailLoggedIn);
+        }
+        
+        if (sendEmail) {
+          twoFactorMail.assignBody(body);
+          twoFactorMail.assignSubject(subject);
+          twoFactorMail.send();
+        }
+        
+      }
+      
+    } catch (Exception e) {
+      //non fatal, just log this
+      LOG.error("Error sending email to: " + userEmailColleague + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+    }
+  }
+  
+  /**
    * see if too many users, and this user has never opted in and set a message if so
    * @param subjectSource 
    * @param twoFactorDaoFactory

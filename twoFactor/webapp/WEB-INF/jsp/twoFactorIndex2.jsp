@@ -501,6 +501,15 @@
         </c:when>
       </c:choose>
       <c:choose>
+        <c:when  test="${twoFactorRequestContainer.twoFactorAdminContainer.canLiteAdmin}">
+          <form action="../../twoFactorUi/app/UiMain.liteAdmin" method="post" style="display: inline">
+            <input value="${textContainer.textEscapeDouble['buttonAdminLiteConsole']}" class="tfBlueButton"
+             type="submit" />
+          </form>
+          &nbsp;
+        </c:when>
+      </c:choose>
+      <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.hasReportPrivilege}">
           <form action="../../twoFactorUi/app/UiMain.reports" method="get" style="display: inline">
             <input value="${textContainer.textEscapeDouble['buttonViewReports']}" class="tfBlueButton"

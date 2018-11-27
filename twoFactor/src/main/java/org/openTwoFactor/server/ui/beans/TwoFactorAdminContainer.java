@@ -251,6 +251,9 @@ public class TwoFactorAdminContainer {
   /** cache of users who can upload new serials */
   private static TwoFactorCache<String, Boolean> adminSerialCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminSerialCache", 100, false, 120, 120, false);
 
+  /** cache of users who can lite admin */
+  private static TwoFactorCache<String, Boolean> liteAdminSerialCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminLiteCache", 100, false, 120, 120, false);
+
   /** cache of users who can admin reports */
   private static TwoFactorCache<String, Boolean> adminReportsCache = new TwoFactorCache<String, Boolean>(TwoFactorAdminContainer.class.getName() + ".adminReportsCache", 100, false, 120, 120, false);
 
@@ -466,6 +469,44 @@ public class TwoFactorAdminContainer {
 
   }
   
+  /**
+   * if the logged in user can liteAdmin
+   * @return if the logged in user can lite admin
+   */
+  public boolean isCanLiteAdmin() {
+    
+    String originalLoginid = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs();
+    
+    //see if it is in cache
+    Boolean isAdminLite = liteAdminSerialCache.get(originalLoginid);
+    if (isAdminLite != null) {
+      return isAdminLite;
+    }
+
+    TwoFactorUser twoFactorUser = TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorUserLoggedIn();
+    
+    if (!twoFactorUser.isOptedIn()) {
+      isAdminLite = false;
+    }
+    
+    if (isAdminLite == null) {
+
+      TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+  
+      Set<String> adminUserIdsWhoCanAdminLiteSet = twoFactorAuthorizationInterface.adminLiteUserIds();
+  
+      Source theSource = TfSourceUtils.mainSource();
+  
+      isAdminLite = TfSourceUtils.subjectIdOrNetIdInSet(theSource, originalLoginid, adminUserIdsWhoCanAdminLiteSet);
+    }
+    
+    liteAdminSerialCache.put(originalLoginid, isAdminLite);
+    
+    return isAdminLite;
+
+  }
+  
+
   /**
    * subject operating on
    */

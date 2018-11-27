@@ -175,4 +175,15 @@ public class TwoFactorGrouperAuthorization implements TwoFactorAuthorizationInte
     return retrieveUserIdsFromAuthzOrCache(groupName);
   }
 
+  /**
+   * @see org.openTwoFactor.server.TwoFactorAuthorizationInterface#adminLiteUserIds()
+   */
+  public Set<String> adminLiteUserIds() {
+    // if using the default config file based authz, this is the comma separated list of lite admin ids
+    String groupName = TwoFactorServerConfig.retrieveConfig().propertyValueString(
+        "twoFactorServer.liteAdmins");
+    
+    return retrieveUserIdsFromAuthzOrCache(groupName);
+  }
+
 }
