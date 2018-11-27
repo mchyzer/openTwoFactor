@@ -3117,6 +3117,11 @@ public class UiMain extends UiServiceLogicBase {
       //resolve subject
       Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
           loggedInUser, false, false, true);
+      
+      if (subject == null) {
+        throw new RuntimeException("Cant find subject by login id: '" + loggedInUser +"'");
+      }
+      
       subjectEmail = TfSourceUtils.retrieveEmail(subject);
     }
 
@@ -3841,6 +3846,58 @@ public class UiMain extends UiServiceLogicBase {
     }
     return null;
   }
+  
+  /**
+   * restrict these people from others inviting them to be friends
+   */
+  private static ExpirableCache<Boolean, Set<String>> friendsRestrictSubjectIdsCache = null;
+  
+  /**
+   * restrict VIPs from being selected as friends
+   * @param subjectSource 
+   * @param subjectId subject id to restrict
+   * @return if the subjectId is restricted
+   */
+  private static boolean friendRestricted(Source subjectSource, String subjectId) {
+    if (friendsRestrictSubjectIdsCache == null) {
+      synchronized(UiMain.class) {
+        
+        if (friendsRestrictSubjectIdsCache == null) {
+          friendsRestrictSubjectIdsCache = new ExpirableCache<Boolean, Set<String>>(5);
+        }
+      }
+    }
+    Set<String> subjectIdsToRestrict = friendsRestrictSubjectIdsCache.get(Boolean.TRUE);
+    
+    if (subjectIdsToRestrict == null) {
+      
+      synchronized(UiMain.class) {
+        
+        subjectIdsToRestrict = friendsRestrictSubjectIdsCache.get(Boolean.TRUE);
+        
+        if (subjectIdsToRestrict == null) {
+          subjectIdsToRestrict = new HashSet<String>();
+          
+          String restrictSubjectIdsOrIdentifiersString = TwoFactorServerUtils.defaultString(TwoFactorServerConfig.retrieveConfig().propertyValueString("twoStep.restrictFromFriends"));
+          
+          Set<String> restrictSubjectIdsOrIdentifiersSet = TwoFactorServerUtils.splitTrimToSet(restrictSubjectIdsOrIdentifiersString, ",");
+          
+          for (String restrictSubjectIdOrIdentifier: restrictSubjectIdsOrIdentifiersSet) {
+            
+            Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, restrictSubjectIdOrIdentifier, true, false, true);
+            if (subject == null) {
+              LOG.error("Cant find subject to be restricted from friend lookup: '" + restrictSubjectIdOrIdentifier + "'");
+            } else {
+              subjectIdsToRestrict.add(subject.getId());
+            }
+          }
+          
+          friendsRestrictSubjectIdsCache.put(Boolean.TRUE, subjectIdsToRestrict);
+        }
+      }
+    }
+    return subjectIdsToRestrict.contains(subjectId);
+  }
 
   /**
    * validate a friend lookup
@@ -3868,6 +3925,11 @@ public class UiMain extends UiServiceLogicBase {
       return errorMessageIfSelf;
       
     }
+    // see if vip
+    if (friendRestricted(subjectSource, subject.getId())) {
+      return errorMessage;
+    }
+    
     return null;
   }
 
