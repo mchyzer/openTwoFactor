@@ -96,11 +96,17 @@ public class TwoFactorTwilio implements TwoFactorContactInterface {
    * 
    * @param args
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     
-    String userText = "Your verification code is: 123456";
+    String userText = "Your verification code is: 123456, Your verification code is: 123456, Your verification code is: 123456";
     
-    new TwoFactorTwilio().text("215 880 9847", userText);
+    //new TwoFactorTwilio().voice("215 880 9847", userText);
+    //new TwoFactorTwilio().voice("514 448 2461", userText);
+    
+    // voice is ok with +
+    // new TwoFactorTwilio().voice("+ 44 7445 860015", userText);   new Thread().sleep(20000);
+    // text needs 011
+    new TwoFactorTwilio().text("+ 44 7445 860015", userText);
     
   }
 

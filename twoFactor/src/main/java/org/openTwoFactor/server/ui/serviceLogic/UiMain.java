@@ -3777,15 +3777,17 @@ public class UiMain extends UiServiceLogicBase {
               TextContainer.retrieveFromRequest().getText().get("profileErrorFriend5invalid"), selfErrorMessage);
         }
         
-        if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
-            phone0, phone1, phone2) < 2) {
-          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
-        }
+        //dont require phone and friends
+//        if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
+//            phone0, phone1, phone2) < 2) {
+//          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
+//        }
+//
+//        if (StringUtils.isBlank(errorMessage) && StringUtils.isBlank(phone0) && StringUtils.isBlank(phone1) && StringUtils.isBlank(phone2)) {
+//          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughPhones");
+//        }
 
-        if (StringUtils.isBlank(errorMessage) && StringUtils.isBlank(phone0) && StringUtils.isBlank(phone1) && StringUtils.isBlank(phone2)) {
-          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughPhones");
-        }
-
+        
 //        if (StringUtils.isBlank(errorMessage) && !StringUtils.isBlank(phoneAutoVoiceText)) {
 //          if (StringUtils.equals("0t", phoneAutoVoiceText)) {
 //            if (StringUtils.isBlank(phone0) || !StringUtils.equals(phoneText0, "true") ) {
@@ -4118,16 +4120,53 @@ public class UiMain extends UiServiceLogicBase {
     }
     //lets count the number of digits... must be at least 10 (note, intl number might have fewer... hmm)
     int digitCount = 0;
+    int firstDigit = -1;
+    boolean hasPlusAtStart = false;
     for (int i=0;i<phone.length();i++) {
+      
+      if (firstDigit == -1 && phone.charAt(i) == '+') {
+        hasPlusAtStart = true;
+      }
+      
       if (Character.isDigit(phone.charAt(i))) {
         digitCount++;
+        
+        if (firstDigit == -1) {
+          
+          firstDigit = Integer.valueOf(Character.toString(phone.charAt(i)));
+        }
       }
     }
-    if (digitCount < 10) {
-      TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorProfileContainer().setErrorFieldLabel(label);
-      return TextContainer.retrieveFromRequest().getText().get("profileErrorPhoneTooShort");
+
+    if (hasPlusAtStart && firstDigit == 0) {
+      return TextContainer.retrieveFromRequest().getText().get("profileErrorPhoneLongAndInternational");
     }
-    return null;
+    
+    // allow?
+    if (hasPlusAtStart) {
+      return null;
+    }
+    
+    // normal number: 123 456 7890
+    if (firstDigit != 1 && digitCount == 10 ) {
+      return null;
+    }
+    
+    //add 1 with normal number: 1 234 567 8901
+    if (firstDigit == 1 && digitCount == 11 ) {
+      return null;
+    }
+    
+    if (firstDigit != 1 && digitCount < 10 ) {
+      TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorProfileContainer().setErrorFieldLabel(label);
+      return TextContainer.retrieveFromRequest().getText().get("profileErrorPhoneLongAndInternational");
+    }
+    if (firstDigit == 1 && digitCount < 11 ) {
+      TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorProfileContainer().setErrorFieldLabel(label);
+      return TextContainer.retrieveFromRequest().getText().get("profileErrorPhoneLongAndInternational");
+    }
+    TwoFactorRequestContainer.retrieveFromRequest().getTwoFactorProfileContainer().setErrorFieldLabel(label);
+    return TextContainer.retrieveFromRequest().getText().get("profileErrorPhoneLongAndInternational");
   }
   
   /**

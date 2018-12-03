@@ -1113,16 +1113,25 @@ public class DuoCommands {
         //if both, make sure ok
         if (duoPhone != null && !StringUtils.isBlank(phoneNumber)) {
           
+          boolean phoneNumberInternational = phoneNumber.trim().startsWith("+");
+          
           boolean duoIsMobile = StringUtils.equalsIgnoreCase(duoPhone.getString("type"), "mobile"); 
   
           //note, this will likely always get updated since duo stores as +11234567890 and open two factor is 123-456-7890
-          String duoNumber = TwoFactorServerUtils.trimToEmpty(duoPhone.getString("number")).replaceAll("[^\\d]", "");
+          String duoNumber = TwoFactorServerUtils.trimToEmpty(duoPhone.getString("number"));
+          
+          duoNumber = duoNumber.replaceAll("[^\\d]", "");
+
           if (duoNumber.startsWith("1")) {
+            
             duoNumber = duoNumber.substring(1);
           }
           
           phoneNumber = TwoFactorServerUtils.trimToEmpty(phoneNumber).replaceAll("[^\\d]", "");
+          boolean phoneNumberStartsWithOne = false;
+
           if (phoneNumber.startsWith("1")) {
+            phoneNumberStartsWithOne = true;
             phoneNumber = phoneNumber.substring(1);
           }
           
@@ -1133,7 +1142,14 @@ public class DuoCommands {
             if (printResults) {
               System.out.println("Phone for user " + twoFactorUser.getLoginid() + " " + i + " was out of sync, changing number to: " + phoneNumber + ", mobile? " + isText);
             }
-  
+
+            if (phoneNumberInternational) {
+              if (phoneNumberStartsWithOne) {
+                phoneNumber = "1" + phoneNumber;
+              }
+              phoneNumber = "+" + phoneNumber;
+            }
+            
             editDuoPhone(phoneId, phoneNumber, isText);
             
           }
