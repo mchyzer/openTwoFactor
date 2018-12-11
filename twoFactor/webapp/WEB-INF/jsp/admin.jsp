@@ -247,8 +247,6 @@
   <br />
   <br />
   ${textContainer.text['adminOptedInUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedInUsers}
-  <br />
-  ${textContainer.text['adminOptedOutUsersPrefix'] } ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorAdminReportBean.optedOutUsers}
   
   <br />
   <br /> 

@@ -214,7 +214,7 @@ public class TwoFactorAdminContainer {
         if (twoFactorAdminReportBean == null) {
           twoFactorAdminReportBean = new TwoFactorAdminReportBean();
           twoFactorAdminReportBean.setOptedInUsers(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedInUsers());
-          twoFactorAdminReportBean.setOptedOutUsers(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedOutUsers());
+          //twoFactorAdminReportBean.setOptedOutUsers(TwoFactorDaoFactory.getFactory().getTwoFactorUser().retrieveCountOfOptedOutUsers());
           twoFactorAdminReportBeanCache.put(Boolean.TRUE, twoFactorAdminReportBean);
           
         }
