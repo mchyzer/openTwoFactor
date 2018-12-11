@@ -77,7 +77,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
     }
     
     System.out.println("\nHOTP (token)");
-    for (int i=-50;i<5000;i++) {
+    for (int i=-50;i<50;i++) {
       String label = "now";
       if (i < 0) {
         label = "" + i;
@@ -162,7 +162,7 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       //findTimePeriodFob(secret, 551960, 305783);
       
       printPasswordsForSecret(secret, 
-          null, null, 0L, false);
+          501441L, null, System.currentTimeMillis(), false);
       return;
     }
     

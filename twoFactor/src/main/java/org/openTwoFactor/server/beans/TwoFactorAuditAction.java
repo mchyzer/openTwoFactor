@@ -601,6 +601,39 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * add totp
+   */
+  ADD_TOTP {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAddTotp";
+    }
+    
+  }, 
+
+  /**
+   * change totp
+   */
+  CHANGE_TOTP {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsChangeTotp";
+    }
+    
+  }, 
+  
+
+  /**
    * add phone
    */
   ADD_PHONE {

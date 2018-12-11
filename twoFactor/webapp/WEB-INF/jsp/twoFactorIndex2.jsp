@@ -220,7 +220,7 @@
       <c:choose>
         <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
 
-          <h4 style="color:black">${textContainer.text['index2Devices']}
+          <h4 style="color:black">${textContainer.text['index2Devices']} &nbsp; <a href="../../twoFactorUi/app/UiMain.testCode" style="font-size: 80%">${textContainer.text['index2testCodeButton']}</a>
           &nbsp; <a href="#" onclick="$('#devicesInstructions').toggle('slow'); return false;"><img src="../../assets/orange-question-mark-icon-png-clip-art-30a.png" width="20" /></a></h4>
           
           <div id="devicesInstructions" style="display: none;">${textContainer.text['deviceInstructionsMain']}</div>
@@ -380,23 +380,22 @@
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
-            <%--
             <div class="formRow">
-              <div class="formLabel">HOTP</div>
+              <div class="formLabel">${textContainer.text['index2hotpLabel']}</div>
               <div class="formValue" style="white-space: nowrap">
-                <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Add HOTP app" class="indexLinkButton"
+                <form action="../../twoFactorUi/app/UiMain.totpAdd" method="post" style="display: inline;">
+                  <input value="${textContainer.textEscapeDouble['index2addHotpAppButton']}" class="indexLinkButton"
                     type="submit" />
                 </form>
                 &nbsp;
-                <form action="../../twoFactorUi/app/UiMain." method="post" style="display: inline;">
-                  <input value="Change secret" class="indexLinkButton"
+                <form action="../../twoFactorUi/app/UiMain.totpChangeSecret" method="post" style="display: inline;">
+                  <input value="${textContainer.textEscapeDouble['index2hotpChangeSecret']}" class="indexLinkButton"
+                        onclick="return confirm('${textContainer.textEscapeSingleDouble['index2hotpConfirmChangeSecret']}');"
                     type="submit" />
                 </form>
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>
-            --%>
             <div class="formRow">
               <div class="formLabel">${textContainer.text['trustedBrowserCountLabel']}</div>
               <div class="formValue" style="white-space: nowrap">

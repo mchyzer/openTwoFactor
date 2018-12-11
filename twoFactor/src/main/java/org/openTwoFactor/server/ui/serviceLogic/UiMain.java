@@ -32,6 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.validator.routines.EmailValidator;
+import org.openTwoFactor.server.TwoFactorCheckPass;
 import org.openTwoFactor.server.TwoFactorLogic;
 import org.openTwoFactor.server.TwoFactorLogicInterface;
 import org.openTwoFactor.server.beans.TwoFactorAudit;
@@ -1571,6 +1572,358 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * 
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpAdd(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpAddLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    showJsp("totpAppInstall.jsp");
+
+  }
+  
+  /**
+   * add phone
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param subjectSource 
+   * 
+   */
+  private void totpAddLogic(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final Source subjectSource) {
+
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+
+  }
+  
+  
+  /**
+   * test code
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void testCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    testCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp("testCode.jsp");
+  }
+
+
+  /**
+   * test a code
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private void testCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+    
+  }
+
+
+  
+  /**
+   * integrate totp app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp("totpAppIntegrate.jsp");
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private void totpAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+    
+    //audit to keep track of what happened
+    TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+        TwoFactorAuditAction.ADD_TOTP, ipAddress, 
+        userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+
+
+    //if this is real mode with a source, and we have email configured, and we are sending emails for show totp...
+    if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+        && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForAddPhone", true)) {
+      
+      Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+      
+      String userEmail = retrieveUserEmail(sourceSubject, twoFactorUser);
+      
+      //set the default text container...
+      String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailAddTotpSubject");
+      subject = TextContainer.massageText("emailAddTotpSubject", subject);
+
+      String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailAddTotpBody");
+      body = TextContainer.massageText("emailAddTotpBody", body);
+      
+      String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+      
+      TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+      
+      boolean sendEmail = true;
+      
+      //there is no email address????
+      if (StringUtils.isBlank(userEmail)) {
+        LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+        if (StringUtils.isBlank(bccsString)) {
+          sendEmail = false;
+        } else {
+          twoFactorMail.addTo(bccsString);
+        }
+      } else {
+        twoFactorMail.addTo(userEmail);
+        twoFactorMail.addBcc(bccsString);
+      }
+
+      if (sendEmail) {
+        twoFactorMail.assignBody(body);
+        twoFactorMail.assignSubject(subject);
+        twoFactorMail.send();
+
+      }
+
+    }
+
+  }
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpSubmitAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpSubmitAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp("totpAppConfirmCode.jsp");
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private void totpSubmitAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+
+  }
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpSubmitAppCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    boolean success = totpSubmitAppCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        twoFactorPass);
+  
+    if (success) {
+      index2(httpServletRequest, httpServletResponse);
+    } else {
+      showJsp("totpAppIntegrate.jsp");
+    }
+  }
+
+
+  /**
+   * two factor submit app integrate code
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  public boolean totpSubmitAppCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String twoFactorPass) {
+  
+    boolean result =  (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+        if (!twoFactorUser.isOptedIn()) {
+          throw new RuntimeException("Not opted in");
+        }
+
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          return false;
+        }
+
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code not number, now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "totpErrorCodeInvalid"));
+          return false;
+        }
+
+        String twoFactorSecret = twoFactorUser.getTwoFactorSecretUnencrypted();
+
+        //no need to validate the password, the password checker will do that
+        TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
+            twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
+
+        if (!twoFactorPassResult.isPasswordCorrect()) {
+
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code, now: " 
+              + System.currentTimeMillis() + ": " + TwoFactorServerUtils.hostname()
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "totpErrorCodeInvalid"));
+          
+          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+
+          return false;
+        }
+        
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("totpSuccessCodeValid"));
+  
+        return true;
+      }
+    });
+
+    return result;
+  }
+
+
+
+  /**
    * add phone to the profile
    * @param httpServletRequest
    * @param httpServletResponse
@@ -2589,6 +2942,9 @@ public class UiMain extends UiServiceLogicBase {
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
+          
+          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+
           return OptinTestSubmitView.optin;
         }
         
@@ -4537,7 +4893,7 @@ public class UiMain extends UiServiceLogicBase {
           return OptinView.profile;    
         }
 
-        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser, false, true)) {
           
           twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
           
@@ -4949,7 +5305,7 @@ public class UiMain extends UiServiceLogicBase {
           String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
   
           if (!initNewOathCode(twoFactorRequestContainer, 
-              twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+              twoFactorDaoFactory, twoFactorCode, twoFactorUser, false, true)) {
             
             twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
             
@@ -5632,6 +5988,46 @@ public class UiMain extends UiServiceLogicBase {
     }
   }
 
+  
+
+  /**
+   * 
+   */
+  public static enum TotpChangeAppInstallView {
+    
+    /**
+     */
+    totpChangeAppInstall("totpChangeAppInstall.jsp"),
+    
+    /**
+     */
+    index("twoFactorIndex2.jsp"),
+    
+    /**
+     */
+    totpChangeAppUploadSecret("totpChangeUploadSecret.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private TotpChangeAppInstallView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
 
   /**
    * 
@@ -5675,7 +6071,6 @@ public class UiMain extends UiServiceLogicBase {
       return this.jsp;
     }
   }
-
 
   /**
    * 
@@ -6037,6 +6432,47 @@ public class UiMain extends UiServiceLogicBase {
      * @param theJsp
      */
     private OptinWizardDoneView(String theJsp) {
+      this.jsp = theJsp;
+    }
+    
+    /**
+     * 
+     * @return jsp
+     */
+    public String getJsp() {
+      return this.jsp;
+    }
+  }
+
+
+  /**
+   * 
+   */
+  public static enum TotpChangeSubmitCodeView {
+    
+    /**
+     */
+    index("twoFactorIndex2.jsp"),
+    
+    /**
+     */
+    optinChangeShowOneTimeCodes("showOneTimeCodes2.jsp"),
+    
+    /**
+     * 
+     */
+    totpChangeConfirmCode("totpChangeConfirmCode.jsp");
+    
+    /**
+     * 
+     */
+    private String jsp;
+    
+    /**
+     * 
+     * @param theJsp
+     */
+    private TotpChangeSubmitCodeView(String theJsp) {
       this.jsp = theJsp;
     }
     
@@ -6746,7 +7182,7 @@ public class UiMain extends UiServiceLogicBase {
           }
           if (StringUtils.isBlank(twoFactorUser.getTwoFactorSecret())) {
             String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
-            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser, false, true)) {
               
               twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
               
@@ -6780,7 +7216,7 @@ public class UiMain extends UiServiceLogicBase {
               return OptinWizardTotpAppInstallView.index;
             }
             twoFactorUser.setTwoFactorSecret(null);
-            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser)) {
+            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser, false, true)) {
               
               twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
               
@@ -7392,11 +7828,13 @@ public class UiMain extends UiServiceLogicBase {
    * @param twoFactorDaoFactory
    * @param twoFactorCode
    * @param twoFactorUser
+   * @param changeCode if changing existing code
+   * @param resetIndexes 
    * @return false if invalid
    */
   private boolean initNewOathCode(TwoFactorRequestContainer twoFactorRequestContainer, 
       final TwoFactorDaoFactory twoFactorDaoFactory,
-      final String twoFactorCode, TwoFactorUser twoFactorUser) {
+      final String twoFactorCode, TwoFactorUser twoFactorUser, boolean changeCode, boolean resetIndexes) {
     
     String pass = twoFactorCode.toUpperCase();
     
@@ -7410,23 +7848,30 @@ public class UiMain extends UiServiceLogicBase {
     }
 
     twoFactorUser.setTwoFactorSecretTempUnencrypted(pass);
-    twoFactorUser.setOptedIn(false);
-    twoFactorUser.setDatePhoneCodeSent(null);
-    twoFactorUser.setPhoneCodeEncrypted(null);
-    twoFactorUser.setLastTotpTimestampUsed(null);
-    twoFactorUser.setTokenIndex(0L);
-    duoClearOutAttributes(twoFactorUser);
+    if (!changeCode) {
+      twoFactorUser.setOptedIn(false);
+    }
+    if (resetIndexes) {
+      twoFactorUser.setDatePhoneCodeSent(null);
+      twoFactorUser.setPhoneCodeEncrypted(null);
+      twoFactorUser.setLastTotpTimestampUsed(null);
+      twoFactorUser.setTokenIndex(0L);
+      if (!changeCode) {
+        duoClearOutAttributes(twoFactorUser);
+      }
+    }
     twoFactorUser.store(twoFactorDaoFactory);
 
-    List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
-
-    //untrust browsers since opting in, dont want orphans from last time
-    for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
-      twoFactorBrowser.setTrustedBrowser(false);
-      twoFactorBrowser.setWhenTrusted(0);
-      twoFactorBrowser.store(twoFactorDaoFactory);
-    }
-    
+    if (!changeCode) {
+      List<TwoFactorBrowser> twoFactorBrowsers = twoFactorDaoFactory.getTwoFactorBrowser().retrieveTrustedByUserUuid(twoFactorUser.getUuid());
+  
+      //untrust browsers since opting in, dont want orphans from last time
+      for (TwoFactorBrowser twoFactorBrowser : twoFactorBrowsers) {
+        twoFactorBrowser.setTrustedBrowser(false);
+        twoFactorBrowser.setWhenTrusted(0);
+        twoFactorBrowser.store(twoFactorDaoFactory);
+      }
+    }    
     return true;
   }
 
@@ -7519,7 +7964,7 @@ public class UiMain extends UiServiceLogicBase {
 
         String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
 
-        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser)) {
+        if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser, false, true)) {
           return OptinWizardSubmitPhoneCodeView.optinWelcome;
         }
 
@@ -8075,6 +8520,9 @@ public class UiMain extends UiServiceLogicBase {
               + ", user-agent: " + userAgent);
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               "optinErrorCodeInvalid"));
+          
+          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+
           return OptinWizardSubmitTotpAppCodeView.optinTotpAppConfirmCode;
         }
         
@@ -9923,5 +10371,715 @@ public class UiMain extends UiServiceLogicBase {
   }
 
 
+  /**
+   * show qrCode image
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void qrCodeCurrent(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+  
+    File qrImageFile = TwoFactorServerUtils.tempFile(".gif", "qrCodes");
+  
+    qrCodeCurrentFile(qrImageFile);
+  
+    TwoFactorServerUtils.sendFileToBrowser(qrImageFile.getAbsolutePath(), false, true, true, null, null, true);
+  
+  }
+
+
+  /**
+   * generate qr code file
+   * @param qrImageFile 
+   */
+  private void qrCodeCurrentFile(File qrImageFile) {
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+    
+    int qrImageWidth = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.qrImageWidth", 400);
+        
+    TwoFactorUser twoFactorUserLoggedIn = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    String twoFactorSecret = twoFactorUserLoggedIn.getTwoFactorSecretUnencrypted();
+  
+    String accountName = twoFactorRequestContainer.getTwoFactorProfileContainer().getAccountName();
+    
+    //http://invariantproperties.com/2011/12/23/using-google-authenticator-totp-on-your-site/
+    String uri = "otpauth://totp/" + accountName + "?secret=" + twoFactorSecret;
+    TwoFactorServerConfig.retrieveConfig().twoFactorLogic().generateQrFile(uri, qrImageFile, qrImageWidth);
+  }
+
+
+  /**
+   * submit a code
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void testCodeSubmit(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    boolean success = testCodeSubmitLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        twoFactorPass);
+  
+    if (success) {
+      index2(httpServletRequest, httpServletResponse);
+    } else {
+      showJsp("testCode.jsp");
+    }
+  }
+
+
+  /**
+   * two factor submit test code
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  private boolean testCodeSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String twoFactorPass) {
+  
+    boolean result =  (Boolean)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        if (!twoFactorUser.isOptedIn()) {
+          throw new RuntimeException("Not opted in");
+        }
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          return false;
+        }
+  
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code not number, now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "totpErrorCodeInvalid"));
+          return false;
+        }
+  
+        TwoFactorCheckPass twoFactorCheckPass = TwoFactorServerConfig.retrieveConfig().twoFactorCheckPass();
+        String twoFactorSecret = twoFactorUser.getTwoFactorSecretUnencrypted();
+        String phonePassword = twoFactorUser.getPhoneCodeUnencryptedIfNotExpired();
+        
+        TwoFactorPassResult twoFactorPassResult = twoFactorCheckPass.twoFactorCheckPassword(
+            twoFactorSecret, twoFactorPass, twoFactorUser.getSequentialPassIndex(), 
+            twoFactorUser.getLastTotpTimestampUsed(), twoFactorUser.getLastTotp60TimestampUsed(), 
+            twoFactorUser.getTokenIndex(), phonePassword, twoFactorUser.getDuoUserId());
+        if (twoFactorPassResult.isPasswordCorrect()) {
+
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "testCodeValid"));
+          return true;
+        }
+        
+        //code is invalid
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("totpErrorCodeTestInvalid"));
+  
+        appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), twoFactorPass);
+        
+        return false;
+      }
+    });
+  
+    return result;
+  }
+
+  /**
+   * for debugging
+   * @param twoFactorRequestContainer 
+   * @param secret 
+   * @param sequentialPassIndex 
+   * @param tokenIndex 
+   * @param codeThatDoesntWork 
+   * 
+   */
+  public static void appendErrorMessageForCode(TwoFactorRequestContainer twoFactorRequestContainer, String secret, 
+      Long sequentialPassIndex, Long tokenIndex, String codeThatDoesntWork) {
+    
+    List<String> errors = new ArrayList<String>();
+    boolean hasError = false;
+    
+    int codeIntThatDoesntWork = -1;
+    
+    try {
+      codeIntThatDoesntWork = TwoFactorServerUtils.intValue(codeThatDoesntWork);
+    } catch (Exception e) {
+      errors.add(TextContainer.retrieveFromRequest().getText().get(
+          "totpErrorCodeInvalid")) ;
+      hasError = true;
+
+    }
+    
+    if (!hasError) {
+      Base32 codec = new Base32();
+      byte[] plainText = codec.decode(secret);
+          
+      if (sequentialPassIndex == null) {
+        sequentialPassIndex = 500001L;
+      }
+      
+      if (tokenIndex == null) {
+        tokenIndex = 0L;
+      }
+      
+      // System.out.pri ntln("HOTP (printed)");
+      for (int i=-100;i<100;i++) {
+        int hotpPassword = new TwoFactorLogic().hotpPassword(plainText, sequentialPassIndex + i);
+        if (hotpPassword == codeIntThatDoesntWork) {
+          if (i < 0) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodePrintedInPast"));
+          }
+          if (i > 0) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodePrintedInFuture"));
+          }
+        }
+        //System.out.pri ntln("Printed: " + (i < 0 ? i : ("+" + i)) + ": " + hotpPassword + ", "  + codeIntThatDoesntWork);
+      }
+      
+      for (int i=-1;i<tokenIndex+50;i++) {
+        int hotpPassword = new TwoFactorLogic().hotpPassword(plainText, i);
+        if (hotpPassword == codeIntThatDoesntWork) {
+          if (i < tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeFobInPast"));
+          }
+          if (i > tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeFobInFuture"));
+          }
+        }
+        //System.out.pri ntln("Fob: " + (i < 0 ? i : ("+" + i)) + ": " + hotpPassword + ", "  + codeIntThatDoesntWork);
+      }
+  
+      for (int i=-50;i<50;i++) {
+        int totpPassword = new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/60000) + i);
+        if (totpPassword == codeIntThatDoesntWork) {
+          if (i < tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeTime60InPast"));
+          }
+          if (i > tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeTime60InFuture"));
+          }
+        }
+        //System.out.pri ntln("TOTP60: " + (i < 0 ? i : ("+" + i)) + ": " + totpPassword + ", "  + codeIntThatDoesntWork);
+      }
+      
+      for (int i=-50;i<50;i++) {
+        int totpPassword = new TwoFactorLogic().totpPassword(plainText, (System.currentTimeMillis()/30000) + i);
+        if (totpPassword == codeIntThatDoesntWork) {
+          if (i < tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeTime30InPast"));
+          }
+          if (i > tokenIndex) {
+            errors.add(TextContainer.retrieveFromRequest().getText().get(
+                "totpErrorCodeTime30InFuture"));
+          }
+        }
+        //System.out.pri ntln("TOTP30: " + (i < 0 ? i : ("+" + i)) + ": " + totpPassword + ", "  + codeIntThatDoesntWork);
+      }
+    }
+    
+    StringBuilder error = new StringBuilder().append(TwoFactorServerUtils.trimToEmpty(twoFactorRequestContainer.getError()));
+    for (String theError : errors) {
+      if (error.length() > 0) {
+        error.append("<br />");
+      }
+      error.append(theError);
+    }
+    if (error.length() > 0) {
+      twoFactorRequestContainer.setError(error.toString());
+    }
+  }
+
+
+  /**
+   * change secret
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpChangeSecret(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpChangeSecretLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+        loggedInUser, httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp("totpChangeSelectType.jsp");
+  
+  }
+
+  /**
+   * change secret
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param loggedInUser
+   * @param ipAddress
+   * @param userAgent
+   * @param subjectSource 
+   * 
+   */
+  private void totpChangeSecretLogic(final TwoFactorDaoFactory twoFactorDaoFactory,
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, final String userAgent,
+      final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+  
+  }
+
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpChangeAppInstall(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String optinTotpTypeName = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("optinTotpTypeName");
+  
+    String twoFactorCustomCode = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCustomCode");
+
+    TotpChangeAppInstallView totpChangeAppInstallView = totpChangeAppInstallLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        optinTotpTypeName, twoFactorCustomCode);
+  
+    showJsp(totpChangeAppInstallView.getJsp());
+  }
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress
+   * @param userAgent
+   * @param loggedInUser
+   * @param subjectSource
+   * @param optinTotpTypeName
+   * @param twoFactorCustomCode
+   * @return error message if there is one and jsp
+   */
+  public TotpChangeAppInstallView totpChangeAppInstallLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource,
+      final String optinTotpTypeName, final String twoFactorCustomCode) {
+  
+    TotpChangeAppInstallView result =  (TotpChangeAppInstallView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUser.setSubjectSource(subjectSource);
+        
+        if (StringUtils.equals(optinTotpTypeName, "uploaded")) {
+          return TotpChangeAppInstallView.totpChangeAppUploadSecret;
+        } else if (StringUtils.equals(optinTotpTypeName, "generated")) {
+  
+          String twoFactorCode = TwoFactorOath.twoFactorGenerateTwoFactorPass();
+          if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCode, twoFactorUser, true, false)) {
+            
+            twoFactorRequestContainer.getTwoFactorDuoPushContainer().init(twoFactorUser);
+            
+            profileLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer,
+                loggedInUser, ipAddress, 
+                userAgent, subjectSource);
+
+            return TotpChangeAppInstallView.index;
+          }
+        } else if (StringUtils.equals(optinTotpTypeName, "uploadedSubmit")) {
+          //submitted code from user
+          if (!StringUtils.isBlank(twoFactorCustomCode)) {
+            
+            String[] error = new String[1];
+            
+            String twoFactorCustomCodeFormatted = validateCustomCode(twoFactorCustomCode, error);
+
+            if (!StringUtils.isBlank(error[0])) {
+              twoFactorRequestContainer.setError(error[0]);
+              
+              return TotpChangeAppInstallView.totpChangeAppUploadSecret;
+            }
+
+            if (!initNewOathCode(twoFactorRequestContainer, twoFactorDaoFactory, twoFactorCustomCodeFormatted, twoFactorUser, true, false)) {
+              
+              return TotpChangeAppInstallView.totpChangeAppUploadSecret;
+            }
+
+          } else {
+            
+            twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinTotpAppUploadSecretRequired"));
+            return TotpChangeAppInstallView.totpChangeAppUploadSecret;
+          }
+
+        } else {
+          throw new RuntimeException("Invalid value for optinTotpTypeName: " + optinTotpTypeName);
+        }
+        
+        twoFactorUser.store(twoFactorDaoFactory);
+        return TotpChangeAppInstallView.totpChangeAppInstall;
+      }
+    });
+  
+    return result;
+  }
+
+
+  /**
+   * change integrate totp app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpChangeAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpChangeAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+  
+    showJsp("totpChangeAppIntegrate.jsp");
+  }
+
+
+  /**
+   * change secret two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private void totpChangeAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+        
+  }
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpChangeSubmitAppIntegrate(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    totpChangeSubmitAppIntegrateLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+
+    showJsp("totpChangeConfirmCode.jsp");
+  }
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  public void totpChangeSubmitAppIntegrateLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+    
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+    if (!twoFactorUser.isOptedIn()) {
+      throw new RuntimeException("Not opted in");
+    }
+
+  }
+
+  /**
+   * submit after integrate app
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void totpChangeSubmitAppCode(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+  
+    TotpChangeSubmitCodeView totpChangeSubmitCodeView = totpChangeSubmitAppCodeLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource,
+        twoFactorPass);
+  
+    showJsp(totpChangeSubmitCodeView.getJsp());
+  }
+
+
+  /**
+   * optin to two factor submit app integrate
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   * @param twoFactorPass
+   * @return error message if there is one and jsp
+   */
+  public TotpChangeSubmitCodeView totpChangeSubmitAppCodeLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource, final String twoFactorPass) {
+  
+    TotpChangeSubmitCodeView result =  (TotpChangeSubmitCodeView)HibernateSession.callbackHibernateSession(
+        TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+  
+        TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+  
+        twoFactorUser.setSubjectSource(subjectSource);
+  
+        if (!twoFactorUser.isOptedIn()) {
+          throw new RuntimeException("Not opted in");
+        }
+
+        if (StringUtils.isBlank(twoFactorPass)) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("optinErrorCodeRequired"));
+          return TotpChangeSubmitCodeView.totpChangeConfirmCode;
+        }
+
+        if (!numberMatcher.matcher(twoFactorPass).matches()) {
+          
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code not number, now: " 
+              + System.currentTimeMillis() 
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "optinErrorCodeInvalid"));
+          return TotpChangeSubmitCodeView.totpChangeConfirmCode;
+        }
+  
+        String twoFactorSecret = twoFactorUser.getTwoFactorSecretTempUnencrypted();
+  
+        //no need to validate the password, the password checker will do that
+        TwoFactorPassResult twoFactorPassResult = TwoFactorOath.twoFactorCheckPassword(
+            twoFactorSecret, twoFactorPass, null, null, null, 0L, null);
+  
+        if (!twoFactorPassResult.isPasswordCorrect()) {
+  
+          String loginId = TfSourceUtils.convertSubjectIdToNetId(subjectSource, loggedInUser, false);
+          LOG.error("Error for " + loginId + " validating code, now: " 
+              + System.currentTimeMillis() + ": " + TwoFactorServerUtils.hostname()
+              + ", user-agent: " + userAgent);
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
+              "optinErrorCodeInvalid"));
+          
+          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+
+          return TotpChangeSubmitCodeView.totpChangeConfirmCode;
+        }
+        
+        //set the object
+        twoFactorUser.setDatePhoneCodeSent(null);
+        twoFactorUser.setPhoneCodeEncrypted(null);
+        twoFactorUser.setTwoFactorSecretUnencrypted(twoFactorSecret);
+        twoFactorUser.setTwoFactorSecretTemp(null);
+        twoFactorUser.setTokenIndex(0L);
+        twoFactorUser.setLastTotpTimestampUsed(null);
+        twoFactorUser.setPhoneOptIn(false);
+        twoFactorUser.setOptInOnlyIfRequired(null);
+  
+        if (twoFactorPassResult.getNextHotpIndex() != null) {
+          twoFactorUser.setSequentialPassIndex(twoFactorPassResult.getNextHotpIndex());
+        }
+        if (twoFactorPassResult.getLastTotp30TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp30TimestampUsed());
+        }
+        if (twoFactorPassResult.getLastTotp60TimestampUsed() != null) {
+          twoFactorUser.setLastTotpTimestampUsed(twoFactorPassResult.getLastTotp60TimestampUsed());
+        }
+        if (twoFactorPassResult.getNextTokenIndex() != null) {
+          twoFactorUser.setTokenIndex(twoFactorPassResult.getNextTokenIndex());
+        }
+  
+        twoFactorUser.store(twoFactorDaoFactory);
+  
+        //opt in to duo
+        if (duoRegisterUsers()) {
+  
+          DuoCommands.migrateUserAndPhonesAndTokensBySomeId(loggedInUser, false, false);
+  
+        }
+  
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.CHANGE_TOTP, ipAddress, 
+            userAgent, twoFactorUser.getUuid(), twoFactorUser.getUuid(), null, null);
+  
+        setupOneTimeCodesOnOptin(twoFactorDaoFactory, twoFactorUser, 
+            twoFactorRequestContainer, ipAddress, userAgent);
+  
+        //opt the user in
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("totpChangeSuccessMessage"));
+
+        {
+
+          String userEmail = null;
+          try {
+            
+            //see if there
+            
+            //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+            if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+                && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForChangeCode", true)) {
+              
+              Subject sourceSubject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, loggedInUser, true, false, true);
+              
+              userEmail = retrieveUserEmail(sourceSubject, twoFactorRequestContainer.getTwoFactorUserLoggedIn());
+              
+              //set the default text container...
+              String subject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailChangeCodeSubject");
+              subject = TextContainer.massageText("emailChangeCodeSubject", subject);
+       
+              String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailChangeCodeBody");
+              body = TextContainer.massageText("emailChangeCodeBody", body);
+              
+              String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.optins");
+              
+              TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+              
+              boolean sendEmail = true;
+              
+              //there is no email address????
+              if (StringUtils.isBlank(userEmail)) {
+                LOG.warn("Did not send email to logged in user: " + loggedInUser + ", no email address...");
+                if (StringUtils.isBlank(bccsString)) {
+                  sendEmail = false;
+                } else {
+                  twoFactorMail.addTo(bccsString);
+                }
+              } else {
+                twoFactorMail.addTo(userEmail);
+                twoFactorMail.addBcc(bccsString);
+              }
+              
+              if (sendEmail) {
+                twoFactorMail.assignBody(body);
+                twoFactorMail.assignSubject(subject);
+                twoFactorMail.send();
+              }
+              
+            }
+            
+          } catch (Exception e) {
+            //non fatal, just log this
+            LOG.error("Error sending email to: " + userEmail + ", loggedInUser id: " + loggedInUser, e);
+          }
+          
+          
+        }
+        
+        return TotpChangeSubmitCodeView.optinChangeShowOneTimeCodes;
+      }
+    });
+  
+    return result;
+  }
 }
   
