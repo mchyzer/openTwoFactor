@@ -524,6 +524,8 @@
           &nbsp;
         </div>
       </c:if>    
+    </div>
+    
    <br /><br />
   <%@ include file="../assetsJsp/commonAbout.jsp"%>
 </div>
