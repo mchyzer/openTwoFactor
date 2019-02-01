@@ -31,7 +31,7 @@
     <br /><br />
     <br />
     <br />
-    <a href="../../twoFactorUi/app/UiMain.optinWizardConfirmApp">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
+    <a href="../../twoFactorUi/app/UiMain.index">${textContainer.text['optinCancelButton']}</a> &nbsp; &nbsp; &nbsp; &nbsp;
     <input value="${textContainer.textEscapeDouble['buttonNextStep']}" class="tfBlueButton" 
        type="submit" />
     
