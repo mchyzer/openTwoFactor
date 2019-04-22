@@ -254,6 +254,10 @@
                     </form>
                   </c:otherwise>
                 </c:choose>
+                &nbsp; <form action="../../twoFactorUi/app/UiMain.duoSync" method="post" style="display: inline;">
+                  <input value="${textContainer.textEscapeDouble['index2DuoSyncButton']}" class="indexLinkButton"
+                    type="submit" />
+                </form>
               </div>
               <div class="formFooter">&nbsp;</div>
             </div>

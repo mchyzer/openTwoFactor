@@ -3,3 +3,4 @@
 /dist
 /grouperClientFailoverState.bin
 /logs
+/src/main/resources/penn*

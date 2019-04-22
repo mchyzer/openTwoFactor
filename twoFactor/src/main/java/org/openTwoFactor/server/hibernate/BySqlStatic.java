@@ -150,25 +150,33 @@ public class BySqlStatic {
           boolean hasResults = resultSet.next();
           
           if (!hasResults) {
-            throw new RuntimeException("Expected 1 row but received none");
+            return null;
           }
           
-          boolean isInt = int.class.equals(returnClassType);
-          boolean isPrimitive = isInt;
-          if (isInt || Integer.class.equals(returnClassType)) {
-            BigDecimal bigDecimal = resultSet.getBigDecimal(1);
-            if (bigDecimal != null) {
-              result = (T)(Object)bigDecimal.intValue();
+
+          if (returnClassType.isArray()) {
+            int columnCount = resultSet.getMetaData().getColumnCount();
+            result = (T)Array.newInstance(String.class, columnCount);
+            for (int i=0;i<columnCount;i++) {
+              Array.set(result, i, resultSet.getString(1+i));
             }
-          } else if (String.class.equals(returnClassType)) {
-            result = (T)resultSet.getString(1);
           } else {
-            throw new RuntimeException("Unexpected type: " + returnClassType);
-          }
-          
-          if (result == null && isPrimitive) {
-            throw new NullPointerException("expecting primitive (" + returnClassType.getSimpleName() 
-                + "), but received null");
+            boolean isInt = int.class.equals(returnClassType);
+            boolean isPrimitive = isInt;
+            if (isInt || Integer.class.equals(returnClassType)) {
+              BigDecimal bigDecimal = resultSet.getBigDecimal(1);
+              if (bigDecimal != null) {
+                result = (T)(Object)bigDecimal.intValue();
+              }
+            } else if (String.class.equals(returnClassType)) {
+              result = (T)resultSet.getString(1);
+            } else {
+              throw new RuntimeException("Unexpected type: " + returnClassType);
+            }
+            if (result == null && isPrimitive) {
+              throw new NullPointerException("expecting primitive (" + returnClassType.getSimpleName() 
+                  + "), but received null");
+            }
           }
           
           if (resultSet.next()) {

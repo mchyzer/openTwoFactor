@@ -4,8 +4,10 @@
  */
 package org.openTwoFactor.server.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,10 +16,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.cache.TwoFactorCache;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.hibernate.HibernateSession;
 
 import edu.internet2.middleware.subject.Source;
 import edu.internet2.middleware.subject.Subject;
 import edu.internet2.middleware.subject.provider.SourceManager;
+import edu.internet2.middleware.subject.provider.SubjectImpl;
 
 
 /**
@@ -185,8 +189,39 @@ public class TfSourceUtils {
       return subject;
     }
     subject = source.getSubjectByIdOrIdentifier(subjectIdOrIdentifier, exceptionIfNotFound, subjectSourceRealm(isAdminView));
-        
+
     if (subject == null) {
+      
+      // TWOFACT-459: cant find subject if pennkey just created
+      List<Object> params = new ArrayList<Object>();
+      params.add(subjectIdOrIdentifier);
+      params.add(subjectIdOrIdentifier);
+      
+      String[] person = HibernateSession.bySqlStatic().select(String[].class, 
+          "select PENN_ID, PENNNAME, DESCRIPTION, NAME, EMAIL, ACTIVE, BIRTH_DATE, LAST_FOUR from two_factor_admin_fastpenncomm.TF_PERSON_SOURCE_ADMIN2_V where penn_id = ? or pennname = ?" , 
+          params);
+      if (person != null && subjectIdOrIdentifier != null && !subjectIdOrIdentifier.contains(" ") && subjectIdOrIdentifier.length() <= 8) {
+        
+        String pennId = person[0];
+        String pennName = person[1];
+        String description = person[2];
+        String name = person[3];
+        String email = person[4];
+        String active = person[5];
+        String birthDate = person[6];
+        String lastFour = person[7];
+        
+        Map<String, Set<String>> attributeMap = new HashMap<String, Set<String>>();
+        attributeMap.put("active", TwoFactorServerUtils.toSet(active));
+        attributeMap.put("birthdate", TwoFactorServerUtils.toSet(birthDate));
+        attributeMap.put("pennname", TwoFactorServerUtils.toSet(pennName));
+        attributeMap.put("email", TwoFactorServerUtils.toSet(email));
+        subject = new SubjectImpl(pennId, name, description, "person", "twoFactor", attributeMap);
+      }
+    }
+    
+    if (subject == null) {
+      
       return null;
     }
     //even if you arent reading from cache, you can put it back to cache

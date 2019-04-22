@@ -305,8 +305,34 @@ public class DuoCommands {
 //      loadTestCheckToken();
 //      return;
 //    }
-    
-    if (args.length == 1 && StringUtils.equals("migrateAllToDuo", args[0])) {
+
+    // 242
+    if (args.length == 2 && StringUtils.equals("retrieveDuoPhonesByUserId", args[0])) {
+      String duoUserId = retrieveDuoUserIdBySomeId(args[1]);
+      JSONArray jsonArray = retrieveDuoPhonesByUserId(duoUserId);
+      for (int i=0; i < jsonArray.size(); i++) {
+        JSONObject token = jsonArray.getJSONObject(i);
+        System.out.println(token);
+      }
+    } else if (args.length == 1 && StringUtils.equals("retrieveAllTokensFromDuo", args[0])) {
+      JSONArray jsonArray = retrieveAllTokensFromDuo();
+      for (int i=0; i < jsonArray.size(); i++) {
+        JSONObject token = jsonArray.getJSONObject(i);
+        System.out.println(token);
+      }
+    } else if (args.length == 2 && StringUtils.equals("retrieveTokensForUser", args[0])) {
+      String duoUserId = retrieveDuoUserIdBySomeId(args[1]);
+      JSONArray jsonArray = retrieveDuoTokensByUserId(duoUserId);
+      for (int i=0; i < jsonArray.size(); i++) {
+        JSONObject token = jsonArray.getJSONObject(i);
+        System.out.println(token);
+      }
+    } else if (args.length == 1 && StringUtils.equals("retrieveAllAliasesFromDuo", args[0])) {
+      Map<String, JSONObject> resultMap = retrieveAllAliasesFromDuo();
+      for (String key: resultMap.keySet()) {
+        System.out.println(key);
+      }
+    } else if (args.length == 1 && StringUtils.equals("migrateAllToDuo", args[0])) {
       migrateAllToDuo();
       
     } else if (args.length == 3 && StringUtils.equals("addDuoUserAlias", args[0])) {
@@ -2102,7 +2128,7 @@ public class DuoCommands {
       if (StringUtils.isBlank(serial)) {
         throw new RuntimeException("Why is serial blank?");
       }
-      
+
       //lookup the token
       //  GET /admin/v1/tokens
       //  type   Optional*  
@@ -2161,36 +2187,96 @@ public class DuoCommands {
   }
 
   /**
-   * retrieve duo tokens by user
+   * get all tokens, loop through pages
    * @param userId
-   * @return the json object
+   * @return the tokens in json format
    */
   public static JSONArray retrieveDuoTokensByUserId(String userId) {
-    
+  
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
     debugMap.put("method", "retrieveDuoTokensByUserId");
-    debugMap.put("userId", userId);
+
     long startTime = System.nanoTime();
-    try {
     
-  
+    try {
       if (StringUtils.isBlank(userId)) {
         throw new RuntimeException("Why is userId blank?");
       }
+
+      int[] totalObjects = new int[] {-1};
+      int[] nextOffset = new int[] {-1};
+      JSONArray allResults = new JSONArray();
+      int offset = 0;
       
+      for (int i=0;i<4000;i++) {
+
+        debugMap.put("numberOfCalls", i+1);
+
+        totalObjects[0] = -1;
+        nextOffset[0] = -1;
+        
+        JSONArray pageResult = retrieveDuoTokensByUserIdHelper(userId, offset, totalObjects, nextOffset);
+        allResults.addAll(pageResult);
+
+        debugMap.put("totalObjects", totalObjects[0]);
+        
+        if (nextOffset[0] == -1) {
+          break;
+        }
+
+        offset = nextOffset[0];
+      }
+
+      debugMap.put("numberOfTokens", TwoFactorServerUtils.length(allResults));
+
+      return allResults;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+
+    
+  }
+  
+  /**
+   * get one page of the tokens
+   * @param userId of the user getting tokens
+   * @param offset first zero based index to get in paging
+   * @param totalObjects pass back how many total object
+   * @param nextOffset pass back the next index to get.  if -1, we done
+   * @return the array of tokens
+   */
+  private static JSONArray retrieveDuoTokensByUserIdHelper(String userId, int offset, int[] totalObjects, int[] nextOffset) {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "retrieveDuoTokensByUserIdHelper");
+
+    long startTime = System.nanoTime();
+    
+    try {
+
       //lookup the token
       //  GET /admin/v1/users/[user_id]/tokens
       String path = "/admin/v1/users/" + userId + "/tokens";
 
       debugMap.put("GET", path);
-
       Http request = httpAdmin("GET", path);
-         
+
+      // the max is 300, but make it 1000, doesnt hurt
+      request.addParam("limit", "1000");
+      debugMap.put("limit", 1000);
+
+      request.addParam("offset", "" + offset);
+      debugMap.put("offset", offset);
+
       signHttpAdmin(request);
       
       String result = executeRequestRaw(request);
-      
+          
       //    {
       //      "stat": "OK",
       //      "response": [{
@@ -2211,25 +2297,55 @@ public class DuoCommands {
       //{"response": [], "stat": "OK"}
       
       JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
-  
+
       if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        
+        // {
+        //    "code": 40003, 
+        //    "message": "Duplicate resource", 
+        //    "stat": "FAIL"
+        // }
+        
         debugMap.put("error", true);
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
       }
       
-      JSONArray responseArray = (JSONArray)jsonObject.get("response");
+      //  {
+      //    "metadata": {
+      //        "next_offset": 100,
+      //        "prev_offset": 0,
+      //        "total_objects": 951
+      //    }
+      //  }
+      if (jsonObject.containsKey("metadata")) {
+        JSONObject metadataJsonObject = (JSONObject)jsonObject.get("metadata");
+        if (metadataJsonObject.containsKey("next_offset")) {
+          nextOffset[0] = metadataJsonObject.getInt("next_offset");
+          debugMap.put("next_offset", nextOffset[0]);
+        }
+        if (metadataJsonObject.containsKey("total_objects")) {
+          totalObjects[0] = metadataJsonObject.getInt("total_objects");
+          debugMap.put("total_objects", totalObjects[0]);
+        }
+        
+      }
       
-      return responseArray;
+      JSONArray resultArray = (JSONArray)jsonObject.get("response");
+      
+
+      debugMap.put("numberOfTokens", resultArray.size());
+
+      return resultArray;
     } catch (RuntimeException re) {
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
       throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
-    
+
   }
-  
+
   /**
    * delete duo user
    * @param theId 
@@ -3079,7 +3195,7 @@ public class DuoCommands {
       if (StringUtils.isBlank(theId)) {
         throw new RuntimeException("Why is id blank?");
       }
-      
+
       //retrieve user
       String path = "/admin/v1/users" + (isDuoUuid ? ("/" + theId) : "");
       debugMap.put("GET", path);
@@ -3256,19 +3372,80 @@ public class DuoCommands {
   private static JSONArray retrieveAllFromDuo() {
     
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
-
+  
     debugMap.put("method", "retrieveAllFromDuo");
+
     long startTime = System.nanoTime();
-    try {
     
+    try {
+      int[] totalObjects = new int[] {-1};
+      int[] nextOffset = new int[] {-1};
+      JSONArray allResults = new JSONArray();
+      int offset = 0;
+      
+      for (int i=0;i<10000;i++) {
+
+        debugMap.put("numberOfCalls", i+1);
+
+        totalObjects[0] = -1;
+        nextOffset[0] = -1;
+        
+        JSONArray pageResult = retrieveAllFromDuoHelper(offset, totalObjects, nextOffset);
+        allResults.addAll(pageResult);
+
+        debugMap.put("totalObjects", totalObjects[0]);
+        
+        if (nextOffset[0] == -1) {
+          break;
+        }
+
+        offset = nextOffset[0];
+      }
+
+      debugMap.put("numberOfUsers", TwoFactorServerUtils.length(allResults));
+
+      return allResults;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+  
+  /**
+   * get one page of the users
+   * @param offset first zero based index to get in paging
+   * @param totalObjects pass back how many total object
+   * @param nextOffset pass back the next index to get.  if -1, we done
+   * @return the name of json array of users
+   */
+  private static JSONArray retrieveAllFromDuoHelper(int offset, int[] totalObjects, int[] nextOffset) {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "retrieveAllFromDuoHelper");
+
+    long startTime = System.nanoTime();
+    
+    try {
+
+      //get users
       String path = "/admin/v1/users";
       debugMap.put("GET", path);
       Http request = httpAdmin("GET", path);
-      
+
+      // the max is 300, but make it 1000, doesnt hurt
+      request.addParam("limit", "1000");
+      debugMap.put("limit", 1000);
+
+      request.addParam("offset", "" + offset);
+      debugMap.put("offset", offset);
+
       signHttpAdmin(request);
       
       String result = executeRequestRaw(request);
-      
+          
       //  {
       //    "response":[
       //      {
@@ -3303,8 +3480,76 @@ public class DuoCommands {
         throw new RuntimeException("Bad response from Duo: " + result);
       }
       
+      //  {
+      //    "metadata": {
+      //        "next_offset": 100,
+      //        "prev_offset": 0,
+      //        "total_objects": 951
+      //    }
+      //  }
+      if (jsonObject.containsKey("metadata")) {
+        JSONObject metadataJsonObject = (JSONObject)jsonObject.get("metadata");
+        if (metadataJsonObject.containsKey("next_offset")) {
+          nextOffset[0] = metadataJsonObject.getInt("next_offset");
+          debugMap.put("next_offset", nextOffset[0]);
+        }
+        if (metadataJsonObject.containsKey("total_objects")) {
+          totalObjects[0] = metadataJsonObject.getInt("total_objects");
+          debugMap.put("total_objects", totalObjects[0]);
+        }
+        
+      }
+
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
       return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+      
+  /**
+   * retrieve all tokens from duo
+   * @return the array of users
+   */
+  public static JSONArray retrieveAllTokensFromDuo() {
+  
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "retrieveAllTokensFromDuo");
+
+    long startTime = System.nanoTime();
+    
+    try {
+      int[] totalObjects = new int[] {-1};
+      int[] nextOffset = new int[] {-1};
+      JSONArray allResults = new JSONArray();
+      int offset = 0;
+      
+      for (int i=0;i<4000;i++) {
+
+        debugMap.put("numberOfCalls", i+1);
+
+        totalObjects[0] = -1;
+        nextOffset[0] = -1;
+        
+        JSONArray pageResult = retrieveAllTokensFromDuoHelper(offset, totalObjects, nextOffset);
+        allResults.addAll(pageResult);
+
+        debugMap.put("totalObjects", totalObjects[0]);
+        
+        if (nextOffset[0] == -1) {
+          break;
+        }
+
+        offset = nextOffset[0];
+      }
+
+      debugMap.put("numberOfTokens", TwoFactorServerUtils.length(allResults));
+
+      return allResults;
     } catch (RuntimeException re) {
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
       throw re;
@@ -3315,25 +3560,36 @@ public class DuoCommands {
   
   /**
    * retrieve all tokens from duo
+   * @param offset first zero based index to get in paging
+   * @param totalObjects pass back how many total object
+   * @param nextOffset pass back the next index to get.  if -1, we done
    * @return the array of users
    */
-  private static JSONArray retrieveAllTokensFromDuo() {
-
+  private static JSONArray retrieveAllTokensFromDuoHelper(int offset, int[] totalObjects, int[] nextOffset) {
+    
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
-    debugMap.put("method", "retrieveAllTokensFromDuo");
+    debugMap.put("method", "retrieveAllTokensFromDuoHelper");
 
     long startTime = System.nanoTime();
-    try {
     
+    try {
+
       String path = "/admin/v1/tokens";
-      debugMap.put("path", path);
+      debugMap.put("GET", path);
       Http request = httpAdmin("GET", path);
-      
+
+      // the max is 300, but make it 1000, doesnt hurt
+      request.addParam("limit", "1000");
+      debugMap.put("limit", 1000);
+
+      request.addParam("offset", "" + offset);
+      debugMap.put("offset", offset);
+
       signHttpAdmin(request);
       
       String result = executeRequestRaw(request);
-      
+          
       //  {
       //    "stat": "OK",
       //    "response": [{
@@ -3352,15 +3608,46 @@ public class DuoCommands {
       //      }]
       //    }]
       //  }
+      
       JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
-  
+
       if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        
+        // {
+        //    "code": 40003, 
+        //    "message": "Duplicate resource", 
+        //    "stat": "FAIL"
+        // }
+        
         debugMap.put("error", true);
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
       }
       
+      //  {
+      //    "metadata": {
+      //        "next_offset": 100,
+      //        "prev_offset": 0,
+      //        "total_objects": 951
+      //    }
+      //  }
+      if (jsonObject.containsKey("metadata")) {
+        JSONObject metadataJsonObject = (JSONObject)jsonObject.get("metadata");
+        if (metadataJsonObject.containsKey("next_offset")) {
+          nextOffset[0] = metadataJsonObject.getInt("next_offset");
+          debugMap.put("next_offset", nextOffset[0]);
+        }
+        if (metadataJsonObject.containsKey("total_objects")) {
+          totalObjects[0] = metadataJsonObject.getInt("total_objects");
+          debugMap.put("total_objects", totalObjects[0]);
+        }
+        
+      }
+      
       JSONArray responseArray = (JSONArray)jsonObject.get("response");
+
+      debugMap.put("numberOfTokens", responseArray.size());
+
       return responseArray;
     } catch (RuntimeException re) {
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
@@ -3370,7 +3657,7 @@ public class DuoCommands {
     }
 
   }
-  
+
   /**
    * 
    */
@@ -3470,7 +3757,6 @@ public class DuoCommands {
       if (StringUtils.isBlank(numberOrId)) {
         throw new RuntimeException("Why is numberOrId blank?");
       }
-      
       //retrieve user
       String path = "/admin/v1/phones" + (isId ? ("/" + numberOrId) : "");
       debugMap.put("GET", path);
@@ -3613,38 +3899,96 @@ public class DuoCommands {
       }
     }
   }
-
+  
   /**
    * retrieve duo phones by user
    * @param userId
    * @return the json object
    */
   public static JSONArray retrieveDuoPhonesByUserId(String userId) {
-    
+  
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
-  
+
     debugMap.put("method", "retrieveDuoPhonesByUserId");
-    debugMap.put("userId", userId);
+
     long startTime = System.nanoTime();
-    try {
     
-  
+    try {
+      
       if (StringUtils.isBlank(userId)) {
         throw new RuntimeException("Why is userId blank?");
       }
+
+      int[] totalObjects = new int[] {-1};
+      int[] nextOffset = new int[] {-1};
+      JSONArray allResults = new JSONArray();
+      int offset = 0;
       
-      //lookup the token
+      for (int i=0;i<4000;i++) {
+
+        debugMap.put("numberOfCalls", i+1);
+
+        totalObjects[0] = -1;
+        nextOffset[0] = -1;
+        
+        JSONArray pageResult = retrieveDuoPhonesByUserIdHelper(userId, offset, totalObjects, nextOffset);
+        allResults.addAll(pageResult);
+
+        debugMap.put("totalObjects", totalObjects[0]);
+        
+        if (nextOffset[0] == -1) {
+          break;
+        }
+
+        offset = nextOffset[0];
+      }
+
+      debugMap.put("numberOfPhones", TwoFactorServerUtils.length(allResults));
+
+      return allResults;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+
+  }
+
+  /**
+   * retrieve duo phones by user
+   * @param userId
+   * @param offset first zero based index to get in paging
+   * @param totalObjects pass back how many total object
+   * @param nextOffset pass back the next index to get.  if -1, we done
+   * @return the json array of phones
+   */
+  private static JSONArray retrieveDuoPhonesByUserIdHelper(String userId, int offset, int[] totalObjects, int[] nextOffset) {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "retrieveDuoPhonesByUserIdHelper");
+
+    long startTime = System.nanoTime();
+    
+    try {
+
       //  GET /admin/v1/users/[user_id]/phones
       String path = "/admin/v1/users/" + userId + "/phones";
-  
       debugMap.put("GET", path);
-  
       Http request = httpAdmin("GET", path);
-         
+
+      // the max is 300, but make it 1000, doesnt hurt
+      request.addParam("limit", "1000");
+      debugMap.put("limit", 1000);
+
+      request.addParam("offset", "" + offset);
+      debugMap.put("offset", offset);
+
       signHttpAdmin(request);
       
       String result = executeRequestRaw(request);
-      
+          
       //  {
       //    "stat": "OK",
       //    "response": [{
@@ -3685,25 +4029,56 @@ public class DuoCommands {
       
       //{"response": [], "stat": "OK"}
 
+      
       JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
 
       if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        
+        // {
+        //    "code": 40003, 
+        //    "message": "Duplicate resource", 
+        //    "stat": "FAIL"
+        // }
+        
         debugMap.put("error", true);
         debugMap.put("result", result);
         throw new RuntimeException("Bad response from Duo: " + result);
       }
-
-      JSONArray responseArray = (JSONArray)jsonObject.get("response");
       
-      return responseArray;
+      //  {
+      //    "metadata": {
+      //        "next_offset": 100,
+      //        "prev_offset": 0,
+      //        "total_objects": 951
+      //    }
+      //  }
+      if (jsonObject.containsKey("metadata")) {
+        JSONObject metadataJsonObject = (JSONObject)jsonObject.get("metadata");
+        if (metadataJsonObject.containsKey("next_offset")) {
+          nextOffset[0] = metadataJsonObject.getInt("next_offset");
+          debugMap.put("next_offset", nextOffset[0]);
+        }
+        if (metadataJsonObject.containsKey("total_objects")) {
+          totalObjects[0] = metadataJsonObject.getInt("total_objects");
+          debugMap.put("total_objects", totalObjects[0]);
+        }
+        
+      }
+      
+      JSONArray resultArray = (JSONArray)jsonObject.get("response");
+      
+      debugMap.put("numberOfPhones", resultArray.size());
+
+      return resultArray;
     } catch (RuntimeException re) {
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
       throw re;
     } finally {
       DuoLog.duoLog(debugMap, startTime);
     }
-    
+
   }
+
 
   /**
    * initiate a push

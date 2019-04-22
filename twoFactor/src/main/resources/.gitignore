@@ -15,3 +15,4 @@
 /sources.xml.dev
 /*.prod
 /*.dev
+/*.test

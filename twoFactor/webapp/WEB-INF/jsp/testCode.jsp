@@ -30,7 +30,14 @@
     ${textContainer.text['testConfirmCodeText']}
     <input type="text" name="twoFactorCode" size="12" autocomplete="off" class="textfield" />
 
-    <br /><br />
+    <br />
+    
+    <br />
+    ${textContainer.text['testFobCodeText']}
+    <input type="text" name="twoFactorFobCode" size="12" autocomplete="off" class="textfield" />
+
+    <br />
+    <br />
     
     <br />
     <br />

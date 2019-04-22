@@ -18,6 +18,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.openTwoFactor.server.beans.TwoFactorDeviceSerial;
 import org.openTwoFactor.server.beans.TwoFactorUser;
+import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.encryption.EncryptionKey;
 import org.openTwoFactor.server.hibernate.TwoFactorDaoFactory;
 
@@ -161,8 +162,10 @@ public class TwoFactorLogic implements TwoFactorLogicInterface {
       
       //findTimePeriodFob(secret, 551960, 305783);
       
-      printPasswordsForSecret(secret, 
-          501441L, null, System.currentTimeMillis(), false);
+      printPasswordsForSecret(secret, 500000L, null, System.currentTimeMillis(), false);
+      
+      //DuoCommands.migrateUserAndPhonesAndTokensBySomeId("10021368", false, false);
+      
       return;
     }
     

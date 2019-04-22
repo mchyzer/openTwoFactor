@@ -233,6 +233,8 @@ public class TfCombobox extends SimpleTagSupport {
     result.append("        dijit.byId('" + this.idBase + "Id').onChange = function(evt) {\n");
     result.append("          this.focusNode.setSelectionRange(0,0);\n");
     result.append("        }\n");
+    // clear out value so a quick submit doesnt break it
+    result.append("        $('#" + this.idBase + "Id').val('');\n");
     result.append("      });\n");
     result.append("    </script></div>\n"); //TODO add delete button
     

@@ -68,6 +68,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
    * valid params that the API knows about
    */
   private static Set<String> validParamNames = TwoFactorServerUtils.toSet(
+      
       //for WS
       "browserUserAgent", "debug", "requireReauth", "requireTwoFactor", 
       "serviceId", "serviceName", "spRequiredFactors", "trustedBrowser", 
@@ -77,7 +78,7 @@ public class TfHttpServletRequest extends HttpServletRequestWrapper {
 
       //for UI
       "birthMonth", "birthDay", "birthYear", "birthdayTextfield", "optInTypeName",
-      "twoFactorCode", "twoFactorCode2", "twoFactorCustomCode", "profileForOptin",
+      "twoFactorCode", "twoFactorFobCode", "twoFactorCode2", "twoFactorCustomCode", "profileForOptin",
       "userIdOperatingOnName", "userIdOperatingOn", "email0", 
       "colleagueLogin0DisplayName", "colleagueLogin1DisplayName", "colleagueLogin2DisplayName",
       "colleagueLogin3DisplayName", "colleagueLogin4DisplayName",

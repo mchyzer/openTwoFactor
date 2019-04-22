@@ -1617,7 +1617,52 @@ public class UiMain extends UiServiceLogicBase {
 
   }
   
+  /**
+   * test code
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void duoSync(HttpServletRequest httpServletRequest, 
+      HttpServletResponse httpServletResponse) {
+    
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
   
+    Source subjectSource = TfSourceUtils.mainSource();
+    
+    duoSyncLogic(
+        TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource);
+    
+    twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("index2DuoSyncSuccess"));
+    
+    index2(httpServletRequest, httpServletResponse);
+  }
+
+  /**
+   * test a code
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer 
+   * @param ipAddress 
+   * @param userAgent 
+   * @param loggedInUser
+   * @param subjectSource
+   */
+  private void duoSyncLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
+      final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource) {
+  
+    twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+
+    TwoFactorUser twoFactorUser = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+    
+    DuoCommands.migrateUserAndPhonesAndTokensBySomeId(twoFactorUser.getLoginid(), false, false);
+    
+  }
+
   /**
    * test code
    * @param httpServletRequest
@@ -1906,7 +1951,7 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               "totpErrorCodeInvalid"));
           
-          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+          appendErrorMessageForCode(twoFactorUser, twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass, null);
 
           return false;
         }
@@ -2943,7 +2988,7 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               optinBySerialNumber ? "optinErrorCodeInvalidFromSerial" : "optinErrorCodeInvalid"));
           
-          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+          appendErrorMessageForCode(twoFactorUser, twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass, null);
 
           return OptinTestSubmitView.optin;
         }
@@ -3888,6 +3933,18 @@ public class UiMain extends UiServiceLogicBase {
   }
 
   /**
+   * if someone typed something in for colleague, and it wasnt found on screen, and they blanked it out, then this is submitted in the background
+   * @param loginId
+   * @return the loginid
+   */
+  private String massageBlankLogin(String loginId) {
+    if (!StringUtils.isBlank(loginId) && TfSourceUtils.retrieveSubjectByIdOrIdentifier(TfSourceUtils.mainSource(), loginId, true, false, false) == null) {
+      return null;
+    }
+    return loginId;
+  }
+  
+  /**
    * profile submit
    * @param httpServletRequest
    * @param httpServletResponse
@@ -3906,22 +3963,27 @@ public class UiMain extends UiServiceLogicBase {
     String colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0Name");
     if (StringUtils.isBlank(colleagueLogin0)) {
       colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0DisplayName");
+      colleagueLogin0 = massageBlankLogin(colleagueLogin0);
     }
     String colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1Name");
     if (StringUtils.isBlank(colleagueLogin1)) {
       colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1DisplayName");
+      colleagueLogin1 = massageBlankLogin(colleagueLogin1);
     }
     String colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2Name");
     if (StringUtils.isBlank(colleagueLogin2)) {
       colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2DisplayName");
+      colleagueLogin2 = massageBlankLogin(colleagueLogin2);
     }
     String colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3Name");
     if (StringUtils.isBlank(colleagueLogin3)) {
       colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3DisplayName");
+      colleagueLogin3 = massageBlankLogin(colleagueLogin3);
     }
     String colleagueLogin4 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin4Name");
     if (StringUtils.isBlank(colleagueLogin4)) {
       colleagueLogin4 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin4DisplayName");
+      colleagueLogin4 = massageBlankLogin(colleagueLogin4);
     }
     String phone0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("phone0");
     //this is "on" if submitted, or null if not
@@ -4184,12 +4246,12 @@ public class UiMain extends UiServiceLogicBase {
         twoFactorUser.setPhone0(phone0);
         twoFactorUser.setPhone1(phone1);
         twoFactorUser.setPhone2(phone2);
-        twoFactorUser.setPhoneIsText0(StringUtils.equals(phoneText0, "true") ? true : false);
-        twoFactorUser.setPhoneIsText1(StringUtils.equals(phoneText1, "true") ? true : false);
-        twoFactorUser.setPhoneIsText2(StringUtils.equals(phoneText2, "true") ? true : false);
-        twoFactorUser.setPhoneIsVoice0(StringUtils.equals(phoneVoice0, "true") ? true : false);
-        twoFactorUser.setPhoneIsVoice1(StringUtils.equals(phoneVoice1, "true") ? true : false);
-        twoFactorUser.setPhoneIsVoice2(StringUtils.equals(phoneVoice2, "true") ? true : false);
+        twoFactorUser.setPhoneIsText0(StringUtils.isBlank(phone0) ? null : StringUtils.equals(phoneText0, "true") ? true : false);
+        twoFactorUser.setPhoneIsText1(StringUtils.isBlank(phone1) ? null : StringUtils.equals(phoneText1, "true") ? true : false);
+        twoFactorUser.setPhoneIsText2(StringUtils.isBlank(phone2) ? null : StringUtils.equals(phoneText2, "true") ? true : false);
+        twoFactorUser.setPhoneIsVoice0(StringUtils.isBlank(phone0) ? null : StringUtils.equals(phoneVoice0, "true") ? true : false);
+        twoFactorUser.setPhoneIsVoice1(StringUtils.isBlank(phone1) ? null : StringUtils.equals(phoneVoice1, "true") ? true : false);
+        twoFactorUser.setPhoneIsVoice2(StringUtils.isBlank(phone2) ? null : StringUtils.equals(phoneVoice2, "true") ? true : false);
 
         //stwoFactorUser.setPhoneAutoCalltext(phoneAutoVoiceText);
                 
@@ -7504,9 +7566,9 @@ public class UiMain extends UiServiceLogicBase {
         if (StringUtils.isBlank(errorMessage)) {
           errorMessage = validatePhoneType(phone2, phoneText2, phoneVoice2, TextContainer.retrieveFromRequest().getText().get("profileErrorLabelPhone3"));
         }
-        if (StringUtils.isBlank(errorMessage) && StringUtils.isBlank(phone0) && StringUtils.isBlank(phone1) && StringUtils.isBlank(phone2)) {
-          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughPhones");
-        }
+//        if (StringUtils.isBlank(errorMessage) && StringUtils.isBlank(phone0) && StringUtils.isBlank(phone1) && StringUtils.isBlank(phone2)) {
+//          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughPhones");
+//        }
 
         if (!StringUtils.isBlank(errorMessage) ) {
           twoFactorRequestContainer.setError(errorMessage);
@@ -7514,14 +7576,14 @@ public class UiMain extends UiServiceLogicBase {
         }
 
         twoFactorUser.setPhone0(phone0);
-        twoFactorUser.setPhoneIsText0(TwoFactorServerUtils.booleanObjectValue(phoneText0));
-        twoFactorUser.setPhoneIsVoice0(TwoFactorServerUtils.booleanObjectValue(phoneVoice0));
+        twoFactorUser.setPhoneIsText0(StringUtils.isBlank(phone0) ? null : TwoFactorServerUtils.booleanObjectValue(phoneText0));
+        twoFactorUser.setPhoneIsVoice0(StringUtils.isBlank(phone0) ? null : TwoFactorServerUtils.booleanObjectValue(phoneVoice0));
         twoFactorUser.setPhone1(phone1);
-        twoFactorUser.setPhoneIsText1(TwoFactorServerUtils.booleanObjectValue(phoneText1));
-        twoFactorUser.setPhoneIsVoice1(TwoFactorServerUtils.booleanObjectValue(phoneVoice1));
+        twoFactorUser.setPhoneIsText1(StringUtils.isBlank(phone1) ? null : TwoFactorServerUtils.booleanObjectValue(phoneText1));
+        twoFactorUser.setPhoneIsVoice1(StringUtils.isBlank(phone1) ? null : TwoFactorServerUtils.booleanObjectValue(phoneVoice1));
         twoFactorUser.setPhone2(phone2);
-        twoFactorUser.setPhoneIsText2(TwoFactorServerUtils.booleanObjectValue(phoneText2));
-        twoFactorUser.setPhoneIsVoice2(TwoFactorServerUtils.booleanObjectValue(phoneVoice2));
+        twoFactorUser.setPhoneIsText2(StringUtils.isBlank(phone2) ? null : TwoFactorServerUtils.booleanObjectValue(phoneText2));
+        twoFactorUser.setPhoneIsVoice2(StringUtils.isBlank(phone2) ? null : TwoFactorServerUtils.booleanObjectValue(phoneVoice2));
 
         twoFactorUser.store(twoFactorDaoFactory);
         
@@ -7570,14 +7632,17 @@ public class UiMain extends UiServiceLogicBase {
     String colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0Name");
     if (StringUtils.isBlank(colleagueLogin0)) {
       colleagueLogin0 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin0DisplayName");
+      colleagueLogin0 = massageBlankLogin(colleagueLogin0);
     }
     String colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1Name");
     if (StringUtils.isBlank(colleagueLogin1)) {
       colleagueLogin1 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin1DisplayName");
+      colleagueLogin1 = massageBlankLogin(colleagueLogin1);
     }
     String colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2Name");
     if (StringUtils.isBlank(colleagueLogin2)) {
       colleagueLogin2 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin2DisplayName");
+      colleagueLogin2 = massageBlankLogin(colleagueLogin2);
     }
     String colleagueLogin3 = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("colleagueLogin3Name");
     if (StringUtils.isBlank(colleagueLogin3)) {
@@ -7714,10 +7779,10 @@ public class UiMain extends UiServiceLogicBase {
               TextContainer.retrieveFromRequest().getText().get("profileErrorFriend5invalid"), selfErrorMessage);
         }
         
-        if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
-            phone0, phone1, phone2) < 2) {
-          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
-        }
+//        if (StringUtils.isBlank(errorMessage) && lifelineCount(colleagueLogin0, colleagueLogin1, colleagueLogin2, colleagueLogin3, colleagueLogin4,
+//            phone0, phone1, phone2) < 2) {
+//          errorMessage = TextContainer.retrieveFromRequest().getText().get("profileErrorNotEnoughLifelines");
+//        }
 
         if (!StringUtils.isBlank(errorMessage) ) {
           twoFactorRequestContainer.setError(errorMessage);
@@ -8521,7 +8586,7 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               "optinErrorCodeInvalid"));
           
-          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+          appendErrorMessageForCode(twoFactorUser, twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass, null);
 
           return OptinWizardSubmitTotpAppCodeView.optinTotpAppConfirmCode;
         }
@@ -10425,12 +10490,13 @@ public class UiMain extends UiServiceLogicBase {
     Source subjectSource = TfSourceUtils.mainSource();
     
     String twoFactorPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorCode");
+    String twoFactorFobPass = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("twoFactorFobCode");
   
     boolean success = testCodeSubmitLogic(
         TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), subjectSource,
-        twoFactorPass);
+        twoFactorPass, twoFactorFobPass);
   
     if (success) {
       index2(httpServletRequest, httpServletResponse);
@@ -10449,12 +10515,13 @@ public class UiMain extends UiServiceLogicBase {
    * @param loggedInUser
    * @param subjectSource
    * @param twoFactorPass
+   * @param twoFactorFobPass
    * @return error message if there is one and jsp
    */
   private boolean testCodeSubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, 
       final TwoFactorRequestContainer twoFactorRequestContainer,
       final String loggedInUser, final String ipAddress, 
-      final String userAgent, final Source subjectSource, final String twoFactorPass) {
+      final String userAgent, final Source subjectSource, final String twoFactorPass, final String twoFactorFobPass) {
   
     boolean result =  (Boolean)HibernateSession.callbackHibernateSession(
         TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
@@ -10505,11 +10572,11 @@ public class UiMain extends UiServiceLogicBase {
               "testCodeValid"));
           return true;
         }
-        
         //code is invalid
         twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("totpErrorCodeTestInvalid"));
   
-        appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), twoFactorPass);
+        appendErrorMessageForCode(twoFactorUser, twoFactorRequestContainer, twoFactorSecret, 
+            twoFactorUser.getSequentialPassIndex(), twoFactorUser.getTokenIndex(), twoFactorPass, twoFactorFobPass);
         
         return false;
       }
@@ -10521,14 +10588,15 @@ public class UiMain extends UiServiceLogicBase {
   /**
    * for debugging
    * @param twoFactorRequestContainer 
+   * @param twoFactorUser
    * @param secret 
    * @param sequentialPassIndex 
    * @param tokenIndex 
    * @param codeThatDoesntWork 
-   * 
+   * @param nextFobPass
    */
-  public static void appendErrorMessageForCode(TwoFactorRequestContainer twoFactorRequestContainer, String secret, 
-      Long sequentialPassIndex, Long tokenIndex, String codeThatDoesntWork) {
+  public static void appendErrorMessageForCode(TwoFactorUser twoFactorUser, TwoFactorRequestContainer twoFactorRequestContainer, String secret, 
+      Long sequentialPassIndex, Long tokenIndex, String codeThatDoesntWork, String nextFobPass) {
     
     List<String> errors = new ArrayList<String>();
     boolean hasError = false;
@@ -10572,7 +10640,16 @@ public class UiMain extends UiServiceLogicBase {
         //System.out.pri ntln("Printed: " + (i < 0 ? i : ("+" + i)) + ": " + hotpPassword + ", "  + codeIntThatDoesntWork);
       }
       
-      for (int i=-1;i<tokenIndex+50;i++) {
+      int nextFobPassInt = -1;
+      if (!StringUtils.isBlank(nextFobPass)) {
+        try {
+          nextFobPassInt = TwoFactorServerUtils.intValue(nextFobPass);
+        } catch (Exception e) {
+          errors.add(TextContainer.retrieveFromRequest().getText().get("nextFobNotInt"));
+        }
+      }
+      
+      for (int i=-1;i<tokenIndex+200;i++) {
         int hotpPassword = new TwoFactorLogic().hotpPassword(plainText, i);
         if (hotpPassword == codeIntThatDoesntWork) {
           if (i < tokenIndex) {
@@ -10583,6 +10660,29 @@ public class UiMain extends UiServiceLogicBase {
             errors.add(TextContainer.retrieveFromRequest().getText().get(
                 "totpErrorCodeFobInFuture"));
           }
+          if (nextFobPassInt != -1) {
+            if (nextFobPassInt == new TwoFactorLogic().hotpPassword(plainText, i+1)) {
+              
+              // set the fob index
+              twoFactorUser.setTokenIndex(i+2L);
+              twoFactorUser.store(TwoFactorDaoFactory.getFactory());
+              
+              //opt in to duo
+              if (duoRegisterUsers()) {
+        
+                DuoCommands.migrateUserAndPhonesAndTokensBySomeId(twoFactorUser.getLoginid(), false, false);
+        
+              }
+              
+              errors.add(TextContainer.retrieveFromRequest().getText().get(
+                  "nextFobIndexReset"));
+              
+            } else {
+              errors.add(TextContainer.retrieveFromRequest().getText().get(
+                  "nextFobNotCorrect"));
+            }
+          }
+          break;
         }
         //System.out.pri ntln("Fob: " + (i < 0 ? i : ("+" + i)) + ": " + hotpPassword + ", "  + codeIntThatDoesntWork);
       }
@@ -10971,7 +11071,7 @@ public class UiMain extends UiServiceLogicBase {
           twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get(
               "optinErrorCodeInvalid"));
           
-          appendErrorMessageForCode(twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass);
+          appendErrorMessageForCode(twoFactorUser, twoFactorRequestContainer, twoFactorSecret, null, null, twoFactorPass, null);
 
           return TotpChangeSubmitCodeView.totpChangeConfirmCode;
         }
