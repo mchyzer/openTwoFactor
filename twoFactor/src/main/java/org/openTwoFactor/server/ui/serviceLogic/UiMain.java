@@ -10667,7 +10667,6 @@ public class UiMain extends UiServiceLogicBase {
               twoFactorUser.setTokenIndex(i+2L);
               twoFactorUser.store(TwoFactorDaoFactory.getFactory());
               
-              //opt in to duo
               if (duoRegisterUsers()) {
         
                 DuoCommands.migrateUserAndPhonesAndTokensBySomeId(twoFactorUser.getLoginid(), false, false);

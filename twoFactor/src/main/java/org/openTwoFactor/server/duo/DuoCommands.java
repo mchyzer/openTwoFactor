@@ -355,7 +355,7 @@ public class DuoCommands {
     } else if (args.length == 2 && StringUtils.equals("deleteTokensByUserFromDuo", args[0])) {
       deleteDuoTokensBySomeId(args[1]);
     } else if (args.length == 2 && StringUtils.equals("migrateTokensByUserToDuo", args[0])) {
-      migrateTokensBySomeId(args[1], true);
+      migrateTokensBySomeId(args[1], true, true);
     } else if (args.length == 2 && StringUtils.equals("deleteDuoToken", args[0])) {
       deleteDuoToken(args[1]);
     } else if (args.length == 1 && StringUtils.equals("deleteAllFromDuo", args[0])) {
@@ -450,8 +450,9 @@ public class DuoCommands {
    * 
    * @param someId
    * @param printOutput 
+   * @param resetFob 
    */
-  private static void migrateTokensBySomeId(String someId, boolean printOutput) {
+  private static void migrateTokensBySomeId(String someId, boolean printOutput, boolean resetFob) {
     
     String duoUserId = retrieveDuoUserIdBySomeId(someId);
     
@@ -464,7 +465,7 @@ public class DuoCommands {
     try {
       //setup HOTP token
       setupOneTimeCodes(twoFactorUser, duoUserId, false);
-      setupHotpToken(twoFactorUser, duoUserId, false);
+      setupHotpToken(twoFactorUser, duoUserId, resetFob);
       setupTotp(twoFactorUser, duoUserId, false, 30);
       setupTotp(twoFactorUser, duoUserId, false, 60);
       
@@ -490,7 +491,7 @@ public class DuoCommands {
     
     migratePhonesToDuoBySomeId(someId, printOutput);
     
-    migrateTokensBySomeId(someId, printOutput);
+    migrateTokensBySomeId(someId, printOutput, true);
   }
   
   /**
@@ -1498,7 +1499,7 @@ public class DuoCommands {
 
       if (!StringUtils.isBlank(duoUserId)) {
         try {
-          migrateTokensBySomeId(netId, true);
+          migrateTokensBySomeId(netId, true, false);
         } catch (Exception e) {
           
           System.out.println("Problem with user: " + duoUserId);
