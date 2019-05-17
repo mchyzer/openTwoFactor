@@ -59,6 +59,7 @@
                                 value="${i}" />
                               <input type="hidden" name="phoneType" 
                                 value="voice" />
+                              <input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value />"/>  
                             </form>
                           </c:when>         
                           <c:otherwise>
@@ -76,6 +77,7 @@
                               value="${i}" />
                             <input type="hidden" name="phoneType" 
                               value="text" />
+                            <input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value />"/>
                           </form>
                         </c:if>                  
                       </div>
@@ -132,13 +134,14 @@
                   <form action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline">
                     <input value="${textContainer.textEscapeDouble['havingTroubleAllowFriendButton']}" class="tfBlueButton"
                        type="submit" />
+                    <input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value />"/>
                   </form> &nbsp;
                   <br /><br />
                   ${textContainer.text['havingTroubleAllowFriendsPrefix']} <c:if test="${!twoFactorRequestContainer.twoFactorHelpLoggingInContainer.invitedColleagues}" ><form
                    action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline"><input
                       value="${textContainer.textEscapeDouble['havingTroubleAllowFriendsLink']}" class="tfBlueButton"
                         style="background: none; border: none; color: #7794C9; text-decoration: underline; cursor: pointer;"
-                        type="submit" /></form></c:if> ${textContainer.text['havingTroubleAllowFriendsSuffix']}
+                        type="submit" /><input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value />"/></form></c:if> ${textContainer.text['havingTroubleAllowFriendsSuffix']}
 
                 </c:otherwise>
               </c:choose>
@@ -156,6 +159,7 @@
                   <form action="../../twoFactorPublicUi/app/UiMainPublic.allowColleaguesToOptYouOut" method="post" style="display: inline">
                     <input value="${textContainer.textEscapeDouble['havingTroubleAllowFriendButton']}" class="tfBlueButton"
                        type="submit" />
+                    <input type="hidden" name="<csrf:token-name/>" value="<csrf:token-value />"/>
                   </form>
                 </c:otherwise>
               </c:choose>
