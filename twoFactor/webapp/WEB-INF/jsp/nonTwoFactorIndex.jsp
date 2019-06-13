@@ -55,6 +55,8 @@
                               <input value="${textContainer.textEscapeDouble['havingTroubleVoicePrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
                                  type="submit"
                                  />
+                               <input type="hidden" name="relay" 
+                                value="${fn:escapeXml(twoFactorRequestContainer.twoFactorHelpLoggingInContainer.relay) }" />
                               <input type="hidden" name="phoneIndex" 
                                 value="${i}" />
                               <input type="hidden" name="phoneType" 
@@ -73,6 +75,8 @@
                             <input value="${textContainer.textEscapeDouble['havingTroubleTextPrefix']} ${ fn:escapeXml(twoFactorPhoneForScreen.phoneForScreen ) }" class="tfBlueButton"
                                type="submit"
                                />
+                              <input type="hidden" name="relay" 
+                                value="${fn:escapeXml(twoFactorRequestContainer.twoFactorHelpLoggingInContainer.relay) }" />
                             <input type="hidden" name="phoneIndex" 
                               value="${i}" />
                             <input type="hidden" name="phoneType" 

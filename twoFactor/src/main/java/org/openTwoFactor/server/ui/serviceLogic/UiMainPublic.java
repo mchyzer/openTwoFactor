@@ -174,11 +174,12 @@ public class UiMainPublic extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType);
     
-//    try {
-//      httpServletResponse.sendRedirect("../../twoFactorUi/app/UiMain.index");
-//    } catch (IOException ioe) {
-//      throw new RuntimeException(ioe);
-//    }
+    String relay = httpServletRequest.getParameter("relay");
+
+    if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
+      return;
+    }
+
     showJsp("nonTwoFactorPhoneCode.jsp");
 
   }
@@ -746,39 +747,52 @@ public class UiMainPublic extends UiServiceLogicBase {
           httpServletRequest.getRemoteAddr(), 
           httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType, userBrowserUuid);
       
-      // see if the relay is allowed
-      if (!StringUtils.isBlank(relay)) {
-        
-        String relayPrefixes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.relay.prefixes");
-        
-        if (!StringUtils.isBlank(relayPrefixes)) {
-          
-          List<String> relayPrefixesList = TwoFactorServerUtils.splitTrimToList(relayPrefixes, ",");
-          boolean allowed = false;
-          
-          for (String relayPrefix : relayPrefixesList) {
-            
-            if (relay.startsWith(relayPrefix)) {
-              allowed = true;
-              break;
-            }
-            
-          }
-          
-          if (!allowed) {
-            throw new RuntimeException("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes");
-          }
-          
-        }
-        
-        try {
-          httpServletResponse.sendRedirect(relay);
-        } catch (IOException ioe) {
-          throw new RuntimeException(ioe);
-        }
+      if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
+        return;
       }
       showJsp("nonTwoFactorIndex.jsp");
     }
+
+  /**
+   * @param httpServletResponse
+   * @param relay
+   * @return true if redirected, false if not
+   */
+  public boolean redirectToRelayIfAllowed(HttpServletResponse httpServletResponse, String relay) {
+    // see if the relay is allowed
+    if (!StringUtils.isBlank(relay)) {
+      
+      String relayPrefixes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.relay.prefixes");
+      
+      if (!StringUtils.isBlank(relayPrefixes)) {
+        
+        List<String> relayPrefixesList = TwoFactorServerUtils.splitTrimToList(relayPrefixes, ",");
+        boolean allowed = false;
+        
+        for (String relayPrefix : relayPrefixesList) {
+          
+          if (relay.startsWith(relayPrefix)) {
+            allowed = true;
+            break;
+          }
+          
+        }
+        
+        if (!allowed) {
+          throw new RuntimeException("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes");
+        }
+        
+      }
+      
+      try {
+        httpServletResponse.sendRedirect(relay);
+        return true;
+      } catch (IOException ioe) {
+        throw new RuntimeException(ioe);
+      }
+    }
+    return false;
+  }
 
   /**
    * 
