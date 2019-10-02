@@ -174,11 +174,11 @@ public class UiMainPublic extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType);
     
-    String relay = httpServletRequest.getParameter("relay");
-
-    if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
-      return;
-    }
+//    String relay = httpServletRequest.getParameter("relay");
+//
+//    if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
+//      return;
+//    }
 
     showJsp("nonTwoFactorPhoneCode.jsp");
 
@@ -321,7 +321,8 @@ public class UiMainPublic extends UiServiceLogicBase {
   
           //maybe going from duo
           //opt in to duo
-          if (useDuoForPasscode && UiMain.duoRegisterUsers() && !StringUtils.isBlank(twoFactorUser.getDuoUserId())) {
+          if (useDuoForPasscode && UiMain.duoRegisterUsers() && !StringUtils.isBlank(twoFactorUser.getDuoUserId())
+              && DuoCommands.retrieveDuoUserByIdOrUsername(twoFactorUser.getDuoUserId(), true) != null) {
   
             secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUser.getLoginid());
             

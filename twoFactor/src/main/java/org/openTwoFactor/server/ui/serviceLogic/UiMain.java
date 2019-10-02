@@ -6681,6 +6681,14 @@ public class UiMain extends UiServiceLogicBase {
 
           return OptinWizardWelcomeView.index;
         }
+        // sync up duo user ids, i.e. if wrong or mismatch, then fix it
+        if (!StringUtils.isBlank(twoFactorUser.getDuoUserId())) {
+          try {
+            DuoCommands.retrieveDuoUserIdBySomeId(twoFactorUser.getUuid(), false);      
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
         
         twoFactorRequestContainer.getTwoFactorProfileContainer().setProfileForOptin(true);
         
