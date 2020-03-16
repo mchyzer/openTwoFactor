@@ -489,9 +489,9 @@ table.tfDarkDataTable tr.tfButtonRow td, tr.tfButtonRow td {
     text-align: right;
 }
 
-/* .codes {
-  font-size: 1em;
-} */
+.codes {
+  font-size: 1.5em;
+}
 
 
 /* profile screen form box customizations */

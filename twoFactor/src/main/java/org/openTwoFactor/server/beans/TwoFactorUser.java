@@ -8,6 +8,7 @@ package org.openTwoFactor.server.beans;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -27,6 +28,7 @@ import org.openTwoFactor.server.TwoFactorAuthorizationInterface;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrName;
 import org.openTwoFactor.server.beans.TwoFactorUserAttr.TwoFactorUserAttrType;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
+import org.openTwoFactor.server.duo.DuoCommands;
 import org.openTwoFactor.server.encryption.EncryptionKey;
 import org.openTwoFactor.server.exceptions.TfDaoException;
 import org.openTwoFactor.server.hibernate.HibernateHandler;
@@ -38,6 +40,7 @@ import org.openTwoFactor.server.hibernate.TwoFactorHibernateBeanBase;
 import org.openTwoFactor.server.hibernate.TwoFactorTransactionType;
 import org.openTwoFactor.server.j2ee.TwoFactorFilterJ2ee;
 import org.openTwoFactor.server.ui.beans.TwoFactorRequestContainer;
+import org.openTwoFactor.server.ui.serviceLogic.UiMain;
 import org.openTwoFactor.server.util.TfSourceUtils;
 import org.openTwoFactor.server.util.TwoFactorServerUtils;
 import org.openTwoFactor.server.ws.rest.TfRestLogic;
@@ -53,6 +56,31 @@ import edu.internet2.middleware.subject.Subject;
 @SuppressWarnings("serial")
 public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Comparable<TwoFactorUser> {
 
+  /**
+   * 
+   * @return phones
+   */
+  public String getPhonesCommaSeparated() {
+    StringBuilder result = new StringBuilder();
+    
+    if (!StringUtils.isBlank(this.getPhone0())) {
+      result.append(this.getPhone0());
+    }
+    if (!StringUtils.isBlank(this.getPhone1())) {
+      if (!StringUtils.isBlank(result.toString())) {
+        result.append(", ");
+      }
+      result.append(this.getPhone1());
+    }
+    if (!StringUtils.isBlank(this.getPhone2())) {
+      if (!StringUtils.isBlank(result.toString())) {
+        result.append(", ");
+      }
+      result.append(this.getPhone2());
+    }
+    return result.toString();
+  }
+  
   /**
    * if has fob attached
    * @return true if has fob
@@ -141,7 +169,7 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Compara
     if (this.usersWhoPickedThisUserToOptThemOut == null) {
       Set<TwoFactorUser> theUsersWhoPickedThisUserToOptThemOut = new TreeSet<TwoFactorUser>();
       
-      List<TwoFactorUser> retrieveUsersWhoPickedThisUserToOptThemOutList = this.twoFactorDaoFactory.getTwoFactorUser().retrieveUsersWhoPickedThisUserToOptThemOut(this.getUuid());
+      List<TwoFactorUser> retrieveUsersWhoPickedThisUserToOptThemOutList = this.twoFactorDaoFactory().getTwoFactorUser().retrieveUsersWhoPickedThisUserToOptThemOut(this.getUuid());
       
       for (TwoFactorUser twoFactorUser : retrieveUsersWhoPickedThisUserToOptThemOutList) {
         twoFactorUser.setSubjectSource(this.subjectSource);
@@ -2327,5 +2355,67 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Compara
     return thisDescription.compareTo(otherDescription);
   }
 
+  /**
+   * json of encrypted 6 digit one-time use codes, 10 of them.  use from here instead of generating more.  mark as "sent" when sent to user
+   * @return phone code encrypted
+   */
+  public String getBypassCodes() {
+    return attributeValueString(TwoFactorUserAttrName.bypass_codes);
+  }
+
+  /**
+   * json of encrypted 6 digit one-time use codes, 10 of them.  use from here instead of generating more.  mark as "sent" when sent to user
+   * @param bypassCodes
+   */
+  public void setBypassCodes(String bypassCodes) {
+    this.attribute(TwoFactorUserAttrName.bypass_codes, true).setAttributeValueString(bypassCodes);
+  }
+
+  /**
+   * get a bypasscode
+   * @return the bypasscode
+   */
+  public String retrieveBypassCode() {
+    String bypassCodes = this.getBypassCodes();
+    if (StringUtils.isBlank(bypassCodes)) {
+//      bypassCodes = 
+    }
+    
+    return null;
+  }
+  
+  public String generateNewBypassCodes() {
+
+    boolean useDuoForPasscode = TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("tfServer.useDuoForPasscode", true);
+
+    List<String> passcodes = null;
+    
+    //maybe going from duo
+    //opt in to duo
+    if (useDuoForPasscode && UiMain.duoRegisterUsers() && !StringUtils.isBlank(this.getDuoUserId())) {
+
+//      passcodes = DuoCommands.duoBypassCodesByUserId(this.getDuoUserId());
+      
+    } else {
+
+      passcodes = new ArrayList<String>();
+      
+      for (int i=0;i<10;i++) {
+        
+        //store code and when sent
+        String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
+        
+        //make this since 9 since thats what duo is
+        secretCode = StringUtils.leftPad(secretCode, 9, '0');
+
+        passcodes.add(secretCode);
+      }
+      
+    }
+    
+//    twoFactorUser.setPhoneCodeUnencrypted(secretCode);
+    return null;
+  }
+  
 }
   

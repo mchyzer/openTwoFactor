@@ -112,6 +112,7 @@ public class TwoFactorFilterJ2ee implements Filter {
             "HttpServletRequest is null, is the Servlet mapped in the web.xml?");
     
     Principal principal = httpServletRequest.getUserPrincipal();
+    
     String principalName = null;
     if (principal == null) {
       principalName = httpServletRequest.getRemoteUser();
@@ -121,13 +122,13 @@ public class TwoFactorFilterJ2ee implements Filter {
     } else {
       principalName = principal.getName();
     }
+//TODO    principalName = "username";
 
     //see if we need to resolve the subject id
     if (fromUi && !StringUtils.isBlank(principalName) 
         && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("twoFactorServer.subject.resolveOnUiLogin", true)) {
       principalName = TfSourceUtils.resolveSubjectId(TfSourceUtils.mainSource(), principalName, true);
     }
-    
     return principalName;
   }
   

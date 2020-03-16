@@ -66,6 +66,11 @@ public class TwoFactorUserAttr extends TwoFactorHibernateBeanBase implements Com
     phone_code_encrypted(TwoFactorUserAttrType.string),
     
     /**
+     * json of encrypted 6 digit one-time use codes, 10 of them.  use from here instead of generating more.  mark as "sent" when sent to user
+     */
+    bypass_codes(TwoFactorUserAttrType.string),
+    
+    /**
      * when the phone code was sent
      */
     date_phone_code_sent(TwoFactorUserAttrType.integer),

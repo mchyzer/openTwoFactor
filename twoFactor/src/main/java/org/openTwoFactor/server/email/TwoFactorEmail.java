@@ -5,6 +5,7 @@ package org.openTwoFactor.server.email;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
@@ -325,7 +326,9 @@ public class TwoFactorEmail {
       Message message = new MimeMessage(session);
       
       boolean hasRecipient = false;
-      
+// TODO
+//      this.toAddresses = new HashSet<String>();
+//      this.toAddresses.add("mchyzer@upenn.edu");
       if (TwoFactorServerUtils.length(this.toAddresses) > 0) {
         
         for (String aTo : this.toAddresses) {

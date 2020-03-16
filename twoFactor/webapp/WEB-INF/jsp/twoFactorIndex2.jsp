@@ -36,6 +36,51 @@
       <br />
       ${textContainer.text['index2HowWorks']}
 
+      <c:choose>
+        <c:when  test="${twoFactorRequestContainer.twoFactorUserLoggedIn.optedIn}">
+          <h4 style="color:black">Quick links</h4>
+
+          <div class="formBoxNarrow profileFormBoxNarrow">
+            <div class="formRow" style="white-space: nowrap;">
+              <!--  div class="formLabel">&nbsp;</div -->
+              <!-- div class="formValue" --> 
+                <c:choose>
+                  <c:when  test="${twoFactorRequestContainer.twoFactorDuoPushContainer.enrolledInDuoPush}">
+                    <form action="../../twoFactorUi/app/UiMain.duoPushUnenroll2" method="post" style="display: inline;">
+                      <input value="${textContainer.textEscapeDouble['index2DuoPushUnenrollButton']}" class="tfBlueButton"
+                        type="submit" />
+                    </form>
+                    &nbsp;
+                    <form action="../../twoFactorUi/app/UiMain.duoPushChangePhone" method="post" style="display: inline;">
+                      <input value="${textContainer.textEscapeDouble['index2ChangePhonesButton']}" class="tfBlueButton"
+                        type="submit" />
+                    </form>
+                    &nbsp;
+                  </c:when>
+                  <c:otherwise>
+                    <form action="../../twoFactorUi/app/UiMain.duoPushEnroll2" method="post" style="display: inline;">
+                      <input value="${textContainer.textEscapeDouble['index2DuoPushEnrollButton']}" class="tfBlueButton"
+                        type="submit" />
+                    </form>
+                    &nbsp;
+                  </c:otherwise>
+                </c:choose>
+                <form action="../../twoFactorUi/app/UiMain.profile" method="get" style="display: inline;">
+                  <input value="Edit phone numbers" class="tfBlueButton"
+                    type="submit" />
+                </form>
+                &nbsp;
+                <form action="../../twoFactorUi/app/UiMain.showOneTimeCodes2" method="post" style="display: inline">
+                  <input value="Print one-time codes" class="tfBlueButton"
+                   type="submit" />
+                </form>
+              <!--  /div -->
+            </div>
+          </div>
+        </c:when>
+      </c:choose>
+
+
       <h4 style="color:black">${textContainer.text['index2EnrollmentHeader']}</h4>
       
       

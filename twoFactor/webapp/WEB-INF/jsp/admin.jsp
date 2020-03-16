@@ -151,7 +151,7 @@
         </c:if>
         
         ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.numberOfPhones}
-        ${textContainer.text['adminNumberOfPhones']}
+        ${textContainer.text['adminNumberOfPhones']} ${twoFactorRequestContainer.twoFactorAdminContainer.twoFactorUserOperatingOn.phonesCommaSeparated}
         <br />
         
         <c:choose>
