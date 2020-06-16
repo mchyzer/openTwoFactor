@@ -57,6 +57,9 @@ public class TfAliasJob implements Job {
     TwoFactorDaoFactory twoFactorDaoFactory = TwoFactorDaoFactory.getFactory();
     new TfAliasJob().aliasLogic(twoFactorDaoFactory);
 
+//    for (String alias : retrieveAliases()) {
+//      System.out.println(alias);
+//    }
   }
   
   /** logger */

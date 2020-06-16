@@ -174,11 +174,11 @@ public class UiMainPublic extends UiServiceLogicBase {
         httpServletRequest.getRemoteAddr(), 
         httpServletRequest.getHeader("User-Agent"), phoneIndex, phoneType);
     
-//    String relay = httpServletRequest.getParameter("relay");
-//
-//    if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
-//      return;
-//    }
+    String relay = httpServletRequest.getParameter("relay");
+
+    if (redirectToRelayIfAllowed(httpServletResponse, relay)) {
+      return;
+    }
 
     showJsp("nonTwoFactorPhoneCode.jsp");
 
@@ -779,18 +779,18 @@ public class UiMainPublic extends UiServiceLogicBase {
           
         }
         
-        if (!allowed) {
-          throw new RuntimeException("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes");
+        if (allowed) {
+          try {
+            httpServletResponse.sendRedirect(relay);
+            return true;
+          } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+          }
         }
+        LOG.error("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes: '" + relayPrefixes + "'");
         
       }
       
-      try {
-        httpServletResponse.sendRedirect(relay);
-        return true;
-      } catch (IOException ioe) {
-        throw new RuntimeException(ioe);
-      }
     }
     return false;
   }
