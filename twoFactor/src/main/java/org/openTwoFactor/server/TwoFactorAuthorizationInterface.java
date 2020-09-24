@@ -19,6 +19,12 @@ public interface TwoFactorAuthorizationInterface {
   public Set<String> adminLiteUserIds();
 
   /**
+   * admin24s can input data and get a code
+   * @return the set of admins
+   */
+  public Set<String> admin24UserIds();
+  
+  /**
    * admins can view audits of users, opt people out, untrust browsers, etc
    * @return the set of admins
    */

@@ -33,6 +33,27 @@ import edu.internet2.middleware.subject.Subject;
 public class TwoFactorAdminContainer {
 
   /**
+   * net id operating on
+   */
+  private String netIdOperatingOn;
+  
+  /**
+   * net id operating on
+   * @return the netIdOperatingOn
+   */
+  public String getNetIdOperatingOn() {
+    return this.netIdOperatingOn;
+  }
+  
+  /**
+   * net id operating on
+   * @param netIdOperatingOn1 the netIdOperatingOn to set
+   */
+  public void setNetIdOperatingOn(String netIdOperatingOn1) {
+    this.netIdOperatingOn = netIdOperatingOn1;
+  }
+
+  /**
    * all two factor report rollups
    */
   private List<TwoFactorReportRollup> twoFactorReportRollups;

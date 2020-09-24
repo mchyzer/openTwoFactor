@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -760,39 +762,54 @@ public class UiMainPublic extends UiServiceLogicBase {
    * @return true if redirected, false if not
    */
   public boolean redirectToRelayIfAllowed(HttpServletResponse httpServletResponse, String relay) {
-    // see if the relay is allowed
-    if (!StringUtils.isBlank(relay)) {
-      
-      String relayPrefixes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.relay.prefixes");
-      
-      if (!StringUtils.isBlank(relayPrefixes)) {
+
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+    debugMap.put("method", "UiMainPublic.redirectToRelayIfAllowed");
+    try {
+      // see if the relay is allowed
+      debugMap.put("relayExists", !StringUtils.isBlank(relay));
+      debugMap.put("relay", relay);
+      if (!StringUtils.isBlank(relay)) {
         
-        List<String> relayPrefixesList = TwoFactorServerUtils.splitTrimToList(relayPrefixes, ",");
-        boolean allowed = false;
+        String relayPrefixes = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.ws.relay.prefixes");
+        debugMap.put("relayPrefixes", relayPrefixes);
         
-        for (String relayPrefix : relayPrefixesList) {
+        if (!StringUtils.isBlank(relayPrefixes)) {
           
-          if (relay.startsWith(relayPrefix)) {
-            allowed = true;
-            break;
+          List<String> relayPrefixesList = TwoFactorServerUtils.splitTrimToList(relayPrefixes, ",");
+          boolean allowed = false;
+          
+          for (String relayPrefix : relayPrefixesList) {
+            
+            if (relay.startsWith(relayPrefix)) {
+              allowed = true;
+              break;
+            }
+            
           }
+          debugMap.put("allowed", allowed);
+          
+          if (allowed) {
+            try {
+              httpServletResponse.sendRedirect(relay);
+              debugMap.put("result", true);
+              return true;
+            } catch (IOException ioe) {
+              throw new RuntimeException(ioe);
+            }
+          }
+          LOG.error("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes: '" + relayPrefixes + "'");
           
         }
-        
-        if (allowed) {
-          try {
-            httpServletResponse.sendRedirect(relay);
-            return true;
-          } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-          }
-        }
-        LOG.error("Invalid relay '" + relay + "', does not start with any prefix from config: twoFactorServer.ws.relay.prefixes: '" + relayPrefixes + "'");
         
       }
-      
+      debugMap.put("result", false);
+      return false;
+    } finally {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(TwoFactorServerUtils.mapToString(debugMap));
+      }
     }
-    return false;
   }
 
   /**

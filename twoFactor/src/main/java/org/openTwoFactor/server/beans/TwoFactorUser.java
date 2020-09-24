@@ -485,6 +485,16 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Compara
   
   /**
    * 
+   */
+  private static ExpirableCache<String, Boolean> admin24Cache = null;
+
+  /**
+   * 
+   */
+  private static Boolean useAdmin24Cache = null;
+  
+  /**
+   * 
    * @return if admin
    */
   public boolean isAdmin() {
@@ -2415,6 +2425,66 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Compara
     
 //    twoFactorUser.setPhoneCodeUnencrypted(secretCode);
     return null;
+  }
+
+  /**
+   * 
+   * @return if admin
+   */
+  public boolean isAdmin24() {
+    
+    if (StringUtils.isBlank(this.loginid)) {
+      throw new RuntimeException("Why is loginid blank???");
+    }
+    
+    if (useAdmin24Cache == null) {
+      synchronized (TwoFactorUser.class) {
+        if (useAdmin24Cache == null) {
+          int cacheForMinutes = TwoFactorServerConfig.retrieveConfig().propertyValueInt("twoFactorServer.admin24CacheMinutes", 2);
+          if (cacheForMinutes == 0) {
+            
+            TwoFactorUser.useAdmin24Cache = false;
+            
+          } else {
+            
+            admin24Cache = new ExpirableCache<String, Boolean>(cacheForMinutes);
+            TwoFactorUser.useAdmin24Cache = true;
+            
+          }
+          
+        }
+      }
+    }
+    
+    //see if in cache
+    if (TwoFactorUser.useAdmin24Cache) {
+      Boolean isAdmin = admin24Cache.get(this.getLoginid());
+      if (isAdmin != null) {
+        return isAdmin;
+      }
+    }
+  
+    TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
+    Set<String> userIds = twoFactorAuthorizationInterface.adminUserIds();
+    
+    Source theSource = this.subjectSource;
+    if (theSource == null) {
+      theSource = TfSourceUtils.mainSource();
+    }
+    
+    boolean isAdmin = TfSourceUtils.subjectIdOrNetIdInSet(theSource, this.loginid, userIds);
+    
+    if (!isAdmin) {
+      //see if there is a different loginId
+      String userId = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs(false);
+      isAdmin = !StringUtils.isBlank(userId) && TfSourceUtils.subjectIdOrNetIdInSet(theSource, userId, userIds);
+    }
+    
+    if (TwoFactorUser.useAdmin24Cache) {
+      admin24Cache.put(this.loginid, isAdmin);
+    }
+    
+    return isAdmin;
   }
   
 }

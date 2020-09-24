@@ -79,6 +79,7 @@ public class TwoFactorUiServlet extends HttpServlet {
       UiMain.class.getSimpleName() + ".optinWizardConfirmApp",
       UiMain.class.getSimpleName() + ".optinWizardTotpAppSetup",
       UiMainAdmin.class.getSimpleName() + ".adminIndex",
+      UiMainAdmin.class.getSimpleName() + ".admin24Index",
       UiMainAdmin.class.getSimpleName() + ".personPicker",
       UiMainAdmin.class.getSimpleName() + ".adminEmailAllPage",
       UiMainAdmin.class.getSimpleName() + ".adminImportSerialsPage",

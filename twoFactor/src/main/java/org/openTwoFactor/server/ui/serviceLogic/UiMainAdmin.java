@@ -3066,6 +3066,259 @@ public class UiMainAdmin extends UiServiceLogicBase {
 
   }
 
+  /**
+   * manage a user from the admin console
+   * @param httpServletRequest
+   * @param httServletResponse
+   */
+  public void admin24Submit(HttpServletRequest httpServletRequest, HttpServletResponse httServletResponse) {
+
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+  
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    String userIdString = httpServletRequest.getParameter("userIdName");
+    String netIdString = httpServletRequest.getParameter("netIdName");
+    String lastFourString = httpServletRequest.getParameter("lastFourName");
+    
+    
+    String birthMonthString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthMonth");
+    String birthDayString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthDay");
+    String birthYearString = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthYear");
+    
+    String birthdayTextfield = TwoFactorFilterJ2ee.retrieveHttpServletRequest().getParameter("birthdayTextfield");
+
+    Source subjectSource = TfSourceUtils.mainSource();
+  
+    admin24SubmitLogic(TwoFactorDaoFactory.getFactory(), twoFactorRequestContainer, loggedInUser, 
+        httpServletRequest.getRemoteAddr(), 
+        httpServletRequest.getHeader("User-Agent"), subjectSource, userIdString, netIdString, 
+        lastFourString, birthMonthString, birthDayString, birthYearString, birthdayTextfield);
+    
+    showJsp("admin24.jsp");
+
+  }
+
+  /**
+   * manage a user
+   * @param twoFactorDaoFactory
+   * @param twoFactorRequestContainer
+   * @param ipAddress
+   * @param userAgent
+   * @param loggedInUser
+   * @param subjectSource
+   * @param userIdString 
+   * @param netIdString 
+   * @param lastFourString 
+   * @param birthMonthString 
+   * @param birthDayString 
+   * @param birthYearString 
+   * @param birthdayTextfield 
+   */
+  public void admin24SubmitLogic(final TwoFactorDaoFactory twoFactorDaoFactory, final TwoFactorRequestContainer twoFactorRequestContainer,
+      final String loggedInUser, final String ipAddress, 
+      final String userAgent, final Source subjectSource,
+      final String userIdString, final String netIdString, final String lastFourString, final String birthMonthString, 
+      final String birthDayString, final String birthYearString, final String birthdayTextfield) {
+  
+    final TwoFactorUser[] twoFactorUserUsingApp = new TwoFactorUser[1];
+  
+    final TwoFactorUser[] twoFactorUserConfirmed = new TwoFactorUser[1];
+  
+    HibernateSession.callbackHibernateSession(TwoFactorTransactionType.READ_WRITE_OR_USE_EXISTING, 
+        TfAuditControl.WILL_AUDIT, new HibernateHandler() {
+  
+      @Override
+      public Object callback(HibernateHandlerBean hibernateHandlerBean) throws TfDaoException {
+  
+        twoFactorRequestContainer.init(twoFactorDaoFactory, loggedInUser);
+      
+        TwoFactorAdminContainer twoFactorAdminContainer = twoFactorRequestContainer.getTwoFactorAdminContainer();
+        
+        twoFactorUserUsingApp[0] = twoFactorRequestContainer.getTwoFactorUserLoggedIn();
+        
+        twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+        
+        //make sure user is an admin
+        if (!twoFactorUserUsingApp[0].isAdmin24()) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          return ConfirmUserRemoteView.index;
+        }
+
+        Subject subject = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+            userIdString, true, false, true);
+
+        if (subject == null) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ConfirmRemoteRecommendNo"));
+          return null;
+        }
+        
+        twoFactorUserConfirmed[0] = TwoFactorUser.retrieveByLoginid(twoFactorDaoFactory, userIdString);
+        
+        if (twoFactorUserConfirmed[0] == null) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ConfirmRemoteRecommendNo"));
+          return null;
+        }
+        
+        //we found a user!
+        twoFactorAdminContainer.setTwoFactorUserOperatingOn(twoFactorUserConfirmed[0]);
+  
+        twoFactorUserConfirmed[0].setSubjectSource(subjectSource);
+  
+        if (!twoFactorUserConfirmed[0].isOptedIn()) {
+  
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
+          return null;
+        }
+  
+        if (StringUtils.isBlank(twoFactorUserConfirmed[0].getLastFour()) && twoFactorUserConfirmed[0].getBirthDate() == null) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorNotEnoughInfo"));
+          return null;
+        }
+        
+        boolean netIdCorrect = StringUtils.equals(netIdString, TfSourceUtils.convertSubjectIdToNetId(subjectSource, twoFactorUserConfirmed[0].getLoginid()));
+
+        if (!netIdCorrect) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ConfirmRemoteRecommendNo"));
+          return null;
+
+        }
+        
+        if (!StringUtils.isBlank(twoFactorUserConfirmed[0].getLastFour()) && !StringUtils.equals(lastFourString, twoFactorUserConfirmed[0].getLastFour())) {
+          
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ConfirmRemoteRecommendNo"));
+          return null;
+
+        }
+        
+        Boolean birthdayCorrect = null;
+        
+        if (twoFactorUserConfirmed[0].getBirthDate() != null) {
+          birthdayCorrect = UiMain.checkBirthday(twoFactorDaoFactory, twoFactorRequestContainer, loggedInUser, ipAddress, 
+              userAgent, subjectSource, twoFactorUserConfirmed[0], birthMonthString, birthDayString, 
+              birthYearString, birthdayTextfield);
+        }
+
+        if (birthdayCorrect == null || !birthdayCorrect) {
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ConfirmRemoteRecommendNo"));
+          return null;
+        }
+        
+        twoFactorAdminContainer.setNetIdOperatingOn(netIdString);
+        
+        //store code and when sent
+        String secretCode = Integer.toString(new SecureRandom().nextInt(1000000));
+        
+        //make this since 9 since thats what duo is
+        secretCode = StringUtils.leftPad(secretCode, 9, '0');
+
+        //maybe going from duo
+        //opt in to duo
+        if (UiMain.duoRegisterUsers()) {
+
+          secretCode = DuoCommands.duoBypassCodeBySomeId(twoFactorUserConfirmed[0].getLoginid());
+          
+        }
+
+        twoFactorUserConfirmed[0].setPhoneCodeUnencrypted(secretCode);
+        twoFactorUserConfirmed[0].setDatePhoneCodeSent(System.currentTimeMillis());
+        twoFactorUserConfirmed[0].store(twoFactorDaoFactory);
+
+        TwoFactorAudit.createAndStore(twoFactorDaoFactory, 
+            TwoFactorAuditAction.ADMIN_CONFIRM_USER, ipAddress, 
+            userAgent, twoFactorUserConfirmed[0].getUuid(), 
+            twoFactorUserUsingApp[0].getUuid(), null, null);
+        
+        //send emails if successful
+        String userEmailLoggedIn = null;
+        String userEmailConfirmed = null;
+        try {
+          
+          twoFactorUserUsingApp[0].setSubjectSource(subjectSource);
+          twoFactorUserConfirmed[0].setSubjectSource(subjectSource);
+          
+          //see if there
+          
+          //if this is real mode with a source, and we have email configured, and we are sending emails for optin...
+          if (subjectSource != null && !StringUtils.isBlank(TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.smtp.server")) 
+              && TwoFactorServerConfig.retrieveConfig().propertyValueBoolean("mail.sendForGenerateCodeByAdmin24", true)) {
+            
+            Subject sourceSubjectPersonPicked = TfSourceUtils.retrieveSubjectByIdOrIdentifier(subjectSource, 
+                twoFactorUserConfirmed[0].getLoginid(), true, false, true);
+            
+            userEmailConfirmed = UiMain.retrieveUserEmail(sourceSubjectPersonPicked, twoFactorUserConfirmed[0]);
+            
+            //set the default text container...
+            String emailSubject = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdmin24Subject");
+            emailSubject = TextContainer.massageText("emailGenerateCodeByAdmin24Subject", emailSubject);
+      
+            String body = TwoFactorTextConfig.retrieveText(null).propertyValueStringRequired("emailGenerateCodeByAdmin24Body");
+            body = TextContainer.massageText("emailGenerateCodeByAdmin24Body", body);
+            
+            String bccsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("mail.bcc.admin24GenerateCodes");
+            
+            TwoFactorEmail twoFactorMail = new TwoFactorEmail();
+            
+            boolean sendEmail = true;
+            //there is no email address????
+            if (StringUtils.isBlank(userEmailConfirmed)) {
+
+              LOG.warn("Did not send email to logged in user: " + twoFactorUserConfirmed[0].getLoginid() + ", no email address...");
+              if (StringUtils.isBlank(bccsString)) {
+                sendEmail = false;
+              } else {
+                twoFactorMail.addTo(bccsString);
+              }
+            } else {
+              twoFactorMail.addTo(userEmailConfirmed);
+              twoFactorMail.addBcc(bccsString);
+            }
+            
+            if (sendEmail) {
+              twoFactorMail.assignBody(body);
+              twoFactorMail.assignSubject(emailSubject);
+              twoFactorMail.send();
+            }
+            
+          }
+          
+        } catch (Exception e) {
+          //non fatal, just log this
+          LOG.error("Error sending email to: " + userEmailConfirmed + ", (logged in): " + userEmailLoggedIn + ", loggedInUser id: " + loggedInUser, e);
+        }
+      
+        twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24GenerateCodeForUserSuccess"));
+        return null;
+      }
+    });
+  }
+
+
+  /**
+   * admin 24 page
+   * @param httpServletRequest
+   * @param httpServletResponse
+   */
+  public void admin24Index(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    
+    TwoFactorRequestContainer twoFactorRequestContainer = TwoFactorRequestContainer.retrieveFromRequest();
+    String loggedInUser = TwoFactorFilterJ2ee.retrieveUserIdFromRequest();
+  
+    twoFactorRequestContainer.init(TwoFactorDaoFactory.getFactory(), loggedInUser);
+    
+    //make sure user is an admin
+    if (!twoFactorRequestContainer.getTwoFactorUserLoggedIn().isAdmin24()) {
+      throw new RuntimeException("Not an admin! " + loggedInUser);
+    }
+  
+    
+    showJsp("admin24.jsp");
+  }
+
 
   /**
    * 

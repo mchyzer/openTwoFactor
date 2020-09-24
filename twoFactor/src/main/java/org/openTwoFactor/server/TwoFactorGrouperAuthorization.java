@@ -186,4 +186,16 @@ public class TwoFactorGrouperAuthorization implements TwoFactorAuthorizationInte
     return retrieveUserIdsFromAuthzOrCache(groupName);
   }
 
+  /**
+   * @see org.openTwoFactor.server.TwoFactorAuthorizationInterface#admin24UserIds()
+   */
+  @Override
+  public Set<String> admin24UserIds() {
+  
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String groupName = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.admins24");
+    
+    return retrieveUserIdsFromAuthzOrCache(groupName);
+  }
+
 }

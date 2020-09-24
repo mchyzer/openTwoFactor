@@ -1,5 +1,5 @@
 <%@ include file="../assetsJsp/commonTaglib.jsp"%>
-              <span id="birthdaySelectsId"><%-- TODO remove --%>
+              <span id="birthdaySelectsId" style="white-space: nowrap;"><%-- TODO remove --%>
               <select name="birthMonth" id="birthMonthId">
                 <option value="">${textContainer.text['optinStep3enterBdayMonth']}</option>
                 <option value="1"

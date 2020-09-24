@@ -3047,11 +3047,70 @@ public class DuoCommands {
    * @param timeoutSeconds
    * @return if success
    */
-  public static boolean duoPushOrPhoneSuccess(String txId, Integer timeoutSeconds) {
+  public static boolean duoPushOrPhoneSuccess(final String txId, final Integer timeoutSeconds) {
     
     Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
 
     debugMap.put("method", "duoPushOrPhoneSuccess");
+    debugMap.put("txId", txId);
+    if (timeoutSeconds != null) {
+      debugMap.put("timeoutSeconds", timeoutSeconds);
+    } else {
+      return duoPushOrPhoneSuccessHelper(txId, timeoutSeconds);
+    }
+    long startTime = System.nanoTime();
+    final RuntimeException[] runtimeException = new RuntimeException[]{null};
+    final Boolean[] result = new Boolean[]{false};
+    
+    Thread thread = new Thread(new Runnable() {
+
+      public void run() {
+        
+        try {
+          result[0] = duoPushOrPhoneSuccessHelper(txId, timeoutSeconds);
+        } catch (RuntimeException re) {
+          runtimeException[0] = re;
+        }
+      }
+    });
+    
+    try {
+    
+      thread.start();
+
+      try {
+        thread.join(timeoutSeconds*1000);
+      } catch (InterruptedException ie) {
+        // ignore
+      }
+      if (runtimeException[0] != null) {
+        throw runtimeException[0];
+      }
+      boolean finished = result[0] != null;
+      boolean accepted = finished && result[0];
+      debugMap.put("finished", finished);
+      debugMap.put("accepted", accepted);
+      return accepted;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+    
+  }
+  
+  /**
+   * check on a push
+   * @param txId 
+   * @param timeoutSeconds
+   * @return if success
+   */
+  private static boolean duoPushOrPhoneSuccessHelper(String txId, Integer timeoutSeconds) {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "duoPushOrPhoneSuccessHelper");
     debugMap.put("txId", txId);
     long startTime = System.nanoTime();
     try {
@@ -3103,6 +3162,9 @@ public class DuoCommands {
       debugMap.put("allowed", allowed);
       return allowed;
     } catch (RuntimeException re) {
+      if (ExceptionUtils.getFullStackTrace(re).toLowerCase().contains("timeout")) {
+        return false;
+      }
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
       throw re;
     } finally {

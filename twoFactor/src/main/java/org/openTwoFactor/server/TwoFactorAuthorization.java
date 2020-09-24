@@ -36,6 +36,23 @@ public class TwoFactorAuthorization implements TwoFactorAuthorizationInterface {
   }
 
   /**
+   * @see org.openTwoFactor.server.TwoFactorAuthorizationInterface#admin24UserIds()
+   */
+  @Override
+  public Set<String> admin24UserIds() {
+
+    // if using the default config file based authz, this is the comma separated list of admin ids
+    String adminsString = TwoFactorServerConfig.retrieveConfig().propertyValueString("twoFactorServer.admins24");
+    
+    if (TwoFactorServerUtils.isBlank(adminsString)) {
+      return new HashSet<String>();
+    }
+
+    return TwoFactorServerUtils.splitTrimToSet(adminsString, ",");
+      
+  }
+
+  /**
    * @see TwoFactorAuthorizationInterface#adminUserIdsWhoCanBackdoorAsOtherUsers()
    */
   @Override

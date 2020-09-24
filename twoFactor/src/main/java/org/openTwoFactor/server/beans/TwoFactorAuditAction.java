@@ -730,6 +730,22 @@ public enum TwoFactorAuditAction {
   }, 
   
   /**
+   * confirm user
+   */
+  ADMIN24_CONFIRM_USER {
+
+    /**
+     * 
+     * @see org.openTwoFactor.server.beans.TwoFactorAuditAction#toStringForUi()
+     */
+    @Override
+    public String toStringForUi() {
+      return "auditsAdmin24ConfirmUser";
+    }
+    
+  }, 
+  
+  /**
    * admin generate code for user
    */
   ADMIN_GENERATE_CODE {
