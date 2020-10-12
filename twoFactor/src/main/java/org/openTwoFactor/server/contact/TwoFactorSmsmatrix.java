@@ -30,7 +30,7 @@ public class TwoFactorSmsmatrix implements TwoFactorContactInterface {
     
     String userText = "Your verification code is: 1, 2, 3, 4, 5, 6";
     
-    new TwoFactorSmsmatrix().text("215 880 9847", userText);
+    new TwoFactorSmsmatrix().text("10021368", "215 880 9847", userText);
     
   }
   
@@ -81,7 +81,7 @@ public class TwoFactorSmsmatrix implements TwoFactorContactInterface {
    * @see org.openTwoFactor.server.contact.TwoFactorContactInterface#text(java.lang.String, java.lang.String)
    */
   @Override
-  public void text(String phoneNumber, String text) {
+  public void text(String userId, String phoneNumber, String text) {
     
     Map<String, Object> debugMap = LOG.isDebugEnabled() ? new LinkedHashMap<String, Object>() : null;
     String responseString = null;

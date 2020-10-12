@@ -45,7 +45,7 @@ public class TwoFactorTwilio implements TwoFactorContactInterface {
    * @see org.openTwoFactor.server.contact.TwoFactorContactInterface#text(java.lang.String, java.lang.String)
    */
   @Override
-  public void text(String phoneNumber, String text) {
+  public void text(String userid, String phoneNumber, String text) {
     
     SmsFactory smsFactory = twilioAccount().getSmsFactory();
     Map<String, String> smsParams = new HashMap<String, String>();
@@ -106,7 +106,7 @@ public class TwoFactorTwilio implements TwoFactorContactInterface {
     // voice is ok with +
     // new TwoFactorTwilio().voice("+ 44 7445 860015", userText);   new Thread().sleep(20000);
     // text needs 011
-    new TwoFactorTwilio().text("+ 44 7445 860015", userText);
+    new TwoFactorTwilio().text("12345678", "+ 44 7445 860015", userText);
     
   }
 

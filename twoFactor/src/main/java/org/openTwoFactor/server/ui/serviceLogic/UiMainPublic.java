@@ -336,7 +336,7 @@ public class UiMainPublic extends UiServiceLogicBase {
           //send code to phone
           if (isText) {
             String message = TextContainer.retrieveFromRequest().getText().get("havingTroubleTextPhonePrefix") + " " + secretCode;
-            TwoFactorServerConfig.retrieveConfig().twoFactorContact().text(phoneNumber, message);
+            TwoFactorServerConfig.retrieveConfig().twoFactorContact().text(twoFactorUser.getLoginid(), phoneNumber, message);
             
           } else if (isVoice) {
             

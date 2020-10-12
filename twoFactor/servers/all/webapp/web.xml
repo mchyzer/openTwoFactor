@@ -117,8 +117,8 @@
     <url-pattern>/twoFactorWs/*</url-pattern>
   </servlet-mapping>
 
-
-  <!-- security-role>
+<!-- 
+  <security-role>
     <description>
       The role that is required to log in to web service
     </description>
@@ -128,7 +128,7 @@
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Authenticated</web-resource-name>
-      <url-pattern>/*</url-pattern>
+      <url-pattern>/twoFactorUi/*</url-pattern>
     </web-resource-collection>
     <auth-constraint>
       <role-name>tf_user</role-name>
@@ -146,6 +146,6 @@
   <login-config>
     <auth-method>BASIC</auth-method>
     <realm-name>Two Factor</realm-name>
-  </login-config -->
-
+  </login-config>
+-->
 </web-app>

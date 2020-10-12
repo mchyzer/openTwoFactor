@@ -3141,7 +3141,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
         
         //make sure user is an admin
         if (!twoFactorUserUsingApp[0].isAdmin24()) {
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserNotAdmin"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ErrorUserNotAdmin"));
           return ConfirmUserRemoteView.index;
         }
 
@@ -3169,7 +3169,7 @@ public class UiMainAdmin extends UiServiceLogicBase {
   
         if (!twoFactorUserConfirmed[0].isOptedIn()) {
   
-          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("adminErrorUserWasNotOptedIn"));
+          twoFactorRequestContainer.setError(TextContainer.retrieveFromRequest().getText().get("admin24ErrorUserWasNotOptedIn"));
           return null;
         }
   

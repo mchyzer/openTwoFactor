@@ -71,7 +71,7 @@ public class TwoFactorContactMultiple implements TwoFactorContactInterface {
    * @see org.openTwoFactor.server.contact.TwoFactorContactInterface#text(java.lang.String, java.lang.String)
    */
   @Override
-  public synchronized void text(final String phoneNumber, final String message) {
+  public synchronized void text(final String userid, final String phoneNumber, final String message) {
     
     this.init();
     
@@ -85,7 +85,7 @@ public class TwoFactorContactMultiple implements TwoFactorContactInterface {
       public Object logic(FailoverLogicBean failoverLogicBean) {
         TwoFactorContactInterface twoFactorContactInterface = 
           TwoFactorContactMultiple.this.twoFactorContactInterface(failoverLogicBean.getConnectionName());
-        twoFactorContactInterface.text(phoneNumber, message);
+        twoFactorContactInterface.text(userid, phoneNumber, message);
         return null;
       }
       

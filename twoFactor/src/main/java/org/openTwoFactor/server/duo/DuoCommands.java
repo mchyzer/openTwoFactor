@@ -348,6 +348,11 @@ public class DuoCommands {
     } else if (args.length == 3 && StringUtils.equals("testCode", args[0])) {
       boolean validCode = verifyDuoCodeBySomeId(args[1], args[2]);
       System.out.println("Valid code? " + validCode);
+      
+      
+    } else if (args.length == 3 && StringUtils.equals("duoSendTextBySomeId", args[0])) {
+      duoSendTextBySomeId(args[1], args[2], false, 30);
+      
     } else if (args.length == 3 && StringUtils.equals("duoInitiatePhoneCallByNumber", args[0])) {
       duoInitiatePhoneCallBySomeId(args[1], args[2], false, 30);
     } else if (args.length == 1 && StringUtils.equals("deleteAllTokensFromDuo", args[0])) {
@@ -2963,6 +2968,70 @@ public class DuoCommands {
       debugMap.put("txid", txid);
 
       return txid;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+
+  /**
+   * initiate a text
+   * @param someId
+   * @param phoneIdOrNumber
+   * @param isIdOrNumber
+   * @param timeoutSeconds
+   * 
+   */
+  public static void duoSendTextBySomeId(String someId, String phoneIdOrNumber, boolean isIdOrNumber, Integer timeoutSeconds) {
+  
+    String userId = retrieveDuoUserIdBySomeId(someId);
+    JSONObject duoPhone = duoPhoneByIdOrNumber(phoneIdOrNumber, isIdOrNumber);
+    if (duoPhone == null) {
+      throw new RuntimeException("Cant find duo phone: " + phoneIdOrNumber + ", (isId? " + isIdOrNumber + ")");
+    }
+    String phoneId = duoPhone.getString("phone_id");
+    duoSendTextByPhoneId(userId, phoneId, timeoutSeconds);
+
+  }
+
+  /**
+   * @param duoUserId 
+   * @param duoTextPhoneId
+   * @param timeoutSeconds
+   */
+  public static void duoSendTextByPhoneId(String duoUserId, String duoTextPhoneId, Integer timeoutSeconds) {
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+
+    debugMap.put("method", "duoSendTextByPhoneId");
+    long startTime = System.nanoTime();
+    try {
+
+      String path = "/auth/v2/auth";
+      debugMap.put("POST", path);
+      Http request = httpAuth("POST", path, timeoutSeconds);
+
+      request.addParam("user_id", duoUserId);
+      debugMap.put("user_id", duoUserId);
+      request.addParam("factor", "sms");
+      request.addParam("device", duoTextPhoneId);
+      debugMap.put("device", duoTextPhoneId);
+  
+      signHttpAuth(request);
+      
+      String result = executeRequestRaw(request);
+      
+      JSONObject jsonObject = (JSONObject) JSONSerializer.toJSON( result );     
+  
+      if (!StringUtils.equals(jsonObject.getString("stat"), "OK")) {
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+      
+      jsonObject = (JSONObject)jsonObject.get("response");
+  
     } catch (RuntimeException re) {
       debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
       throw re;

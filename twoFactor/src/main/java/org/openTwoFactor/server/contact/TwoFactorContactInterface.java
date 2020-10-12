@@ -23,6 +23,6 @@ public interface TwoFactorContactInterface {
    * @param phoneNumber
    * @param message
    */
-  public void text(String phoneNumber, String message);
+  public void text(String loginid, String phoneNumber, String message);
 
 }
