@@ -2458,33 +2458,33 @@ public class TwoFactorUser extends TwoFactorHibernateBeanBase implements Compara
     
     //see if in cache
     if (TwoFactorUser.useAdmin24Cache) {
-      Boolean isAdmin = admin24Cache.get(this.getLoginid());
-      if (isAdmin != null) {
-        return isAdmin;
+      Boolean isAdmin24 = admin24Cache.get(this.getLoginid());
+      if (isAdmin24 != null) {
+        return isAdmin24;
       }
     }
   
     TwoFactorAuthorizationInterface twoFactorAuthorizationInterface = TwoFactorServerConfig.retrieveConfig().twoFactorAuthorization();
-    Set<String> userIds = twoFactorAuthorizationInterface.adminUserIds();
+    Set<String> userIds = twoFactorAuthorizationInterface.admin24UserIds();
     
     Source theSource = this.subjectSource;
     if (theSource == null) {
       theSource = TfSourceUtils.mainSource();
     }
     
-    boolean isAdmin = TfSourceUtils.subjectIdOrNetIdInSet(theSource, this.loginid, userIds);
+    boolean isAdmin24 = TfSourceUtils.subjectIdOrNetIdInSet(theSource, this.loginid, userIds);
     
-    if (!isAdmin) {
+    if (!isAdmin24) {
       //see if there is a different loginId
       String userId = TwoFactorFilterJ2ee.retrieveUserIdFromRequestOriginalNotActAs(false);
-      isAdmin = !StringUtils.isBlank(userId) && TfSourceUtils.subjectIdOrNetIdInSet(theSource, userId, userIds);
+      isAdmin24 = !StringUtils.isBlank(userId) && TfSourceUtils.subjectIdOrNetIdInSet(theSource, userId, userIds);
     }
     
     if (TwoFactorUser.useAdmin24Cache) {
-      admin24Cache.put(this.loginid, isAdmin);
+      admin24Cache.put(this.loginid, isAdmin24);
     }
     
-    return isAdmin;
+    return isAdmin24;
   }
   
 }
