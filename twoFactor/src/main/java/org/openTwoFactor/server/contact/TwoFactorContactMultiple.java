@@ -32,9 +32,9 @@ public class TwoFactorContactMultiple implements TwoFactorContactInterface {
       "verification code is: 1, 2, 3, 4, 5, 6.  Again, your " +
       "verification code is: 1, 2, 3, 4, 5, 6.  ";
     
-    new TwoFactorContactMultiple().voice("215 880 9847", userText);
+    //new TwoFactorContactMultiple().voice("215 880 9847", userText);
     
-    //new TwoFactorContactMultiple().text("215 880 9847", "123456");
+    new TwoFactorContactMultiple().text("10021368", "215 880 9847", "123456");
   }
   
   /**
