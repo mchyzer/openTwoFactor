@@ -18,6 +18,10 @@ import net.sf.json.JSONSerializer;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.NullNode;
 import org.openTwoFactor.server.beans.TwoFactorUser;
 import org.openTwoFactor.server.beans.TwoFactorUserView;
 import org.openTwoFactor.server.config.TwoFactorServerConfig;
@@ -328,7 +332,7 @@ public class DuoCommands {
         System.out.println(token);
       }
     } else if (args.length == 1 && StringUtils.equals("retrieveAllAliasesFromDuo", args[0])) {
-      Map<String, JSONObject> resultMap = retrieveAllAliasesFromDuo();
+      Map<String, JsonNode> resultMap = retrieveAllAliasesFromDuo();
       for (String key: resultMap.keySet()) {
         System.out.println(key);
       }
@@ -3930,24 +3934,24 @@ public class DuoCommands {
    * retrieve the alias to the username
    * @return the map
    */
-  public static Map<String, JSONObject> retrieveAllAliasesFromDuo() {
+  public static Map<String, JsonNode> retrieveAllAliasesFromDuo() {
 
     //get all users in duo
-    JSONArray allUsers = retrieveAllFromDuo();
+    ArrayNode allUsers = retrieveAllFromDuo2();
     
-    Map<String, JSONObject> aliasToUsernameMap = new HashMap<String, JSONObject>();
+    Map<String, JsonNode> aliasToUsernameMap = new HashMap<String, JsonNode>();
     
     if (allUsers == null || allUsers.size() == 0) {
       return aliasToUsernameMap;
     }
 
     for (int i=0; i<allUsers.size(); i++) {
-      JSONObject user = (JSONObject)allUsers.get(i);
+      JsonNode user = allUsers.get(i);
       for (int j=1;j<=4;j++) {
         // alias1...4
         String aliasName = "alias" + j;
-        if (user.containsKey(aliasName) && !JSONNull.getInstance().equals(user.get(aliasName))) {
-          String theAlias = user.getString(aliasName);
+        if (user.has(aliasName)) {
+          String theAlias = jsonJacksonGetString(user, aliasName);
           if (!StringUtils.isBlank(theAlias)) {
             aliasToUsernameMap.put(theAlias, user);
           }
@@ -4371,4 +4375,306 @@ public class DuoCommands {
     return duoInitiatePhoneCallByPhoneId(userId, duoPhoneId, timeoutSeconds);
     
   }
+
+  /**
+   * retrieve all from duo
+   * @return the array of users
+   */
+  private static ArrayNode retrieveAllFromDuo2() {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+  
+    debugMap.put("method", "retrieveAllFromDuo2");
+  
+    long startTime = System.nanoTime();
+    
+    try {
+      int[] totalObjects = new int[] {-1};
+      int[] nextOffset = new int[] {-1};
+      ObjectMapper objectMapper = new ObjectMapper();
+      ArrayNode allResults = objectMapper.createArrayNode();
+
+      int offset = 0;
+      
+      for (int i=0;i<10000;i++) {
+  
+        debugMap.put("numberOfCalls", i+1);
+  
+        totalObjects[0] = -1;
+        nextOffset[0] = -1;
+        
+        ArrayNode pageResult = retrieveAllFromDuoHelper2(offset, totalObjects, nextOffset);
+        allResults.addAll(pageResult);
+  
+        debugMap.put("totalObjects", totalObjects[0]);
+        
+        if (nextOffset[0] == -1) {
+          break;
+        }
+  
+        offset = nextOffset[0];
+      }
+  
+      debugMap.put("numberOfUsers", TwoFactorServerUtils.length(allResults));
+  
+      return allResults;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+
+  /**
+   * get one page of the users
+   * @param offset first zero based index to get in paging
+   * @param totalObjects pass back how many total object
+   * @param nextOffset pass back the next index to get.  if -1, we done
+   * @return the name of json array of users
+   */
+  private static ArrayNode retrieveAllFromDuoHelper2(int offset, int[] totalObjects, int[] nextOffset) {
+    
+    Map<String, Object> debugMap = new LinkedHashMap<String, Object>();
+  
+    debugMap.put("method", "retrieveAllFromDuoHelper2");
+  
+    long startTime = System.nanoTime();
+    
+    try {
+  
+      //get users
+      String path = "/admin/v1/users";
+      debugMap.put("GET", path);
+      Http request = httpAdmin("GET", path);
+  
+      // the max is 300, but make it 1000, doesnt hurt
+      request.addParam("limit", "1000");
+      debugMap.put("limit", 1000);
+  
+      request.addParam("offset", "" + offset);
+      debugMap.put("offset", offset);
+  
+      signHttpAdmin(request);
+      
+      String result = executeRequestRaw(request);
+          
+      //  {
+      //    "response":[
+      //      {
+      //        "desktoptokens":[
+      //          
+      //        ],
+      //        "email":"",
+      //        "groups":[
+      //          
+      //        ],
+      //        "last_login":null,
+      //        "notes":"",
+      //        "phones":[
+      //          
+      //        ],
+      //        "realname":"",
+      //        "status":"active",
+      //        "tokens":[
+      //          
+      //        ],
+      //        "user_id":"DUXEK2QS0MSI7TV3TEN1",
+      //        "username":"harveycg"
+      //      }
+      //    ],
+      //    "stat":"OK"
+      //  }    
+      JsonNode jsonObject = jsonJacksonNode( result );     
+  
+      if (!StringUtils.equals(jsonJacksonGetString(jsonObject, "stat"), "OK")) {
+        debugMap.put("error", true);
+        debugMap.put("result", result);
+        throw new RuntimeException("Bad response from Duo: " + result);
+      }
+      
+      //  {
+      //    "metadata": {
+      //        "next_offset": 100,
+      //        "prev_offset": 0,
+      //        "total_objects": 951
+      //    }
+      //  }
+      if (jsonObject.has("metadata")) {
+        JsonNode metadataJsonObject = jsonObject.get("metadata");
+        if (metadataJsonObject.has("next_offset")) {
+          nextOffset[0] = jsonJacksonGetInteger(metadataJsonObject, "next_offset");
+          debugMap.put("next_offset", nextOffset[0]);
+        }
+        if (metadataJsonObject.has("total_objects")) {
+          totalObjects[0] = jsonJacksonGetInteger(metadataJsonObject, "total_objects");
+          debugMap.put("total_objects", totalObjects[0]);
+        }
+        
+      }
+  
+      ArrayNode responseArray = (ArrayNode)jsonObject.get("response");
+      return responseArray;
+    } catch (RuntimeException re) {
+      debugMap.put("exception", ExceptionUtils.getFullStackTrace(re));
+      throw re;
+    } finally {
+      DuoLog.duoLog(debugMap, startTime);
+    }
+  }
+  
+  /**
+   * get a field as string and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static String jsonJacksonGetString(JsonNode jsonNode, String fieldName) {
+    return jsonJacksonGetString(jsonNode, fieldName, null);
+  }
+  
+  /**
+   * get a field as string and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static String jsonJacksonGetString(JsonNode jsonNode, String fieldName, String defaultString) {
+    if (jsonNode != null) {
+      JsonNode fieldNode = jsonNode.get(fieldName);
+      if (fieldNode != null) {
+        if (!(fieldNode instanceof NullNode)) {
+          if (defaultString != null) {
+            return TwoFactorServerUtils.defaultIfEmpty(fieldNode.asText(),defaultString);
+          }
+          return fieldNode.asText();
+        }
+      }
+    }
+    return defaultString;
+  }
+
+  /**
+   * get a field as boolean and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static Boolean jsonJacksonGetBoolean(JsonNode jsonNode, String fieldName) {
+    return jsonJacksonGetBoolean(jsonNode, fieldName, null);
+  }
+  
+  /**
+   * get a field as boolean and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @param defaultBoolean if null use this value
+   * @return the string
+   */
+  public static Boolean jsonJacksonGetBoolean(JsonNode jsonNode, String fieldName, Boolean defaultBoolean) {
+    if (jsonNode != null) {
+      JsonNode fieldNode = jsonNode.get(fieldName);
+      if (fieldNode != null) {
+        if (!(fieldNode instanceof NullNode)) {
+          if (defaultBoolean != null) {
+            return fieldNode.asBoolean(defaultBoolean);
+          }
+          return fieldNode.asBoolean();
+        }
+      }
+    }
+    return defaultBoolean;
+  }
+
+  /**
+   * get a field as long and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static Long jsonJacksonGetLong(JsonNode jsonNode, String fieldName) {
+    return jsonJacksonGetLong(jsonNode, fieldName, null);
+  }
+
+  /**
+   * get a field as long and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static Long jsonJacksonGetLong(JsonNode jsonNode, String fieldName, Long defaultLong) {
+    if (jsonNode != null) {
+      JsonNode fieldNode = jsonNode.get(fieldName);
+      if (fieldNode != null) {
+        if (!(fieldNode instanceof NullNode)) {
+          if (defaultLong != null) {
+            return fieldNode.asLong(defaultLong);
+          }
+          return fieldNode.asLong();
+        }
+      }
+    }
+    return defaultLong;
+  }
+
+  /**
+   * get a field as integer and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static Integer jsonJacksonGetInteger(JsonNode jsonNode, String fieldName) {
+    return jsonJacksonGetInteger(jsonNode, fieldName, null);
+  }
+
+  /**
+   * get a field as integer and handle null
+   * @param jsonNode
+   * @param fieldName
+   * @return the string
+   */
+  public static Integer jsonJacksonGetInteger(JsonNode jsonNode, String fieldName, Integer defaultInteger) {
+    if (jsonNode != null) {
+      JsonNode fieldNode = jsonNode.get(fieldName);
+      if (fieldNode != null) {
+        if (!(fieldNode instanceof NullNode)) {
+          if (defaultInteger != null) {
+            return fieldNode.asInt(defaultInteger);
+          }
+          return fieldNode.asInt();
+        }
+      }
+    }
+    return defaultInteger;
+  }
+
+  public static JsonNode jsonJacksonNode(String json) {
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      //read JSON like DOM Parser
+      JsonNode rootNode = objectMapper.readTree(json);
+      return rootNode;
+    } catch (Exception e) {
+      TwoFactorServerUtils.injectInException(e, "Error in json '" + TwoFactorServerUtils.abbreviate(json, 4000) + "'");
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static String jsonJacksonToString(JsonNode jsonNode) {
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      String json = objectMapper.writeValueAsString(jsonNode);
+      return json;
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
+
 }

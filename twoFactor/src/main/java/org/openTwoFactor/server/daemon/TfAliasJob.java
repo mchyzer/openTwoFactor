@@ -20,6 +20,7 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.codehaus.jackson.JsonNode;
 import org.ldaptive.BindOperation;
 import org.ldaptive.BindRequest;
 import org.ldaptive.Connection;
@@ -161,7 +162,7 @@ public class TfAliasJob implements Job {
       debugLog.put("aliasCountInLdap", TwoFactorServerUtils.length(aliasesFromLdap));
       
       Map<String, String> aliasToNetidFromLdap = new HashMap<String, String>();
-
+      // System.out.println(TwoFactorServerUtils.setToString(new java.util.TreeSet<String>(aliasToNetidFromLdap.keySet())))
       Pattern pattern = Pattern.compile("^(.*)-.*$");
 
       for (String aliasFromLdap : aliasesFromLdap) {
@@ -174,11 +175,11 @@ public class TfAliasJob implements Job {
 
       debugLog.put("aliasCountInLdapPostRegex", TwoFactorServerUtils.length(aliasToNetidFromLdap));
 
-      Map<String, JSONObject> duoAliasesToUserObject = DuoCommands.retrieveAllAliasesFromDuo();
-
+      Map<String, JsonNode> duoAliasesToUserObject = DuoCommands.retrieveAllAliasesFromDuo();
+      // System.out.println(TwoFactorServerUtils.mapToString(duoAliasesToUserObject))
       debugLog.put("aliasCountInDuo", TwoFactorServerUtils.length(duoAliasesToUserObject));
-
-      Map<String, JSONObject> duoAliasesToDelete = new HashMap<String, JSONObject>(duoAliasesToUserObject);
+      // System.out.println(TwoFactorServerUtils.setToString(new java.util.TreeSet<String>(duoAliasesToUserObject.keySet())))
+      Map<String, JsonNode> duoAliasesToDelete = new HashMap<String, JsonNode>(duoAliasesToUserObject);
 
       Set<String> aliasWhitelist = new HashSet<String>();
 
@@ -202,9 +203,9 @@ public class TfAliasJob implements Job {
 
       //remove these aliases not used
       for (String duoAliasToDelete : duoAliasesToDelete.keySet()) {
-        JSONObject user = duoAliasesToDelete.get(duoAliasToDelete);
+        JsonNode user = duoAliasesToDelete.get(duoAliasToDelete);
         
-        String duoUserId = user.getString("user_id");
+        String duoUserId = DuoCommands.jsonJacksonGetString(user, "user_id");
         
         DuoCommands.deleteDuoUserAlias(duoUserId, duoAliasToDelete);
         
@@ -215,7 +216,7 @@ public class TfAliasJob implements Job {
       
       //add aliases that arent there
       for (String aliasFromLdap : aliasToNetidFromLdap.keySet()) {
-        if (duoAliasesToUserObject.containsKey(aliasesFromLdap)) {
+        if (duoAliasesToUserObject.containsKey(aliasFromLdap)) {
           continue;
         }
         
@@ -241,8 +242,8 @@ public class TfAliasJob implements Job {
           aliasCountToAdd++;
         }
       }
-      debugLog.put("aliasCountInDuoToAdd", TwoFactorServerUtils.length(aliasCountToAdd));
-      debugLog.put("aliasCountNoAccount", TwoFactorServerUtils.length(aliasCountNoAccount));
+      debugLog.put("aliasCountInDuoToAdd", aliasCountToAdd);
+      debugLog.put("aliasCountNoAccount", aliasCountNoAccount);
       
     } catch (Throwable t) {
       hasError = true;
