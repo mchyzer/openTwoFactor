@@ -56,7 +56,7 @@
           class="tfBlueButton"
            type="submit"
           onclick="return confirm('${textContainer.textEscapeSingleDouble['adminUntrustConfirm']}');" />
-          <input type="hidden" name="userIdOperatingOn" 
+          <input type="hidden" name="userIdOperatingOnName" 
             value="${fn:escapeXml(twoFactorRequestContainer.twoFactorAdminContainer.userIdOperatingOn) }" />
         </form>
       </c:when>
