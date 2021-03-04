@@ -7,7 +7,7 @@
 
 <%@ include file="../assetsJsp/commonHead.jsp"%>
 
-<!-- twoFactorIndex.jsp -->
+<!-- twoFactorIndex.jsp. -->
 
 </head>
 <body alink="#cc6600" bgcolor="#ffffff" link="#011d5c" text="#000000" vlink="#011d5c">
@@ -455,7 +455,7 @@
               <div class="formValue" style="white-space: nowrap">
                 
                 ${textContainer.text['trustedBrowserCountText']}
-                <c:if test="${twoFactorRequestContainer.twoFactorUntrustBrowserContainer.numberOfBrowsersWithoutUntrusting > 0} ">
+                <c:if test="${twoFactorRequestContainer.twoFactorUntrustBrowserContainer.numberOfBrowsersWithoutUntrusting > 0}"><%-- --%>
                   <br />
                   <form action="../../twoFactorUi/app/UiMain.untrustBrowsers" method="post" style="display: inline;">
                     <input value="${textContainer.textEscapeDouble['untrustBrowserButtonText']}" class="indexLinkButton"
