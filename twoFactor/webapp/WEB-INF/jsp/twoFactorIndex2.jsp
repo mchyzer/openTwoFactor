@@ -74,6 +74,11 @@
                   <input value="Print one-time codes" class="tfBlueButton"
                    type="submit" />
                 </form>
+                &nbsp;
+                <form action="../../twoFactorUi/app/UiMain.helpColleague" method="get" style="display: inline">
+                  <input value="${textContainer.textEscapeDouble['buttonHelpFriend']}" class="tfBlueButton"
+                   type="submit" />
+                </form>
               <!--  /div -->
             </div>
           </div>

@@ -81,7 +81,8 @@ public class BySqlStatic {
           //we dont close this connection or anything since could be pooled
           Connection connection = hibernateSession.getSession().connection();
           preparedStatement = connection.prepareStatement(sql);
-      
+          preparedStatement.setFetchSize(1000);
+
           attachParams(preparedStatement, params);
           
           result1 = preparedStatement.executeUpdate();
@@ -142,7 +143,8 @@ public class BySqlStatic {
           //we dont close this connection or anything since could be pooled
           Connection connection = hibernateSession.getSession().connection();
           preparedStatement = connection.prepareStatement(sql);
-      
+          preparedStatement.setFetchSize(1000);
+
           attachParams(preparedStatement, params);
           
           resultSet = preparedStatement.executeQuery();
@@ -229,7 +231,8 @@ public class BySqlStatic {
           //we dont close this connection or anything since could be pooled
           Connection connection = hibernateSession.getSession().connection();
           preparedStatement = connection.prepareStatement(sql);
-      
+          preparedStatement.setFetchSize(1000);
+
           attachParams(preparedStatement, params);
           
           resultSet = preparedStatement.executeQuery();
