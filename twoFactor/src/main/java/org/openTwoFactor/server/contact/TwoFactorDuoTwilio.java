@@ -4,7 +4,9 @@
  */
 package org.openTwoFactor.server.contact;
 
+import org.apache.commons.logging.Log;
 import org.openTwoFactor.server.duo.DuoCommands;
+import org.openTwoFactor.server.util.TwoFactorServerUtils;
 
 
 
@@ -13,15 +15,23 @@ import org.openTwoFactor.server.duo.DuoCommands;
  */
 public class TwoFactorDuoTwilio extends TwoFactorTwilio  {
 
+  /** logger */
+  private static final Log LOG = TwoFactorServerUtils.getLog(TwoFactorDuoTwilio.class);
+
   /**
    * @see org.openTwoFactor.server.contact.TwoFactorContactInterface#text(java.lang.String, java.lang.String)
    */
   @Override
   public void text(String loginid, String phoneNumber, String text) {
     
-    // dont worry about numbers to set
-    DuoCommands.duoSendTextBySomeId(loginid, phoneNumber, false, 30);
+    try {
     
+      // dont worry about numbers to set
+      DuoCommands.duoSendTextBySomeId(loginid, phoneNumber, false, 30);
+    } catch (Exception e) {
+      LOG.info("Non fatal problem sending text by duo. " + e.getMessage());
+      super.text(loginid, phoneNumber, text);
+    }
   }
 
   /**
